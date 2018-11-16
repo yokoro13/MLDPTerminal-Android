@@ -1,0 +1,53 @@
+<resources>
+    <string name="app_name">TeCTerminal</string>
+
+    <string name="ble_not_supported">BLE is not supported</string>
+    <string name="mldp_not_supported">MLDP is not supported</string>
+    <string name="label_device">Device: </string>
+    <string name="label_state">State: </string>
+    <string name="unknown">Unknown</string>
+    <string name="no_data">No data</string>
+    <string name="label_incoming">Incoming: </string>
+    <string name="label_outgoing">Outgoing: </string>
+    <string name="send">Send</string>
+    <string name="clear">Clear</string>
+    <string name="enabling_bluetooth">Enabling Bluetooth</string>
+    <string name="connecting">Connecting</string>
+    <string name="connected">Connected</string>
+    <string name="disconnecting">Disconnecting</string>
+    <string name="not_connected">Not Connected</string>
+    <string name="scan_for_devices">Scan for Devices</string>
+    <string name="text_to_send">Text to send</string>
+    <string name="no_devices_found">No devices found</string>
+
+
+    <!-- About dialog -->
+    <string name="about_title">About MLDP Terminal Application</string>
+    <string name="about_contents">Copyright (C) 2016 Microchip Technology, Inc.\r\n\nVersion 3.2\r\n</string>
+
+    <!-- Exit dialog -->
+    <string name="exit_title">Exit MLDP Terminal Application</string>
+    <string name="exit_contents">Are you sure you want to exit?\r\n</string>
+
+    <!-- Attempting auto connect dialog -->
+    <string name="autoconnect_title">Trying to Connect...</string>
+    <string name="autoconnect_contents">Attempting to connect to the Bluetooth device that was previously used.\r\n\nPress Cancel to scan for another device.\r\n</string>
+
+    <!-- Unable to connect dialog -->
+    <string name="noconnect_title">Unable to Connect</string>
+    <string name="noconnect_contents">Failed to connect to the Bluetooth device.\r\n\nDo you want to scan for another device?\r\n</string>
+
+    <!-- Lost connection dialog -->
+    <string name="lost_title">Lost Connection...</string>
+    <string name="lost_contents">The connection to the Bluetooth device was lost\r\n\nDo you want to scan for another device?\r\n</string>
+
+    <!-- Menu items for MLDPTermainalLaunchActivity -->
+    <string name="menu_connect">Connect</string>
+    <string name="menu_disconnect">Disconnect</string>
+
+    <!-- Menu items for MldpBluetoothScanActivity -->
+    <string name="menu_scan">Scan</string>
+
+    <string name="keyboard_name">TeCKeyboard</string>
+
+</resources>
