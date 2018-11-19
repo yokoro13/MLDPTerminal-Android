@@ -44,8 +44,9 @@ import java.util.function.ToDoubleBiFunction;
  * 一番した以外で文字が追加できるのをなおす
  * 文字消去
  * 文字の幅を一定にする
- * 画面を回転させた時のデータ保持(onCreateがもう一回発動するから全部消える)
- * 英字キーボードに場合キーイベントが発生しないバグ？？
+ * 画面を回転させた時のデータ保持(onCreateがもう一回発動するから全部消える?)
+ * onKey => textWatcherへの移行
+ * エンターを押したとき，右側に空白がはいるなら，入らなくなるまでいれる（いちいち一行の文字数を取る必要がなくなる）
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -116,6 +117,8 @@ public class MainActivity extends AppCompatActivity{
     private KeyboardView keyboardView;
     private Keyboard keyboard;
 
+    private String lineText = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,49 +132,8 @@ public class MainActivity extends AppCompatActivity{
 
         input = (EditText) findViewById(R.id.main_display);
 
-
         //コピー，ペースト，カット，すべて選択が機能的にいらないので削除
-        input.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
-            @Override
-            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                menu.removeItem(android.R.id.paste);
-                menu.removeItem(android.R.id.cut);
-                menu.removeItem(android.R.id.copy);
-                menu.removeItem(android.R.id.selectAll);
-                menu.removeItem(android.R.id.addToDictionary);
-                menu.removeItem(android.R.id.startSelectingText);
-                menu.removeItem(android.R.id.selectTextMode);
-                menu.removeItem(android.R.id.replaceText);
-                menu.removeItem(android.R.id.autofill);
-                return false;
-            }
-
-            @Override
-            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                menu.removeItem(android.R.id.paste);
-                menu.removeItem(android.R.id.cut);
-                menu.removeItem(android.R.id.copy);
-                menu.removeItem(android.R.id.selectAll);
-                menu.removeItem(android.R.id.addToDictionary);
-                menu.removeItem(android.R.id.startSelectingText);
-                menu.removeItem(android.R.id.selectTextMode);
-                menu.removeItem(android.R.id.replaceText);
-                menu.removeItem(android.R.id.autofill);
-                menu.close();
-                return true;
-            }
-
-            @Override
-            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                return false;
-            }
-
-            @Override
-            public void onDestroyActionMode(ActionMode mode) {
-
-            }
-        });
-
+        input.setCustomSelectionActionModeCallback(mActionModeCallback);
 
         input.addTextChangedListener(mInputTextWatcher);
 
@@ -462,6 +424,54 @@ public class MainActivity extends AppCompatActivity{
         return super.onOptionsItemSelected(item);
     }
 
+    private final ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            menu.removeItem(android.R.id.paste);
+            menu.removeItem(android.R.id.cut);
+            menu.removeItem(android.R.id.copy);
+            menu.removeItem(android.R.id.selectAll);
+            menu.removeItem(android.R.id.addToDictionary);
+            menu.removeItem(android.R.id.startSelectingText);
+            menu.removeItem(android.R.id.selectTextMode);
+            menu.removeItem(android.R.id.replaceText);
+            menu.removeItem(android.R.id.autofill);
+            return false;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            menu.removeItem(android.R.id.paste);
+            menu.removeItem(android.R.id.cut);
+            menu.removeItem(android.R.id.copy);
+            menu.removeItem(android.R.id.selectAll);
+            menu.removeItem(android.R.id.addToDictionary);
+            menu.removeItem(android.R.id.startSelectingText);
+            menu.removeItem(android.R.id.selectTextMode);
+            menu.removeItem(android.R.id.replaceText);
+            menu.removeItem(android.R.id.autofill);
+            menu.close();
+            return true;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+
+        }
+    };
+
+    private final View.OnKeyListener mOnKeyListener = new View.OnKeyListener() {
+        @Override
+        public boolean onKey(View v, int keyCode, KeyEvent event) {
+            return false;
+        }
+    };
+
     private final TextWatcher mOutgoingTextWatcher = new TextWatcher() {
 
         public void beforeTextChanged(CharSequence cs, int i, int i1, int i2) {
@@ -481,42 +491,65 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
+    int position;
+    boolean editFlag = true;
+
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            currCursol = input.getSelectionStart();
-            inputText = input.getText().toString(); //おされた瞬間のテキストを保持
-            lineCount = input.getLineCount();
+            if (editFlag) {
+                currCursol = input.getSelectionStart();
+                inputText = s.toString(); //おされた瞬間のテキストを保持
+                lineCount = input.getLineCount();
 
-            if(before_str.length() > input.getSelectionStart()){
-                input.append("だめです");
-                return;
+                position = start;
+
+                if (position == 0 && 0 < count && 0 < after) {
+                    position = count;
+                }
             }
 
         }
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            if(items.size() > 1 ) {
-                if (!items.get(getSelectRow()).isWritable()) //それが編集可能じゃないなら
-                    //input.append("だめです");
-                    return; //入力イベントキャンセル
-            }
-
-            if(s.toString().substring(start).equals(LF)){
-                //input.append("enterrrrrr");
-            }
-            if(before > 0){
-                if (input.getSelectionStart() < before_str.length()){
-
-                }
-            }
         }
 
         @Override
         public void afterTextChanged(Editable s) {
+            String str = s.toString().substring(start);//入力文字
+            lineText += str;
+            if (str.matches("[\\p{ASCII}]*")) {
 
+                if (items.size() > 1) {
+                    if (!items.get(getSelectRow()).isWritable()) //それが編集可能じゃないなら
+                        //input.append("だめです");
+                        return; //入力イベントキャンセル
+                }
+
+                if (str.equals(LF)) {
+                    Log.d(TAG, "lineText is " + lineText);
+                    addNewLine(lineText);
+                    lineText = "";
+                    //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+                }
+
+
+                /***
+                 if(before > 0){
+                 if (input.getSelectionStart() < before_str.length()){
+
+                 }
+                 }
+                 **/
+            }
+            else {
+                editFlag = false;
+                input.setText(inputText);
+                input.setSelection(currCursol);
+                lineText = lineText.substring(0, lineText.length()-1);
+                editFlag = true;
+            }
         }
     };
 
@@ -549,7 +582,6 @@ public class MainActivity extends AppCompatActivity{
                 Log.d(TAG, "Received intent ACTION_BLE_DATA_RECEIVED");
                 String data = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA);
 
-
                 if (data != null) {
                     String str="";
                     byte[] utf = data.getBytes(StandardCharsets.UTF_8);
@@ -557,6 +589,10 @@ public class MainActivity extends AppCompatActivity{
                         str = Integer.toHexString(b & 0xff);
                     }
 
+                    /**ASCII 以外の入力制限フロー
+                     * 入力文字を１６進数にし．Stringにキャスト
+                     *
+                     */
                     start = input.getSelectionStart();
                     end = input.getSelectionEnd();
                     switch (str) {
@@ -703,7 +739,6 @@ public class MainActivity extends AppCompatActivity{
                     case ENABLING:
                     case SCANNING:
                     case DISCONNECTED:
-
                         setProgressBarIndeterminateVisibility(false);
                         break;
                     case CONNECTING:
@@ -791,19 +826,6 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    private void addNewLine(String newStr) {
-        input.append(newStr + LF);
-        rowText = inputText.substring(before_str.length(), inputText.length());
-        before_str = inputText;
-        addList(rowText);
-        input.setSelection(input.getText().length());
-    }
-
-    //strの最後が改行コードかしらべる
-    private Boolean isEnd(String str) {
-        return str.lastIndexOf(LF) == str.length() - 1;
-    }
-
     //Listの中身を表示
     private void displayList() {
         for (int i = 0; i < items.size(); i++) {
@@ -811,13 +833,16 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    private void showBleDevicesList(){
-        for (int i=0; i < bleDevices.size(); i++){
-            addNewLine(bleDevices.get(i).toString());
+    private void addNewLine(String newStr) {
+        input.append(newStr + LF);
+        rowText = inputText.substring(before_str.length(), inputText.length());
+        before_str = inputText;
+        int maxChar = getMaxRowLength();
+        for(int i = rowText.length()%maxChar; i < maxChar; i++){
+            rowText += " ";
         }
-        if(bleDevices.size() == 0){
-            addNewLine("Device not found");
-        }
+        addList(rowText);
+        input.setSelection(input.getText().length());
     }
 
     /**
@@ -828,13 +853,10 @@ public class MainActivity extends AppCompatActivity{
      * list <- (id, text, hasNext, writable).
      */
 
+
     private void addList(String row){
-        int weight = input.getWidth(); //画面の横幅
-        Log.d(TAG, "display weight is " + Integer.toString(weight));
-        int size = (int)input.getTextSize();
-        Log.d(TAG, "text size is " + Integer.toString(size));
-        //int maxChar = weight/size; //1行に入る文字数
-        int maxChar = 42;
+        //TODO 一行に入る最大文字数の求め方を考える.
+        int maxChar = getMaxRowLength();
         Log.d(TAG, "max char is " + Integer.toString(maxChar));
         String text; //一行の文字列を格納
         String str = row; //ちぎるやつ
@@ -846,7 +868,7 @@ public class MainActivity extends AppCompatActivity{
         Boolean hasNext = false; //次の行がある場合はtrue
 
         for(int i = rowNum; i > 0; i--) {
-            if (str.length() >= maxChar) {
+            if (str.length() > maxChar) {
                 hasNext = true;
                 text = str.substring(0, maxChar);
                 str = str.substring(maxChar+1, str.length() - 1);
@@ -864,13 +886,6 @@ public class MainActivity extends AppCompatActivity{
 
     }
 
-    private int setSelectRow(int row){
-        int length = 0;
-        for(int i = 0; i < row; i++){
-            length += items.get(i).getText().length();
-        }
-        return length;
-    }
     private int getSelectRow(){
         int count = 0;
         int start = input.getSelectionStart();
@@ -886,12 +901,16 @@ public class MainActivity extends AppCompatActivity{
         return row;
     }
 
-    private int getDisplayWeight(){
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        return metrics.widthPixels;
-    }
-    private void undoText(String str) {
+    //TODO 一行に入る最大文字数の求め方を考える.
+    private int getMaxRowLength(){
+        int weight = input.getWidth(); //画面の横幅
+        Log.d(TAG, "display weight is " + Integer.toString(weight));
+        int size = (int)input.getTextSize();
+        Log.d(TAG, "text size is " + Integer.toString(size));
+        //int maxChar = weight/size; //1行に入る文字数
+
+        int maxChar = 42;
+        return maxChar;
     }
 
 }
