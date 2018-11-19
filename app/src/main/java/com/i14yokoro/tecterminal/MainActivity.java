@@ -108,27 +108,17 @@ public class MainActivity extends AppCompatActivity{
     private int start,end;
     EscapeSequence escapeSequence;
 
-    InputMethodManager imm;
-
     int r;
     private int currCursol = 0;
     private Boolean pushEnter = false;
 
-    private KeyboardView keyboardView;
-    private Keyboard keyboard;
-
     private String lineText = "";
+    private int maxChar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        /**
-        keyboardView = new KeyboardView(this, null);
-        keyboard = new Keyboard(this, R.layout.keyboard);
-        keyboardView.setKeyboard(keyboard)
-         **/
 
         input = (EditText) findViewById(R.id.main_display);
 
@@ -137,6 +127,7 @@ public class MainActivity extends AppCompatActivity{
 
         input.addTextChangedListener(mInputTextWatcher);
 
+        maxChar = getMaxRowLength();
         items = new ArrayList<>();
         bleDevices = new ArrayList<>();
 
@@ -179,13 +170,6 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
-        /**TODO
-         * 予測変換を消す
-         * IMEによっては無理かも
-         */
-        imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(input.getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
-
         //SDK23以降はBLEをスキャンするのに位置情報が必要
         if(Build.VERSION.SDK_INT >= 23) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
@@ -226,124 +210,6 @@ public class MainActivity extends AppCompatActivity{
                 //}
                 return true;
             }
-        });
-
-        //keyがおされたときのイベント
-        input.setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                //input.append("add");
-                currCursol = input.getSelectionStart();
-                inputText = input.getText().toString(); //おされた瞬間のテキストを保持
-                lineCount = input.getLineCount();
-                //input.clearComposingText();
-
-                Log.d("debug***", "LineCount/" + Integer.toString(lineCount));
-
-                char keyChar = (char)event.getUnicodeChar();
-
-                //if(event.getAction() == KeyEvent.ACTION_DOWN)
-                    //input.append("\u4e2d");//この書き方でもいける
-
-                /**
-                 * TODO
-                 * ここのwriteableを使いたい
-                 * 一番したの団は必ずtrue
-                 */
-                if(items.size() > 1 ) {
-                    if (!items.get(getSelectRow()).isWritable()) //それが編集可能じゃないなら
-                        return true; //入力イベントキャンセル
-                }
-                //if(before_str.length() >= input.getSelectionStart()){
-                  //  return true;
-                //}
-
-                //削除対策
-                if((keyCode == KeyEvent.KEYCODE_DEL) && (event.getAction() == KeyEvent.ACTION_DOWN)){
-
-                    Log.d("debug***", "input DEL");
-                    Log.d("debug***", Integer.toString(inputText.lastIndexOf(LF))+ "/ " + Integer.toString(before_str.length()-1));
-
-                    Log.d("debug**","selection/" + Integer.toString(input.getSelectionStart()));
-                    if(input.getSelectionStart() > 0) { //選択位置が一番最初じゃないとき
-                        if (inputText.substring(input.getSelectionStart() - 1).equals(LF)) {
-
-                            return true; //１つ前が改行ならイベントキャンセル
-                        }
-                     }
-                     Log.d("debug***", Boolean.toString(able_edit));
-                 }
-
-                 //addNewLine(Integer.toString(keyCode));
-                //入力完了したとき（Enterが押された時）
-                String lastChar;
-                if(input.length() > 0) {
-                    lastChar = inputText.substring(inputText.length() - 1);
-                    String str = "";
-                    byte[] utf = lastChar.getBytes(StandardCharsets.UTF_8);
-                    for (byte b : utf) {
-                        str = Integer.toHexString(b & 0xff);
-                    }
-                    if (str.equals("a")) {
-                        pushEnter = true;
-                    }
-                }
-
-                if (pushEnter && (event.getAction() == KeyEvent.ACTION_DOWN)) {
-                    if(before_str.length() > inputText.length()){ //編集前の方が長いとき
-                        return true; //イベントキャンセル
-                    }
-
-                    rowText = inputText.substring(before_str.length(), inputText.length());
-                    before_str = inputText;
-                    Log.d("debug***", "after_lastIndex" + Integer.toString(inputText.lastIndexOf(LF)));
-                    addList(rowText);
-
-                    command = rowText.split(" ", 0);
-                    command[0] = command[0].replaceAll(LF, "");
-                    //command[0].replaceAll(" ", "");
-
-                    Log.d("debug**", items.toString());
-
-                    if (!connecting) {
-                        Log.d(TAG, "connecting is false" );
-                        Log.d(TAG, "command = " + command[0] + ".");
-                        if (command[0].equals(SCAN_COMMAND) && command.length == 1) {
-                            addNewLine("scanning");
-                            startScan();
-
-                        }
-                        if (command[0].equals(CONNECT_COMMAND) && command.length <= 2) {
-                            if(command.length == 2){
-                                command[1] = command[1].replaceAll(LF,"");
-                                bleDeviceAddress = command[1];
-                            }
-                            if (bleDeviceAddress != null) {
-                                connectWithAddress(bleDeviceAddress);
-
-                                connecting = true;
-                            } else {
-                                startScan();
-                            }
-
-                        }
-                    } else {
-                        if (command[0].equals(DISCONNECT_COMMAND) && command.length == 1) {
-                            state = State.DISCONNECTING;
-                            updateConnectionState();
-                            unbindService(bleServiceConnection);
-                            //bleService.disconnect();
-                            //input.removeTextChangedListener(mOutgoingTextWatcher);
-                            connecting = false;
-                        }
-                    }
-                    displayList();
-                    pushEnter = false;
-                }
-                return false;
-            }
-
-
         });
 
     }
@@ -465,13 +331,6 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    private final View.OnKeyListener mOnKeyListener = new View.OnKeyListener() {
-        @Override
-        public boolean onKey(View v, int keyCode, KeyEvent event) {
-            return false;
-        }
-    };
-
     private final TextWatcher mOutgoingTextWatcher = new TextWatcher() {
 
         public void beforeTextChanged(CharSequence cs, int i, int i1, int i2) {
@@ -493,7 +352,7 @@ public class MainActivity extends AppCompatActivity{
 
     int position;
     boolean editFlag = true;
-
+    boolean deleteFlag = true;
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -513,35 +372,39 @@ public class MainActivity extends AppCompatActivity{
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
+            /**
+             * TODO
+             * ここのwriteableを使いたい
+             * 一番したの団は必ずtrue
+             */
+
+            if(before > 0 && input.getSelectionStart() > 0) { //削除される文字が存在するとき
+                if (s.toString().substring(input.getSelectionStart() - 1).equals(LF)
+                        || !items.get(getSelectRow()).isWritable()) { //その前の文字が改行コードまたは，編集可能じゃなかったら
+                    deleteFlag = false;//削除フラグをおる
+                }
+            }
         }
 
         @Override
         public void afterTextChanged(Editable s) {
             String str = s.toString().substring(start);//入力文字
             lineText += str;
-            if (str.matches("[\\p{ASCII}]*")) {
 
-                if (items.size() > 1) {
-                    if (!items.get(getSelectRow()).isWritable()) //それが編集可能じゃないなら
-                        //input.append("だめです");
-                        return; //入力イベントキャンセル
-                }
+            if (str.matches("[\\p{ASCII}]*") && deleteFlag) {
 
                 if (str.equals(LF)) {
                     Log.d(TAG, "lineText is " + lineText);
-                    addNewLine(lineText);
+                    for(int i = lineText.length()%maxChar; i < maxChar; i++){
+                        input.append(" ");
+                        lineText += " ";
+                    }
+                    addList(lineText);
                     lineText = "";
+                    displayList();
                     //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                 }
 
-
-                /***
-                 if(before > 0){
-                 if (input.getSelectionStart() < before_str.length()){
-
-                 }
-                 }
-                 **/
             }
             else {
                 editFlag = false;
@@ -549,6 +412,7 @@ public class MainActivity extends AppCompatActivity{
                 input.setSelection(currCursol);
                 lineText = lineText.substring(0, lineText.length()-1);
                 editFlag = true;
+                deleteFlag = true;
             }
         }
     };
@@ -837,10 +701,6 @@ public class MainActivity extends AppCompatActivity{
         input.append(newStr + LF);
         rowText = inputText.substring(before_str.length(), inputText.length());
         before_str = inputText;
-        int maxChar = getMaxRowLength();
-        for(int i = rowText.length()%maxChar; i < maxChar; i++){
-            rowText += " ";
-        }
         addList(rowText);
         input.setSelection(input.getText().length());
     }
@@ -856,7 +716,6 @@ public class MainActivity extends AppCompatActivity{
 
     private void addList(String row){
         //TODO 一行に入る最大文字数の求め方を考える.
-        int maxChar = getMaxRowLength();
         Log.d(TAG, "max char is " + Integer.toString(maxChar));
         String text; //一行の文字列を格納
         String str = row; //ちぎるやつ
@@ -890,10 +749,10 @@ public class MainActivity extends AppCompatActivity{
         int count = 0;
         int start = input.getSelectionStart();
         int row = 0;
-        for (; count < start;row++){
-            Log.d(TAG, "getSelectRow");
+        for (; count <= start;row++){ //TODO あってるか微妙
+            //Log.d(TAG, "getSelectRow");
             if(row < items.size()-1 ){
-                Log.d(TAG, Integer.toString(row) + " : " + Integer.toString(count));
+                //Log.d(TAG, Integer.toString(row) + " : " + Integer.toString(count));
                 count += items.get(row).getText().length();
             }
             else break;
