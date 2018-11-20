@@ -362,11 +362,6 @@ public class MainActivity extends AppCompatActivity{
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-            /**
-             * TODO
-             * ここのwriteableを使いたい
-             * 一番したの団は必ずtrue
-             */
 
             if(before > 0 && input.getSelectionStart() > 0) { //削除される文字が存在するとき
                 if (s.subSequence(input.getSelectionStart() - 1, input.getSelectionStart()).equals(LF)
@@ -390,13 +385,12 @@ public class MainActivity extends AppCompatActivity{
                 if (str.equals(LF)) {
                     if (enter) {
                         Log.d(TAG, "lineText is " + lineText);
-
+                        enter = false;
                         editFlag = false;
                         input.setText(inputText);
                         input.setSelection(currCursol);
                         lineText = lineText.substring(0, lineText.length() - 1);
                         addSpace();
-                        enter = false;
                         input.append(LF);
 
                         rowText = inputText.substring(before_str.length(), inputText.length());

@@ -35,17 +35,32 @@ public class EscapeSequence {
     }
 
     public void moveUp(int n){
+        /**
         if(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()) >= 0){
-            editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
+            //editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
+            editText.setSelection(editText.getSelectionStart()-42);
+        }**/
+        if(editText.getSelectionStart()-42 >= 0){
+            editText.setSelection(editText.getSelectionStart()-42);
+        }
+        else {
+            editText.setSelection(0);
         }
 
     }
     public void moveDown(int n){
+        /**
         if(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n) < editText.length()){
             editText.setSelection(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n));
+        }**/
+        if (editText.getSelectionStart()+42 < editText.length()){
+            editText.setSelection(editText.getSelectionStart()+42);
         }
-
+        else {
+            editText.setSelection(editText.length());
+        }
     }
+
     public void moveRowUp(int n){
 
     }
