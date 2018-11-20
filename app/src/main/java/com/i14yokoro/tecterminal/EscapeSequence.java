@@ -40,8 +40,8 @@ public class EscapeSequence {
             //editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
             editText.setSelection(editText.getSelectionStart()-42);
         }**/
-        if(editText.getSelectionStart()-42 >= 0){
-            editText.setSelection(editText.getSelectionStart()-42);
+        if(editText.getSelectionStart()-43 >= 0){
+            editText.setSelection(editText.getSelectionStart()-43);
         }
         else {
             editText.setSelection(0);
@@ -53,8 +53,8 @@ public class EscapeSequence {
         if(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n) < editText.length()){
             editText.setSelection(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n));
         }**/
-        if (editText.getSelectionStart()+42 < editText.length()){
-            editText.setSelection(editText.getSelectionStart()+42);
+        if (editText.getSelectionStart()+43 < editText.length()){
+            editText.setSelection(editText.getSelectionStart()+43);
         }
         else {
             editText.setSelection(editText.length());

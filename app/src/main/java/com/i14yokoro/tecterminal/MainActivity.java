@@ -130,11 +130,11 @@ public class MainActivity extends AppCompatActivity{
             public void onClick(View v) {
                 //Rect result = new Rect();
                 //r = input.getHeight()/
-                r = input.getWidth()/(int)input.getTextSize();//LineHeight();//LineCount();//Bounds(1, new Rect(0,0,0,0));
+                //r = input.getWidth()/(int)input.getTextSize();//LineHeight();//LineCount();//Bounds(1, new Rect(0,0,0,0));
                 //Paint paint = new Paint();
                 //input.meas
-                addNewLine(Integer.toString(r));
-                //escapeSequence.moveLeft(1);
+                //addNewLine(Integer.toString(r));
+                escapeSequence.moveLeft(1);
             }
         });
 
