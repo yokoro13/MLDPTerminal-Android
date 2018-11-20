@@ -379,7 +379,7 @@ public class MainActivity extends AppCompatActivity{
              */
 
             if(before > 0 && input.getSelectionStart() > 0) { //削除される文字が存在するとき
-                if (s.toString().substring(input.getSelectionStart() - 1).equals(LF)
+                if (s.subSequence(input.getSelectionStart() - 1, input.getSelectionStart()).equals(LF)
                         || !items.get(getSelectRow()).isWritable()) { //その前の文字が改行コードまたは，編集可能じゃなかったら
                     Log.d(TAG, "deleteFlag is false");
                     deleteFlag = false;//削除フラグをおる
@@ -390,7 +390,7 @@ public class MainActivity extends AppCompatActivity{
         //TODO ループにはいっているので直す
         @Override
         public void afterTextChanged(Editable s) {
-            String str = s.toString().substring(start);//入力文字
+            String str = s.subSequence(s.length()-1, s.length()).toString();//入力文字
             lineText += str;
 
             Log.d(TAG, "afterTextChange");
@@ -398,10 +398,7 @@ public class MainActivity extends AppCompatActivity{
                 Log.d(TAG, "ASCII code/ " + str);
                 if (str.equals(LF)) {
                     Log.d(TAG, "lineText is " + lineText);
-                    for(int i = lineText.length()%maxChar; i < maxChar; i++){
-                        input.append(" ");
-                        lineText += " ";
-                    }
+                    addSpace(lineText);
                     rowText = inputText.substring(before_str.length(), inputText.length());
                     before_str = inputText;
                     addList(lineText);
@@ -774,6 +771,16 @@ public class MainActivity extends AppCompatActivity{
 
         int maxChar = 42;
         return maxChar;
+    }
+
+    //端っこのいくまでスペース追加
+    private void addSpace(String line){
+        editFlag = false;
+        for(int i = lineText.length()%maxChar; i < maxChar; i++){
+            input.append(" ");
+            lineText += " ";
+        }
+        editFlag = true;
     }
 
 }
