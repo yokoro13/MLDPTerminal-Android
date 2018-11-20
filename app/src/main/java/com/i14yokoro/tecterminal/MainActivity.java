@@ -10,34 +10,23 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.graphics.Paint;
-import android.graphics.Rect;
-import android.inputmethodservice.Keyboard;
-import android.inputmethodservice.KeyboardView;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.InputType;
 import android.text.TextWatcher;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ActionMode;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.function.ToDoubleBiFunction;
 
 /**
  * TODO
@@ -353,6 +342,7 @@ public class MainActivity extends AppCompatActivity{
     int position;
     boolean editFlag = true;
     boolean deleteFlag = true;
+    boolean enter = true;
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -390,21 +380,36 @@ public class MainActivity extends AppCompatActivity{
         //TODO ループにはいっているので直す
         @Override
         public void afterTextChanged(Editable s) {
+            if(s.length() < 1) return;
             String str = s.subSequence(s.length()-1, s.length()).toString();//入力文字
             lineText += str;
 
             Log.d(TAG, "afterTextChange");
-            if (str.matches("[\\p{ASCII}]*") && deleteFlag) {
+            if (str.matches("[\\p{ASCII}]*") && deleteFlag ) {
                 Log.d(TAG, "ASCII code/ " + str);
                 if (str.equals(LF)) {
-                    Log.d(TAG, "lineText is " + lineText);
-                    addSpace(lineText);
-                    rowText = inputText.substring(before_str.length(), inputText.length());
-                    before_str = inputText;
-                    addList(lineText);
-                    lineText = "";
-                    displayList();
-                    //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+                    if (enter) {
+                        Log.d(TAG, "lineText is " + lineText);
+
+                        editFlag = false;
+                        input.setText(inputText);
+                        input.setSelection(currCursol);
+                        lineText = lineText.substring(0, lineText.length() - 1);
+                        addSpace();
+                        enter = false;
+                        input.append(LF);
+
+                        rowText = inputText.substring(before_str.length(), inputText.length());
+                        before_str = inputText;
+                        addList(lineText);
+                        Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
+                        lineText = "";
+                        displayList();
+                        //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+                    }
+                    else {
+                        enter = true;
+                    }
                 }
 
             }
@@ -694,6 +699,7 @@ public class MainActivity extends AppCompatActivity{
 
     //Listの中身を表示
     private void displayList() {
+        Log.d(TAG, "displayList/");
         for (int i = 0; i < items.size(); i++) {
             Log.d("debug***", Integer.toString(items.get(i).getText().length()));
         }
@@ -730,8 +736,8 @@ public class MainActivity extends AppCompatActivity{
         for(int i = rowNum; i > 0; i--) {
             if (str.length() > maxChar) {
                 hasNext = true;
-                text = str.substring(0, maxChar);
-                str = str.substring(maxChar+1, str.length() - 1);
+                text = str.substring(0, maxChar-1);
+                str = str.substring(maxChar, str.length() - 1);
             } else {
                 hasNext = false;
                 text = str;
@@ -774,12 +780,16 @@ public class MainActivity extends AppCompatActivity{
     }
 
     //端っこのいくまでスペース追加
-    private void addSpace(String line){
+    private void addSpace(){
         editFlag = false;
-        for(int i = lineText.length()%maxChar; i < maxChar; i++){
-            input.append(" ");
-            lineText += " ";
+
+        String space = "";
+        Log.d(TAG, "add Space");
+        for(int i = lineText.length()%maxChar; i <= maxChar; i++){
+            space += " ";
         }
+        input.append(space);
+        lineText += space;
         editFlag = true;
     }
 
