@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity{
         rowListItem = new RowListItem(items.size(), "", false, true); //一行目を追加
         items.add(rowListItem);
 
-        escapeSequence = new EscapeSequence(this, items); //今のContentを渡す
+        escapeSequence = new EscapeSequence(this, items, getMaxRowLength()); //今のContentを渡す
 
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -134,28 +134,28 @@ public class MainActivity extends AppCompatActivity{
                 //Paint paint = new Paint();
                 //input.meas
                 //addNewLine(Integer.toString(r));
-                escapeSequence.moveLeft(1);
+                escapeSequence.moveLeft();
             }
         });
 
         findViewById(R.id.btn_right).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                escapeSequence.moveRight(1);
+                escapeSequence.moveRight();
             }
         });
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                escapeSequence.moveUp(1);
+                escapeSequence.moveUp();
             }
         });
 
         findViewById(R.id.btn_down).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                escapeSequence.moveDown(1);
+                escapeSequence.moveDown();
             }
         });
 
@@ -385,7 +385,7 @@ public class MainActivity extends AppCompatActivity{
                 if (str.equals(LF)) {
                     if (enter) {
                         Log.d(TAG, "lineText is " + lineText);
-                        enter = false;
+                        enter = false; //最後に改行をいれるのでループしないように
                         editFlag = false;
                         input.setText(inputText);
                         input.setSelection(currCursol);
@@ -750,6 +750,7 @@ public class MainActivity extends AppCompatActivity{
         int count = 0;
         int start = input.getSelectionStart();
         int row = 0;
+        /**
         for (; count <= start;row++){ //TODO あってるか微妙
             //Log.d(TAG, "getSelectRow");
             if(row < items.size()-1 ){
@@ -758,7 +759,9 @@ public class MainActivity extends AppCompatActivity{
             }
             else break;
         }
-        return row;
+         */
+        //TODO getSelectionのカウントが0-42, 43 - 85かもしれないのでしらべる
+        return input.getSelectionStart()+1 % getMaxRowLength();
     }
 
     //TODO 一行に入る最大文字数の求め方を考える.
