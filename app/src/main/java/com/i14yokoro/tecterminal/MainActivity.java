@@ -39,21 +39,14 @@ public class MainActivity extends AppCompatActivity{
 
     private static final String TAG = "debug***";
 
-    private boolean connecting = false; //接続中かどうか（true:接続中  , false:切断中）
-
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
     private EditText input; //ディスプレイのEdittext
     private String inputText; //入力したテキスト
-    private ArrayList<RowListItem> items; //コンソール画面の行情報が入る
     private ArrayList<BleDevice> bleDevices; //スキャンしたデバイス情報が入る
 
     private boolean able_edit = true; //編集可能か
 
-    private int lineCount; //行数
     private String before_str = ""; //１つ前の行までのテキスト情報
-    private String rowText; //今の行のテキスト情報
-
-    private RowListItem rowListItem; //行情報
 
     private static final String PREFS = "PREFS";
     private static final String PREFS_NAME = "NAME";
@@ -77,13 +70,6 @@ public class MainActivity extends AppCompatActivity{
 
     State state = State.STARTING;
 
-    //コマンド用
-    private String[] command;
-    private final String SCAN_COMMAND = "scan";
-    private final String CONNECT_COMMAND = "connect";
-    private final String DISCONNECT_COMMAND = "disconnect";
-    private final String ADDRESS_COMMAND = "address";
-
     private Boolean escFlag = false; //escキーがおされたらtrue
     private Boolean moveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
     private int move = 0; //escapeシーケンス用
@@ -96,8 +82,7 @@ public class MainActivity extends AppCompatActivity{
     EscapeSequence escapeSequence;
 
     int r;
-    private int currCursol = 0;
-    private Boolean pushEnter = false;
+    private int currCursor = 0;
 
     private String lineText = "";
     private int maxChar;
@@ -115,13 +100,9 @@ public class MainActivity extends AppCompatActivity{
         input.addTextChangedListener(mInputTextWatcher);
 
         maxChar = getMaxRowLength();
-        items = new ArrayList<>();
         bleDevices = new ArrayList<>();
 
-        rowListItem = new RowListItem(items.size(), "", false, true); //一行目を追加
-        items.add(rowListItem);
-
-        escapeSequence = new EscapeSequence(this, items, getMaxRowLength()); //今のContentを渡す
+        escapeSequence = new EscapeSequence(this, getMaxRowLength()); //今のContentを渡す
 
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -187,11 +168,11 @@ public class MainActivity extends AppCompatActivity{
             public boolean onTouch(View v, MotionEvent event) {
                 //if(event.getAction() == MotionEvent.ACTION_DOWN) {
                     if (input.getSelectionStart() < before_str.length()) {
-                        input.setSelection(currCursol);
+                        input.setSelection(currCursor);
                         return true;
                     }
                     else{
-                        currCursol = input.getSelectionStart();
+                        currCursor = input.getSelectionStart();
                     }
 
                 //}
@@ -345,9 +326,8 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             if (editFlag) {
-                currCursol = input.getSelectionStart();
+                currCursor = input.getSelectionStart();
                 inputText = s.toString(); //おされた瞬間のテキストを保持
-                lineCount = input.getLineCount();
 
                 position = start;
 
@@ -362,8 +342,7 @@ public class MainActivity extends AppCompatActivity{
         public void onTextChanged(CharSequence s, int start, int before, int count) {
 
             if(before > 0 && input.getSelectionStart() > 0) { //削除される文字が存在するとき
-                if (s.subSequence(input.getSelectionStart() - 1, input.getSelectionStart()).equals(LF)
-                        || !items.get(getSelectRow()).isWritable()) { //その前の文字が改行コードまたは，編集可能じゃなかったら
+                if (s.subSequence(input.getSelectionStart() - 1, input.getSelectionStart()).equals(LF)) { //その前の文字が改行コードまたは，編集可能じゃなかったら
                     Log.d(TAG, "deleteFlag is false");
                     deleteFlag = false;//削除フラグをおる
                 }
@@ -386,17 +365,14 @@ public class MainActivity extends AppCompatActivity{
                         enter = false; //最後に改行をいれるのでループしないように
                         editFlag = false;
                         input.setText(inputText);
-                        input.setSelection(currCursol);
+                        input.setSelection(currCursor);
                         lineText = lineText.substring(0, lineText.length() - 1);
                         addSpace();
                         input.append(LF);
 
-                        rowText = inputText.substring(before_str.length(), inputText.length());
                         before_str = inputText;
-                        addList(lineText);
                         Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
                         lineText = "";
-                        displayList();
                         //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                     }
                     else {
@@ -408,7 +384,7 @@ public class MainActivity extends AppCompatActivity{
             else {
                 editFlag = false;
                 input.setText(inputText);
-                input.setSelection(currCursol);
+                input.setSelection(currCursor);
                 lineText = lineText.substring(0, lineText.length()-1);
                 editFlag = true;
                 deleteFlag = true;
@@ -477,12 +453,10 @@ public class MainActivity extends AppCompatActivity{
                             moveFlag = false;
                             break;
                         case KeyHexString.KEY_ENTER:
-                            addList(comingText);
                             comingText = "";
                             input.append(LF);
                             escFlag = false;
                             moveFlag = false;
-                            displayList();
                             break;
                         case KeyHexString.KEY_ESC:
                             escFlag = true;
@@ -689,19 +663,9 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    //Listの中身を表示
-    private void displayList() {
-        Log.d(TAG, "displayList/");
-        for (int i = 0; i < items.size(); i++) {
-            Log.d("debug***", Integer.toString(items.get(i).getText().length()));
-        }
-    }
-
     private void addNewLine(String newStr) {
         input.append(newStr + LF);
-        rowText = inputText.substring(before_str.length(), inputText.length());
         before_str = inputText;
-        addList(rowText);
         input.setSelection(input.getText().length());
     }
 
@@ -713,36 +677,6 @@ public class MainActivity extends AppCompatActivity{
      * list <- (id, text, hasNext, writable).
      */
 
-    private void addList(String row){
-        //TODO 一行に入る最大文字数の求め方を考える.
-        Log.d(TAG, "max char is " + Integer.toString(maxChar));
-        String text; //一行の文字列を格納
-        String str = row; //ちぎるやつ
-
-        int rowNum = str.length()/maxChar; //入力に使われる行数
-        if(str.length()%maxChar > 0){
-            rowNum++;
-        }
-        Boolean hasNext = false; //次の行がある場合はtrue
-
-        for(int i = rowNum; i > 0; i--) {
-            if (str.length() > maxChar) {
-                hasNext = true;
-                text = str.substring(0, maxChar-1);
-                str = str.substring(maxChar, str.length() - 1);
-            } else {
-                hasNext = false;
-                text = str;
-            }
-            Log.d(TAG, "add list");
-            rowListItem = new RowListItem(items.size()-1, text, hasNext, false);
-            items.set(items.size()-1, rowListItem);
-            rowListItem = new RowListItem(items.size(), "", false, true);
-            items.add(rowListItem);
-            Log.d(TAG, "add list /" + str);
-        }
-
-    }
 
     private int getSelectRow(){
         int count = 0;

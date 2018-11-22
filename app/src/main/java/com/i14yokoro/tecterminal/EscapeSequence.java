@@ -1,21 +1,16 @@
 package com.i14yokoro.tecterminal;
 
 import android.content.Context;
-import android.util.Log;
 import android.widget.EditText;
-
-import java.util.ArrayList;
 
 public class EscapeSequence {
     EditText editText;
     Context context;
-    private ArrayList<RowListItem> items;
     private int max;
 
-    EscapeSequence(Context context, ArrayList<RowListItem> items, int max){
+    EscapeSequence(Context context, int max){
         this.context = context;
         this.editText = (EditText) ((MainActivity)context).findViewById(R.id.main_display);
-        this.items = items;
         this.max = max;
     }
 
@@ -133,10 +128,6 @@ public class EscapeSequence {
         //getSelection % maxChar番地 のリストからうしろをクリア
         String str = editText.getText().subSequence(0, editText.getSelectionStart()-1).toString();
         editText.setText(str);
-        for (int i = items.size()-1; i >= editText.getSelectionStart() % max; i --){
-            items.remove(i);
-        }
-
     }
 
     public void clearDisplay(int n){
@@ -153,37 +144,4 @@ public class EscapeSequence {
         editText.setText("testtt");
     }
 
-    //row行までの文字数をかえす
-    private int getLength(int row){
-        int length = 0;
-        for(int i = 0; i < row; i++){
-            length += items.get(i).getText().length();
-            Log.d("debug****", Integer.toString(items.get(i).getText().length()));
-        }
-        return length;
-    }
-
-    //start行からrow行までの文字数を返す
-    private int getLength(int start, int end){
-        int length = 0;
-        for(int i = start; i < end; i++){
-            length += items.get(i).getText().length();
-        }
-        return length;
-    }
-
-    //選択中の行番号を返す
-    private int getSelectRow(){
-        int count = 0;
-        int start = editText.getSelectionStart();
-        int row = 0;
-        for (; count < start; row++){
-            if(row < items.size() - 1){
-                count += items.get(row).getText().length();
-            }
-            else break;
-        }
-        Log.d("debug**** / getselect", Integer.toString(row));
-        return row;
-    }
 }
