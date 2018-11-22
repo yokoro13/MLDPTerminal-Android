@@ -4,8 +4,8 @@ import android.content.Context;
 import android.widget.EditText;
 
 public class EscapeSequence {
-    EditText editText;
-    Context context;
+    private EditText editText;
+    private Context context;
     private int max;
 
     EscapeSequence(Context context, int max){
@@ -139,9 +139,4 @@ public class EscapeSequence {
     public void clearRow(int n){
 
     }
-
-    public void test(){
-        editText.setText("testtt");
-    }
-
 }
