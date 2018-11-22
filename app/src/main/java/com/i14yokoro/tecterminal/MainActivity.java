@@ -26,14 +26,11 @@ import android.view.View;
 import android.widget.EditText;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 
 /**
  * TODO 一番した以外で文字が追加できるのをなおす
- * TODO 文字消去
  * TODO 文字の幅を一定にする
  * TODO 画面を回転させた時のデータ保持(onCreateがもう一回発動するから全部消える?)
- * TODO RowListItemに依存しない設計に
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -42,7 +39,6 @@ public class MainActivity extends AppCompatActivity{
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
     private EditText input; //ディスプレイのEdittext
     private String inputText; //入力したテキスト
-    private ArrayList<BleDevice> bleDevices; //スキャンしたデバイス情報が入る
 
     private boolean able_edit = true; //編集可能か
 
@@ -72,13 +68,11 @@ public class MainActivity extends AppCompatActivity{
 
     private Boolean escFlag = false; //escキーがおされたらtrue
     private Boolean moveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
-    private int move = 0; //escapeシーケンス用
     private String moveStr = ""; //escapeシーケンスできたString型の数字を保存
 
-    private String comingText = ""; //RNからきたテキストを一行分保存する
+    //private String comingText = ""; //RNからきたテキストを一行分保存する
 
     Editable editable;
-    private int start,end;
     EscapeSequence escapeSequence;
 
     int r;
@@ -100,19 +94,12 @@ public class MainActivity extends AppCompatActivity{
         input.addTextChangedListener(mInputTextWatcher);
 
         maxChar = getMaxRowLength();
-        bleDevices = new ArrayList<>();
 
         escapeSequence = new EscapeSequence(this, getMaxRowLength()); //今のContentを渡す
 
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //Rect result = new Rect();
-                //r = input.getHeight()/
-                //r = input.getWidth()/(int)input.getTextSize();//LineHeight();//LineCount();//Bounds(1, new Rect(0,0,0,0));
-                //Paint paint = new Paint();
-                //input.meas
-                //addNewLine(Integer.toString(r));
                 escapeSequence.moveLeft();
             }
         });
@@ -201,7 +188,7 @@ public class MainActivity extends AppCompatActivity{
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.clear();
-        if(bleAutoConnect == true) {
+        if(bleAutoConnect) {
             editor.putString(PREFS_NAME, bleDeviceName);
             editor.putString(PREFS_ADDRESS, bleDeviceAddress);
         }
@@ -268,8 +255,8 @@ public class MainActivity extends AppCompatActivity{
             menu.removeItem(android.R.id.addToDictionary);
             menu.removeItem(android.R.id.startSelectingText);
             menu.removeItem(android.R.id.selectTextMode);
-            menu.removeItem(android.R.id.replaceText);
-            menu.removeItem(android.R.id.autofill);
+            //menu.removeItem(android.R.id.replaceText);
+            //menu.removeItem(android.R.id.autofill);
             return false;
         }
 
@@ -282,8 +269,8 @@ public class MainActivity extends AppCompatActivity{
             menu.removeItem(android.R.id.addToDictionary);
             menu.removeItem(android.R.id.startSelectingText);
             menu.removeItem(android.R.id.selectTextMode);
-            menu.removeItem(android.R.id.replaceText);
-            menu.removeItem(android.R.id.autofill);
+            //menu.removeItem(android.R.id.replaceText);
+            //menu.removeItem(android.R.id.autofill);
             menu.close();
             return true;
         }
@@ -318,10 +305,10 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    int position;
-    boolean editFlag = true;
-    boolean deleteFlag = true;
-    boolean enter = true;
+    private int position;
+    private boolean editFlag = true;
+    private boolean deleteFlag = true;
+    private boolean enter = true;
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -384,7 +371,7 @@ public class MainActivity extends AppCompatActivity{
             else {
                 editFlag = false;
                 input.setText(inputText);
-                input.setSelection(currCursor);
+                input.setSelection(position);
                 lineText = lineText.substring(0, lineText.length()-1);
                 editFlag = true;
                 deleteFlag = true;
@@ -428,12 +415,8 @@ public class MainActivity extends AppCompatActivity{
                         str = Integer.toHexString(b & 0xff);
                     }
 
-                    /**ASCII 以外の入力制限フロー
-                     * 入力文字を１６進数にし．Stringにキャスト
-                     *
-                     */
-                    start = input.getSelectionStart();
-                    end = input.getSelectionEnd();
+                    int startSel = input.getSelectionStart();
+                    int endSel = input.getSelectionEnd();
                     switch (str) {
                         case KeyHexString.KEY_RIGHT:
                             escapeSequence.moveRight(1);
@@ -446,14 +429,13 @@ public class MainActivity extends AppCompatActivity{
                             moveFlag = false;
                             break;
                         case KeyHexString.KEY_DEL:
-                            if(start >= 1) {
-                                input.getText().delete(start - 1, end);
+                            if(startSel >= 1) {
+                                input.getText().delete(startSel - 1, endSel);
                             }
                             escFlag = false;
                             moveFlag = false;
                             break;
                         case KeyHexString.KEY_ENTER:
-                            comingText = "";
                             input.append(LF);
                             escFlag = false;
                             moveFlag = false;
@@ -469,9 +451,7 @@ public class MainActivity extends AppCompatActivity{
                                 break;
                             }
                         default:
-                            /**
-                             * 2桁の入力を可能にする　できた
-                             */
+                            //2桁の入力を可能にする　できた
                             if (escFlag && data.matches("[0-9]")) {
                                 Log.d(TAG, "move flag is true");
                                 moveStr += data;
@@ -479,6 +459,8 @@ public class MainActivity extends AppCompatActivity{
                                 break;
                             }
                             if(escFlag && data.matches("[A-H]")){
+                                //escapeシーケンス用
+                                int move;
                                 if(moveFlag) {
                                     move = Integer.parseInt(moveStr);
                                 }else {
@@ -518,9 +500,8 @@ public class MainActivity extends AppCompatActivity{
 
                             editable = input.getText();
                             able_edit = false;
-                            editable.replace(Math.min(start, end), Math.max(start, end), data);
+                            editable.replace(Math.min(startSel, endSel), Math.max(startSel, endSel), data);
                             //input.append(str);
-                            comingText += data;
                             input.setSelection(input.getText().length());
                             //able_edit = true;
                             escFlag = false;
@@ -607,7 +588,7 @@ public class MainActivity extends AppCompatActivity{
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == REQ_CODE_ENABLE_BT) {
             if (resultCode == Activity.RESULT_OK) {
-                if(bleAutoConnect == false  || bleDeviceAddress == null) {
+                if(!bleAutoConnect || bleDeviceAddress == null) {
                     startScan();
                 }
             }
@@ -643,12 +624,7 @@ public class MainActivity extends AppCompatActivity{
             MldpBluetoothService.LocalBinder binder = (MldpBluetoothService.LocalBinder) service;
             bleService = binder.getService();
             Log.d(TAG, "bleService");
-            if (bleService.isBluetoothRadioEnabled()) {
-                if(bleAutoConnect == false  || bleDeviceAddress == null) {
-                    //startScan();
-                }
-            }
-            else {
+            if (!bleService.isBluetoothRadioEnabled()) {
                 state = State.ENABLING;
                 updateConnectionState();
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -669,29 +645,10 @@ public class MainActivity extends AppCompatActivity{
         input.setSelection(input.getText().length());
     }
 
-    /**
-     * list設計
-     * 1行に入る文字数を調べる. maxchar input/maxchar == rowNum
-     * maxchar > input -> hasNext is true. subString(0, maxchar) and subString(maxchar, input.length)
-     * else : hasNext is false. subString (0, input.length).
-     * list <- (id, text, hasNext, writable).
-     */
-
-
     private int getSelectRow(){
         int count = 0;
         int start = input.getSelectionStart();
         int row = 0;
-        /**
-        for (; count <= start;row++){
-            //Log.d(TAG, "getSelectRow");
-            if(row < items.size()-1 ){
-                //Log.d(TAG, Integer.toString(row) + " : " + Integer.toString(count));
-                count += items.get(row).getText().length();
-            }
-            else break;
-        }
-         */
         //TODO getSelectionのカウントが0-42, 43 - 85かもしれないのでしらべる
         return input.getSelectionStart()+1 % getMaxRowLength();
     }
@@ -712,12 +669,12 @@ public class MainActivity extends AppCompatActivity{
     private void addSpace(){
         editFlag = false;
 
-        String space = "";
+        StringBuilder space = new StringBuilder();
         Log.d(TAG, "add Space");
         for(int i = lineText.length()%maxChar; i <= maxChar; i++){
-            space += " ";
+            space.append(" ");
         }
-        input.append(space);
+        input.append(space.toString());
         lineText += space;
         editFlag = true;
     }
