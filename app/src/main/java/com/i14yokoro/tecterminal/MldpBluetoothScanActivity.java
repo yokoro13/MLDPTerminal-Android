@@ -59,13 +59,9 @@ public class MldpBluetoothScanActivity extends ListActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        //requestWindowFeature(Window.FEATURE_ACTION_BAR);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.scan_list_screen);//Show the screen
-        //ActionBar actionBar = getActionBar();//Get the ActionBar
-        //actionBar.setTitle("Scan for Devices");
-        //actionBar.setDisplayHomeAsUpEnabled(true);
         setProgressBarIndeterminate(true);
         setProgressBarIndeterminateVisibility(true);
         alwaysConnectCheckBox = (CheckBox) findViewById(R.id.alwaysConnectCheckBox);
@@ -181,7 +177,7 @@ public class MldpBluetoothScanActivity extends ListActivity {
     }
 
     private void scanStart() {
-        if (areScanning == false) {
+        if (!areScanning) {
             if (bleService.isBluetoothRadioEnabled()) {
                 bleDeviceListAdapter.clear();
                 areScanning = true;
