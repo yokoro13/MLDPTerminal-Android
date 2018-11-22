@@ -29,13 +29,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
- * TODO
- * 一番した以外で文字が追加できるのをなおす
- * 文字消去
- * 文字の幅を一定にする
- * 画面を回転させた時のデータ保持(onCreateがもう一回発動するから全部消える?)
- * onKey => textWatcherへの移行
- * エンターを押したとき，右側に空白がはいるなら，入らなくなるまでいれる（いちいち一行の文字数を取る必要がなくなる）
+ * TODO 一番した以外で文字が追加できるのをなおす
+ * TODO 文字消去
+ * TODO 文字の幅を一定にする
+ * TODO 画面を回転させた時のデータ保持(onCreateがもう一回発動するから全部消える?)
+ * TODO RowListItemに依存しない設計に
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -751,7 +749,7 @@ public class MainActivity extends AppCompatActivity{
         int start = input.getSelectionStart();
         int row = 0;
         /**
-        for (; count <= start;row++){ //TODO あってるか微妙
+        for (; count <= start;row++){
             //Log.d(TAG, "getSelectRow");
             if(row < items.size()-1 ){
                 //Log.d(TAG, Integer.toString(row) + " : " + Integer.toString(count));
