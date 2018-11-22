@@ -341,10 +341,10 @@ public class MainActivity extends AppCompatActivity{
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
             String str = s.subSequence(s.length()-1, s.length()).toString();//入力文字
-            lineText += str;
 
             Log.d(TAG, "afterTextChange");
             if (str.matches("[\\p{ASCII}]*") && deleteFlag ) {
+                lineText += str;
                 Log.d(TAG, "ASCII code/ " + str);
                 if (str.equals(LF)) {
                     if (enter) {
@@ -646,9 +646,6 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private int getSelectRow(){
-        int count = 0;
-        int start = input.getSelectionStart();
-        int row = 0;
         //TODO getSelectionのカウントが0-42, 43 - 85かもしれないのでしらべる
         return input.getSelectionStart()+1 % getMaxRowLength();
     }

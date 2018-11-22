@@ -38,8 +38,8 @@ public class EscapeSequence {
          //editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
          editText.setSelection(editText.getSelectionStart()-42);
          }**/
-        if(editText.getSelectionStart() - max >= 0){
-            editText.setSelection(editText.getSelectionStart() - max);
+        if(editText.getSelectionStart() - (max+1) >= 0){
+            editText.setSelection(editText.getSelectionStart() - (max+1));
         }
         else {
             editText.setSelection(0);
@@ -51,8 +51,8 @@ public class EscapeSequence {
          if(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n) < editText.length()){
          editText.setSelection(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n));
          }**/
-        if (editText.getSelectionStart() + max < editText.length()){
-            editText.setSelection(editText.getSelectionStart() + max);
+        if (editText.getSelectionStart() + (max+1) < editText.length()){
+            editText.setSelection(editText.getSelectionStart() + (max+1));
         }
         else {
             editText.setSelection(editText.length());
@@ -83,8 +83,8 @@ public class EscapeSequence {
             //editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
             editText.setSelection(editText.getSelectionStart()-42);
         }**/
-        if(editText.getSelectionStart() - max * n >= 0){
-            editText.setSelection(editText.getSelectionStart() - max * n);
+        if(editText.getSelectionStart() - (max+1) * n - max + 1>= 0){
+            editText.setSelection(editText.getSelectionStart() - (max+1) * n);
         }
         else {
             editText.setSelection(0);
@@ -96,8 +96,8 @@ public class EscapeSequence {
         if(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n) < editText.length()){
             editText.setSelection(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n));
         }**/
-        if (editText.getSelectionStart() + max * n < editText.length()){
-            editText.setSelection(editText.getSelectionStart() + max * n);
+        if (editText.getSelectionStart() + (max+1) * n < editText.length()){
+            editText.setSelection(editText.getSelectionStart() + max * (max+1));
         }
         else {
             editText.setSelection(editText.length());
@@ -106,16 +106,16 @@ public class EscapeSequence {
 
     public void moveRowUp(int n){
         if(editText.getSelectionStart() - max * n > 0){
-            editText.setSelection(editText.getSelectionStart() - editText.getSelectionStart() % max - max * n);
+            editText.setSelection(editText.getSelectionStart() - editText.getSelectionStart() % max - (max+1) * n);
         }
     }
     public void moveRowDown(int n){
         if (editText.getSelectionStart() + max * n < editText.length()){
-            editText.setSelection(editText.getSelectionStart() - editText.getSelectionStart() % max + max * n);
+            editText.setSelection(editText.getSelectionStart() - editText.getSelectionStart() % max + (max+1) * n);
         }
     }
     public void moveSelection(int n){
-        editText.setSelection(editText.getSelectionStart() - editText.getSelectionStart() % max+ n);
+        editText.setSelection(editText.getSelectionStart() - editText.getSelectionStart() % max + n);
     }
     public void moveSelection(int n, int m){
         editText.setSelection(max * n + m);
