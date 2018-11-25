@@ -337,6 +337,7 @@ public class MainActivity extends AppCompatActivity{
         }
 
         //TODO ループにはいっているので直す
+        //TODO 削除が入ると改行が入る
         @Override
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
@@ -643,11 +644,6 @@ public class MainActivity extends AppCompatActivity{
         input.append(newStr + LF);
         before_str = inputText;
         input.setSelection(input.getText().length());
-    }
-
-    private int getSelectRow(){
-        //TODO getSelectionのカウントが0-42, 43 - 85かもしれないのでしらべる
-        return input.getSelectionStart()+1 % getMaxRowLength();
     }
 
     //TODO 一行に入る最大文字数の求め方を考える.
