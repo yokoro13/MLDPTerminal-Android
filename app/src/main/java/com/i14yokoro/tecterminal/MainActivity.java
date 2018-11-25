@@ -87,15 +87,13 @@ public class MainActivity extends AppCompatActivity{
         setContentView(R.layout.activity_main);
 
         input = (EditText) findViewById(R.id.main_display);
-
-        //コピー，ペースト，カット，すべて選択が機能的にいらないので削除
         input.setCustomSelectionActionModeCallback(mActionModeCallback);
-
         input.addTextChangedListener(mInputTextWatcher);
-
         maxChar = getMaxRowLength();
-
         escapeSequence = new EscapeSequence(this, getMaxRowLength()); //今のContentを渡す
+        state = State.STARTING;
+        inputText = input.getText().toString();
+        connectTimeoutHandler = new Handler();
 
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -140,20 +138,11 @@ public class MainActivity extends AppCompatActivity{
             }
         }
 
-        state = State.STARTING;
-
-        inputText = input.getText().toString();
-
-        connectTimeoutHandler = new Handler();
-
-        //registerReceiver(bleServiceReceiver, bleServiceIntentFilter());
-
         //画面タッチされた時のおべんと
-        //カーソル下のピンクなくす
         input.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                //if(event.getAction() == MotionEvent.ACTION_DOWN) {
+
                     if (input.getSelectionStart() < before_str.length()) {
                         input.setSelection(currCursor);
                         return true;
@@ -162,7 +151,6 @@ public class MainActivity extends AppCompatActivity{
                         currCursor = input.getSelectionStart();
                     }
 
-                //}
                 return true;
             }
         });
@@ -380,6 +368,7 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
+    //通すActionを記述
     private static IntentFilter bleServiceIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(MldpBluetoothService.ACTION_BLE_REQ_ENABLE_BT);
