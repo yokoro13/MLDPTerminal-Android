@@ -23,7 +23,7 @@
             android:fontFamily="monospace"
             android:gravity="top|left"
             android:paddingBottom="50dp"
-            android:textSize="14sp"
+            android:textSize="30px"
             android:typeface="monospace" />
 
     </LinearLayout>

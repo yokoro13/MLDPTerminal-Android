@@ -19,10 +19,12 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ActionMode;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 
 import java.nio.charset.StandardCharsets;
@@ -39,8 +41,6 @@ public class MainActivity extends AppCompatActivity{
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
     private EditText input; //ディスプレイのEdittext
     private String inputText; //入力したテキスト
-
-    private boolean able_edit = true; //編集可能か
 
     private String before_str = ""; //１つ前の行までのテキスト情報
 
@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity{
     Editable editable;
     EscapeSequence escapeSequence;
 
-    int r;
+    float r;
     private int currCursor = 0;
 
     private String lineText = "";
@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 escapeSequence.moveLeft();
             }
         });
@@ -120,6 +121,14 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 escapeSequence.moveDown();
+            }
+        });
+
+        findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                r = input.getWidth()/input.getTextSize();
+                addNewLine(Float.toString(r));
             }
         });
 
@@ -281,10 +290,10 @@ public class MainActivity extends AppCompatActivity{
 
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
             if(count > before) {
-                if(able_edit)
+                if(editFlag)
                     bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
                     //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
-                else able_edit = true;
+                //else editFlag = true;
 
             }
         }
@@ -316,7 +325,7 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
 
-            if(before > 0 && input.getSelectionStart() > 0) { //削除される文字が存在するとき
+            if (before > 0 && input.getSelectionStart() > 0) { //削除される文字が存在するとき
                 if (s.subSequence(input.getSelectionStart() - 1, input.getSelectionStart()).equals(LF)) { //その前の文字が改行コードまたは，編集可能じゃなかったら
                     Log.d(TAG, "deleteFlag is false");
                     deleteFlag = false;//削除フラグをおる
@@ -332,6 +341,7 @@ public class MainActivity extends AppCompatActivity{
             String str = s.subSequence(s.length()-1, s.length()).toString();//入力文字
 
             Log.d(TAG, "afterTextChange");
+            //TODO ２文字以上の判定ができない？
             if (str.matches("[\\p{ASCII}]*") && deleteFlag ) {
                 lineText += str;
                 Log.d(TAG, "ASCII code/ " + str);
@@ -426,7 +436,9 @@ public class MainActivity extends AppCompatActivity{
                             moveFlag = false;
                             break;
                         case KeyHexString.KEY_ENTER:
+                            editFlag = false;
                             input.append(LF);
+                            escFlag = true;
                             escFlag = false;
                             moveFlag = false;
                             break;
@@ -481,6 +493,7 @@ public class MainActivity extends AppCompatActivity{
                                     escapeSequence.moveSelection(move);
                                 }
                                 if(str.equals(KeyHexString.KEY_H)){
+                                    //TODO ここの引数２個なんとかする
                                     escapeSequence.moveSelection(move, move);
                                 }
                                 moveFlag = false;
@@ -489,11 +502,11 @@ public class MainActivity extends AppCompatActivity{
                             }
 
                             editable = input.getText();
-                            able_edit = false;
+                            escFlag = false;
                             editable.replace(Math.min(startSel, endSel), Math.max(startSel, endSel), data);
                             //input.append(str);
                             input.setSelection(input.getText().length());
-                            //able_edit = true;
+                            escFlag = true;
                             escFlag = false;
                             moveFlag = false;
 
@@ -630,15 +643,19 @@ public class MainActivity extends AppCompatActivity{
     };
 
     private void addNewLine(String newStr) {
-        input.append(newStr + LF);
+        input.append(newStr);
+        input.append(LF);
         before_str = inputText;
         input.setSelection(input.getText().length());
     }
 
     //TODO 一行に入る最大文字数の求め方を考える.
     private int getMaxRowLength(){
-        int weight = input.getWidth(); //画面の横幅
-        Log.d(TAG, "display weight is " + Integer.toString(weight));
+        //int weight = input.getWidth(); //画面の横幅
+        WindowManager wm =  (WindowManager)getSystemService(WINDOW_SERVICE);
+        Display disp = wm.getDefaultDisplay();
+        int width = disp.getWidth();
+        Log.d(TAG, "display weight is " + Integer.toString(width));
         int size = (int)input.getTextSize();
         Log.d(TAG, "text size is " + Integer.toString(size));
         //int maxChar = weight/size; //1行に入る文字数
@@ -648,17 +665,16 @@ public class MainActivity extends AppCompatActivity{
     }
 
     //端っこのいくまでスペース追加
-    private void addSpace(){
+    private void addSpace() {
         editFlag = false;
 
         StringBuilder space = new StringBuilder();
         Log.d(TAG, "add Space");
-        for(int i = lineText.length()%maxChar; i <= maxChar; i++){
+        for (int i = lineText.length() % maxChar; i <= maxChar; i++) {
             space.append(" ");
         }
         input.append(space.toString());
         lineText += space;
         editFlag = true;
     }
-
 }

@@ -29,6 +29,9 @@
             android:screenOrientation="portrait" />
         <service
             android:name=".MldpBluetoothService" />
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
     </application>
 
 </manifest>
