@@ -313,7 +313,7 @@ public class MainActivity extends AppCompatActivity{
 
         public void beforeTextChanged(CharSequence cs, int i, int i1, int i2) {
         }
-
+        //TODO RN側からエンターを押した時に空行が１行入る．
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
             if(count > before) {
                 if(editFlag)
