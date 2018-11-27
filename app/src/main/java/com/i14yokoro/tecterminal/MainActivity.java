@@ -100,31 +100,51 @@ public class MainActivity extends AppCompatActivity{
         inputText = input.getText().toString();
         connectTimeoutHandler = new Handler();
 
-        findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                escapeSequence.moveLeft();
-            }
-        });
-
-        findViewById(R.id.btn_right).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                escapeSequence.moveRight();
-            }
-        });
-
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                escapeSequence.moveUp();
+                if(state == State.CONNECTED) {
+                    bleService.writeMLDP("ESC[1A");
+                }
+                else {
+                    escapeSequence.moveUp();
+                }
             }
         });
 
         findViewById(R.id.btn_down).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                escapeSequence.moveDown();
+                if(state == State.CONNECTED) {
+                    bleService.writeMLDP("ESC[1B");
+                }
+                else {
+                    escapeSequence.moveDown();
+                }
+            }
+        });
+
+        findViewById(R.id.btn_right).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(state == State.CONNECTED) {
+                    bleService.writeMLDP("ESC[1C");
+                }
+                else {
+                    escapeSequence.moveRight();
+                }
+            }
+        });
+
+        findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(state == State.CONNECTED) {
+                    bleService.writeMLDP("ESC[1D");
+                }
+                else {
+                    escapeSequence.moveLeft();
+                }
             }
         });
 
