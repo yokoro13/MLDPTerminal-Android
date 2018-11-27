@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -88,6 +90,7 @@ public class MainActivity extends AppCompatActivity{
 
         input = (EditText) findViewById(R.id.main_display);
         input.setCustomSelectionActionModeCallback(mActionModeCallback);
+
         input.addTextChangedListener(mInputTextWatcher);
         maxChar = getMaxRowLength();
         escapeSequence = new EscapeSequence(this, getMaxRowLength()); //今のContentを渡す
@@ -98,7 +101,6 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 escapeSequence.moveLeft();
             }
         });
@@ -147,7 +149,7 @@ public class MainActivity extends AppCompatActivity{
             }
         }
 
-        //画面タッチされた時のおべんと
+        //画面タッチされた時のイベント
         input.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -649,19 +651,24 @@ public class MainActivity extends AppCompatActivity{
         input.setSelection(input.getText().length());
     }
 
-    //TODO 一行に入る最大文字数の求め方を考える.
     private int getMaxRowLength(){
-        //int weight = input.getWidth(); //画面の横幅
+        //int weight = input.getWidth();
         WindowManager wm =  (WindowManager)getSystemService(WINDOW_SERVICE);
         Display disp = wm.getDefaultDisplay();
-        int width = disp.getWidth();
-        Log.d(TAG, "display weight is " + Integer.toString(width));
-        int size = (int)input.getTextSize();
-        Log.d(TAG, "text size is " + Integer.toString(size));
-        //int maxChar = weight/size; //1行に入る文字数
 
-        int maxChar = 42;
-        return maxChar;
+        int dispWidth = disp.getWidth();
+        Log.d(TAG, "display weight is " + Integer.toString(dispWidth));
+
+        // 文字サイズが30pxで，TypefaceがMonospace 「" "」の幅を取得
+        Paint paint = new Paint();
+        paint.setTextSize(30);
+        paint.setAntiAlias(true);
+        paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
+        int textWidth = (int)paint.measureText(" ");
+
+        Log.d(TAG, "text size is " + Integer.toString(textWidth));
+
+        return dispWidth/textWidth;
     }
 
     //端っこのいくまでスペース追加
