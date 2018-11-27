@@ -27,14 +27,16 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import java.nio.charset.StandardCharsets;
 
 /**
- * TODO 一番した以外で文字が追加できるのをなおす
- * TODO 文字の幅を一定にする
  * TODO 画面を回転させた時のデータ保持(onCreateがもう一回発動するから全部消える?)
+ * TODO ４０になるまで空白をいれる形式だと色々まずいので，移動してgetSelect%maxChar<nだったら空白をその分いれるようにする
+ * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
+ * TODO
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -156,10 +158,12 @@ public class MainActivity extends AppCompatActivity{
 
                     if (input.getSelectionStart() < before_str.length()) {
                         input.setSelection(currCursor);
+                        showKeyboard();
                         return true;
                     }
                     else{
                         currCursor = input.getSelectionStart();
+                        showKeyboard();
                     }
 
                 return true;
@@ -336,7 +340,8 @@ public class MainActivity extends AppCompatActivity{
         }
 
         //TODO ループにはいっているので直す
-        //TODO 削除が入ると改行が入る
+        //TODO 一番した以外で文字が追加したときに改行が入るのを直す
+
         @Override
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
@@ -589,7 +594,6 @@ public class MainActivity extends AppCompatActivity{
         });
     }
 
-    
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == REQ_CODE_ENABLE_BT) {
             if (resultCode == Activity.RESULT_OK) {
@@ -683,5 +687,16 @@ public class MainActivity extends AppCompatActivity{
         input.append(space.toString());
         lineText += space;
         editFlag = true;
+    }
+
+    private String getLineString(){
+        return null;
+    }
+
+    private void showKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        View v = getCurrentFocus();
+        if (v != null)
+            imm.showSoftInput(v, 0);
     }
 }
