@@ -313,7 +313,6 @@ public class MainActivity extends AppCompatActivity{
 
         public void beforeTextChanged(CharSequence cs, int i, int i1, int i2) {
         }
-        //TODO RN側からエンターを押した時に空行が１行入る．
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
             if(count > before) {
                 if(editFlag)
@@ -377,7 +376,7 @@ public class MainActivity extends AppCompatActivity{
                         Log.d(TAG, "lineText is " + lineText);
                         enter = false; //最後に改行をいれるのでループしないように
                         editFlag = false;
-                        input.setText(inputText);
+                        input.setText(inputText);//エンター入力前にもどす
                         input.setSelection(currCursor);
                         lineText = lineText.substring(0, lineText.length() - 1);
                         addSpace();
@@ -464,7 +463,7 @@ public class MainActivity extends AppCompatActivity{
                             break;
                         case KeyHexString.KEY_ENTER:
                             editFlag = false;
-                            input.append(LF);
+                            //input.append(LF);
                             escFlag = true;
                             escFlag = false;
                             moveFlag = false;
