@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("ESC[1A");
+                    bleService.writeMLDP("\\x1b[1A");
                 }
                 else {
                     escapeSequence.moveUp();
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("ESC[1B");
+                    bleService.writeMLDP("\\x1b[1B");
                 }
                 else {
                     escapeSequence.moveDown();
@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("ESC[1C");
+                    bleService.writeMLDP("\\x1b[1C");
                 }
                 else {
                     escapeSequence.moveRight();
@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("ESC[1D");
+                    bleService.writeMLDP("\\x1b[1D");
                 }
                 else {
                     escapeSequence.moveLeft();
@@ -592,16 +592,18 @@ public class MainActivity extends AppCompatActivity{
                     case CONNECTING:
                         setProgressBarIndeterminateVisibility(true);
                         input.removeTextChangedListener(mOutgoingTextWatcher);
+                        input.removeTextChangedListener(mInputTextWatcher);
                         input.addTextChangedListener(mOutgoingTextWatcher);
                         break;
                     case CONNECTED:
-                        addNewLine("connected to name: " + bleDeviceName + "    ---address: " + bleDeviceAddress);
+                        addNewLine("connected to " + bleDeviceName);
                         setProgressBarIndeterminateVisibility(false);
                         break;
                     case DISCONNECTING:
-                        addNewLine("disconnected " + bleDeviceName + "  ---address: " + bleDeviceAddress);
-                        input.removeTextChangedListener(mOutgoingTextWatcher);
                         setProgressBarIndeterminateVisibility(false);
+                        addNewLine("disconnected from " + bleDeviceName);
+                        input.removeTextChangedListener(mOutgoingTextWatcher);
+                        input.addTextChangedListener(mInputTextWatcher);
                         break;
                     default:
                         state = State.STARTING;
