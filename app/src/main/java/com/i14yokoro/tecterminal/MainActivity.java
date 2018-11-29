@@ -84,6 +84,7 @@ public class MainActivity extends AppCompatActivity{
     private int currCursor = 0;
 
     private String lineText = "";
+    private String RNtext = "";
     private int maxRowLength;
     private int position;
     private int eStart;
@@ -104,15 +105,16 @@ public class MainActivity extends AppCompatActivity{
         inputEditText.setCustomSelectionActionModeCallback(mActionModeCallback);
 
         inputEditText.addTextChangedListener(mInputTextWatcher);
+
         maxRowLength = getMaxRowLength();
-        escapeSequence = new EscapeSequence(this, getMaxRowLength()); //今のContentを渡す
+        items = new ArrayList<>();
+        rowItem = new RowItem(items.size(), "", false, true);
+
+        escapeSequence = new EscapeSequence(this, items, maxRowLength); //今のContentを渡す
         state = State.STARTING;
         inputStrText = inputEditText.getText().toString();
         connectTimeoutHandler = new Handler();
 
-        items = new ArrayList<>();
-
-        rowItem = new RowItem(items.size(), "", false, true);
         items.add(rowItem);
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
@@ -398,13 +400,13 @@ public class MainActivity extends AppCompatActivity{
                 if (str.equals(LF)) {
                     if (enterPutFlag) {
                         Log.d(TAG, "lineText is " + lineText);
-                        enterPutFlag = false; //最後に改行をいれるのでループしないように
+                        //enterPutFlag = false; //最後に改行をいれるのでループしないように
                         editingFlag = false;
                         inputEditText.setText(inputStrText);//エンター入力前にもどす
                         inputEditText.setSelection(currCursor);
                         lineText = lineText.substring(0, lineText.length() - 1);
-                        addSpace();
-                        inputEditText.append(LF);
+                        addList(lineText);
+                        //inputEditText.append(LF);
 
                         before_str = inputStrText;
                         Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
@@ -487,7 +489,8 @@ public class MainActivity extends AppCompatActivity{
                             break;
                         case KeyHexString.KEY_ENTER:
                             editingFlag = false;
-                            //input.append(LF);
+                            addList(RNtext);
+                            RNtext = "";
                             escPuttingFlag = true;
                             escPuttingFlag = false;
                             escapeMoveFlag = false;
@@ -550,6 +553,7 @@ public class MainActivity extends AppCompatActivity{
                                 escPuttingFlag = false;
                                 break;
                             }
+                            RNtext = RNtext + data;
 
                             editable = inputEditText.getText();
                             escPuttingFlag = false;
@@ -693,9 +697,10 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    private void addNewLine(String newStr) {
-        inputEditText.append(newStr);
+    private void addNewLine(String newText) {
+        inputEditText.append(newText);
         inputEditText.append(LF);
+        addList(newText);
         before_str = inputStrText;
         inputEditText.setSelection(inputEditText.getText().length());
     }
@@ -703,17 +708,17 @@ public class MainActivity extends AppCompatActivity{
     private void addList(String newText){
         String text; //一行の文字列を格納
         String str = newText; //ちぎるやつ
-        int rowNum = str.length()/maxRowLength; //入力に使われる行数
+        boolean hasNext; //次の行がある場合はtrue
+        int rowNum = str.length()/maxRowLength+1; //入力に使われる行数
         if(str.length()%maxRowLength > 0){
             rowNum++;
         }
-        Boolean hasNext = false; //次の行がある場合はtrue
         for(int i = rowNum; i > 0; i--) {
-            if (str.length() > maxRowLength) {
+            if (i > 1) {
                 hasNext = true;
                 text = str.substring(0, maxRowLength-1);
                 str = str.substring(maxRowLength, str.length() - 1);
-            } else {
+            } else { //あと１行
                 hasNext = false;
                 text = str;
             }

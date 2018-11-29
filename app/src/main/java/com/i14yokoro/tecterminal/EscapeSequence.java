@@ -3,14 +3,18 @@ package com.i14yokoro.tecterminal;
 import android.content.Context;
 import android.widget.EditText;
 
+import java.util.ArrayList;
+
 public class EscapeSequence {
     private EditText editText;
     private Context context;
     private int max;
+    private ArrayList<RowItem> items;
 
-    EscapeSequence(Context context, int max){
+    EscapeSequence(Context context, ArrayList<RowItem> items,int max){
         this.context = context;
         this.editText = (EditText) ((MainActivity)context).findViewById(R.id.main_display);
+        this.items = items;
         this.max = max;
     }
 
