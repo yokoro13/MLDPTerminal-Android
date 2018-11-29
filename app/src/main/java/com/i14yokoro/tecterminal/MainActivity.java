@@ -31,6 +31,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 /**
  * TODO 画面を回転させた時のデータ保持(onCreateがもう一回発動するから全部消える?)
@@ -59,6 +60,8 @@ public class MainActivity extends AppCompatActivity{
     private static final long CONNECT_TIME = 5000; //スキャンする時間
     private Handler connectTimeoutHandler;
     private MldpBluetoothService bleService;
+    private RowInfoItem rowInfoItem;
+    private ArrayList<RowInfoItem> items;
 
     private String bleDeviceName, bleDeviceAddress;
 
@@ -106,6 +109,11 @@ public class MainActivity extends AppCompatActivity{
         state = State.STARTING;
         inputStrText = inputEditText.getText().toString();
         connectTimeoutHandler = new Handler();
+
+        items = new ArrayList<>();
+
+        rowInfoItem = new RowInfoItem(items.size(), "", false, true);
+        items.add(rowInfoItem);
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -690,6 +698,32 @@ public class MainActivity extends AppCompatActivity{
         inputEditText.append(LF);
         before_str = inputStrText;
         inputEditText.setSelection(inputEditText.getText().length());
+    }
+
+    private void addList(String newText){
+        String text; //一行の文字列を格納
+        String str = newText; //ちぎるやつ
+        int rowNum = str.length()/maxRowLength; //入力に使われる行数
+        if(str.length()%maxRowLength > 0){
+            rowNum++;
+        }
+        Boolean hasNext = false; //次の行がある場合はtrue
+        for(int i = rowNum; i > 0; i--) {
+            if (str.length() > maxRowLength) {
+                hasNext = true;
+                text = str.substring(0, maxRowLength-1);
+                str = str.substring(maxRowLength, str.length() - 1);
+            } else {
+                hasNext = false;
+                text = str;
+            }
+            Log.d(TAG, "add list");
+            rowInfoItem = new RowInfoItem(items.size()-1, text, hasNext, false);
+            items.set(items.size()-1, rowInfoItem);
+            rowInfoItem = new RowInfoItem(items.size(), "", false, true);
+            items.add(rowInfoItem);
+            Log.d(TAG, "add list /" + str);
+        }
     }
 
     private int getMaxRowLength(){
