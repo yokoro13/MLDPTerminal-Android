@@ -1,11 +1,11 @@
 package com.i14yokoro.tecterminal;
 
-public class RowInfoItem {
+public class RowItem {
     private int id;
     private String text;
     private boolean hasNext;
     private boolean writable;
-    public RowInfoItem(int id, String text, boolean hasNext,boolean writable){
+    public RowItem(int id, String text, boolean hasNext, boolean writable){
         this.id = id;
         this.text = text;
         this.hasNext = hasNext;

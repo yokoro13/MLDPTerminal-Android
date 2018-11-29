@@ -60,8 +60,8 @@ public class MainActivity extends AppCompatActivity{
     private static final long CONNECT_TIME = 5000; //スキャンする時間
     private Handler connectTimeoutHandler;
     private MldpBluetoothService bleService;
-    private RowInfoItem rowInfoItem;
-    private ArrayList<RowInfoItem> items;
+    private RowItem rowItem;
+    private ArrayList<RowItem> items;
 
     private String bleDeviceName, bleDeviceAddress;
 
@@ -112,8 +112,8 @@ public class MainActivity extends AppCompatActivity{
 
         items = new ArrayList<>();
 
-        rowInfoItem = new RowInfoItem(items.size(), "", false, true);
-        items.add(rowInfoItem);
+        rowItem = new RowItem(items.size(), "", false, true);
+        items.add(rowItem);
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -718,10 +718,10 @@ public class MainActivity extends AppCompatActivity{
                 text = str;
             }
             Log.d(TAG, "add list");
-            rowInfoItem = new RowInfoItem(items.size()-1, text, hasNext, false);
-            items.set(items.size()-1, rowInfoItem);
-            rowInfoItem = new RowInfoItem(items.size(), "", false, true);
-            items.add(rowInfoItem);
+            rowItem = new RowItem(items.size()-1, text, hasNext, false);
+            items.set(items.size()-1, rowItem);
+            rowItem = new RowItem(items.size(), "", false, true);
+            items.add(rowItem);
             Log.d(TAG, "add list /" + str);
         }
     }
