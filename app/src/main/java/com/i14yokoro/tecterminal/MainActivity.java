@@ -43,8 +43,8 @@ public class MainActivity extends AppCompatActivity{
     private static final String TAG = "debug***";
 
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
-    private EditText input; //ディスプレイのEdittext
-    private String inputText; //入力したテキスト
+    private EditText inputEditText; //ディスプレイのEdittext
+    private String inputStrText; //入力したテキスト
 
     private String before_str = ""; //１つ前の行までのテキスト情報
 
@@ -68,36 +68,43 @@ public class MainActivity extends AppCompatActivity{
 
     private enum State {STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING} //state
 
-    State state = State.STARTING;
+    private State state = State.STARTING;
 
-    private Boolean escFlag = false; //escキーがおされたらtrue
-    private Boolean moveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
-    private String moveStr = ""; //escapeシーケンスできたString型の数字を保存
+    private String escapeMoveNum = ""; //escapeシーケンスできたString型の数字を保存
 
     //private String comingText = ""; //RNからきたテキストを一行分保存する
 
-    Editable editable;
-    EscapeSequence escapeSequence;
+    private Editable editable;
+    private EscapeSequence escapeSequence;
 
     float r;
     private int currCursor = 0;
 
     private String lineText = "";
-    private int maxChar;
+    private int maxRowLength;
+    private int position;
+    private int eStart;
+    private int eCount;
+
+    private boolean escPuttingFlag = false; //escキーがおされたらtrue
+    private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
+    private boolean editingFlag = true;
+    private boolean deletePutFlag = true;
+    private boolean enterPutFlag = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        input = (EditText) findViewById(R.id.main_display);
-        input.setCustomSelectionActionModeCallback(mActionModeCallback);
+        inputEditText = (EditText) findViewById(R.id.main_display);
+        inputEditText.setCustomSelectionActionModeCallback(mActionModeCallback);
 
-        input.addTextChangedListener(mInputTextWatcher);
-        maxChar = getMaxRowLength();
+        inputEditText.addTextChangedListener(mInputTextWatcher);
+        maxRowLength = getMaxRowLength();
         escapeSequence = new EscapeSequence(this, getMaxRowLength()); //今のContentを渡す
         state = State.STARTING;
-        inputText = input.getText().toString();
+        inputStrText = inputEditText.getText().toString();
         connectTimeoutHandler = new Handler();
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
@@ -107,7 +114,7 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1A");
                 }
                 else {
-                    if ((input.getSelectionStart()/maxChar - 1) != input.getLineCount()-1){
+                    if ((inputEditText.getSelectionStart()/maxRowLength - 1) != inputEditText.getLineCount()-1){
                         return;
                     }
                     escapeSequence.moveUp();
@@ -122,7 +129,7 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1B");
                 }
                 else {
-                    if ((input.getSelectionStart()/maxChar + 1) != input.getLineCount()-1){
+                    if ((inputEditText.getSelectionStart()/maxRowLength + 1) != inputEditText.getLineCount()-1){
                         return;
                     }
                     escapeSequence.moveDown();
@@ -137,7 +144,7 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1C");
                 }
                 else {
-                    if ((input.getSelectionStart() + 1)/maxChar != input.getLineCount()-1){
+                    if ((inputEditText.getSelectionStart() + 1)/maxRowLength != inputEditText.getLineCount()-1){
                         return;
                     }
                     escapeSequence.moveRight();
@@ -152,7 +159,7 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1D");
                 }
                 else {
-                    if ((input.getSelectionStart() - 1)/maxChar != input.getLineCount()-1){
+                    if ((inputEditText.getSelectionStart() - 1)/maxRowLength != inputEditText.getLineCount()-1){
                         return;
                     }
                     escapeSequence.moveLeft();
@@ -163,7 +170,7 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                r = input.getWidth()/input.getTextSize();
+                r = inputEditText.getWidth()/inputEditText.getTextSize();
                 addNewLine(Float.toString(r));
             }
         });
@@ -184,17 +191,17 @@ public class MainActivity extends AppCompatActivity{
         }
 
         //画面タッチされた時のイベント
-        input.setOnTouchListener(new View.OnTouchListener() {
+        inputEditText.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                    if (input.getSelectionStart() < before_str.length()) {
-                        input.setSelection(currCursor);
+                    if (inputEditText.getSelectionStart() < before_str.length()) {
+                        inputEditText.setSelection(currCursor);
                         showKeyboard();
                         return true;
                     }
                     else{
-                        currCursor = input.getSelectionStart();
+                        currCursor = inputEditText.getSelectionStart();
                         showKeyboard();
                     }
 
@@ -327,7 +334,7 @@ public class MainActivity extends AppCompatActivity{
         }
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
             if(count > before) {
-                if(editFlag)
+                if(editingFlag)
                     bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
                     //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
                 //else editFlag = true;
@@ -339,18 +346,13 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    private int position;
-    private boolean editFlag = true;
-    private boolean deleteFlag = true;
-    private boolean enter = true;
-    private int eStart;
-    private int eCount;
+
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            if (editFlag) {
-                currCursor = input.getSelectionStart();
-                inputText = s.toString(); //おされた瞬間のテキストを保持
+            if (editingFlag) {
+                currCursor = inputEditText.getSelectionStart();
+                inputStrText = s.toString(); //おされた瞬間のテキストを保持
 
                 position = start;
 
@@ -365,10 +367,10 @@ public class MainActivity extends AppCompatActivity{
         public void onTextChanged(CharSequence s, int start, int before, int count) {
             eStart = start;
             eCount = count;
-            if (before > 0 && input.getSelectionStart() > 0) { //削除される文字が存在するとき
-                if (s.subSequence(input.getSelectionStart() - 1, input.getSelectionStart()).equals(LF)) { //その前の文字が改行コードまたは，編集可能じゃなかったら
+            if (before > 0 && inputEditText.getSelectionStart() > 0) { //削除される文字が存在するとき
+                if (s.subSequence(inputEditText.getSelectionStart() - 1, inputEditText.getSelectionStart()).equals(LF)) { //その前の文字が改行コードまたは，編集可能じゃなかったら
                     Log.d(TAG, "deleteFlag is false");
-                    deleteFlag = false;//削除フラグをおる
+                    deletePutFlag = false;//削除フラグをおる
                 }
             }
         }
@@ -383,38 +385,38 @@ public class MainActivity extends AppCompatActivity{
 
             Log.d(TAG, "afterTextChange");
             //TODO ２文字以上の判定ができない？
-            if (str.matches("[\\p{ASCII}]*") && deleteFlag ) {
+            if (str.matches("[\\p{ASCII}]*") && deletePutFlag ) {
                 lineText += str;
                 Log.d(TAG, "ASCII code/ " + str);
                 if (str.equals(LF)) {
-                    if (enter) {
+                    if (enterPutFlag) {
                         Log.d(TAG, "lineText is " + lineText);
-                        enter = false; //最後に改行をいれるのでループしないように
-                        editFlag = false;
-                        input.setText(inputText);//エンター入力前にもどす
-                        input.setSelection(currCursor);
+                        enterPutFlag = false; //最後に改行をいれるのでループしないように
+                        editingFlag = false;
+                        inputEditText.setText(inputStrText);//エンター入力前にもどす
+                        inputEditText.setSelection(currCursor);
                         lineText = lineText.substring(0, lineText.length() - 1);
                         addSpace();
-                        input.append(LF);
+                        inputEditText.append(LF);
 
-                        before_str = inputText;
+                        before_str = inputStrText;
                         Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
                         lineText = "";
                         //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                     }
                     else {
-                        enter = true;
+                        enterPutFlag = true;
                     }
                 }
 
             }
             else {
-                editFlag = false;
-                input.setText(inputText);
-                input.setSelection(position);
+                editingFlag = false;
+                inputEditText.setText(inputStrText);
+                inputEditText.setSelection(position);
                 lineText = lineText.substring(0, lineText.length()-1);
-                editFlag = true;
-                deleteFlag = true;
+                editingFlag = true;
+                deletePutFlag = true;
             }
         }
     };
@@ -456,60 +458,60 @@ public class MainActivity extends AppCompatActivity{
                         str = Integer.toHexString(b & 0xff);
                     }
 
-                    int startSel = input.getSelectionStart();
-                    int endSel = input.getSelectionEnd();
+                    int startSel = inputEditText.getSelectionStart();
+                    int endSel = inputEditText.getSelectionEnd();
                     switch (str) {
                         case KeyHexString.KEY_RIGHT:
                             escapeSequence.moveRight(1);
-                            escFlag = false;
-                            moveFlag = false;
+                            escPuttingFlag = false;
+                            escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_LEFT:
                             escapeSequence.moveLeft(1);
-                            escFlag = false;
-                            moveFlag = false;
+                            escPuttingFlag = false;
+                            escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_DEL:
                             if(startSel >= 1) {
-                                input.getText().delete(startSel - 1, endSel);
+                                inputEditText.getText().delete(startSel - 1, endSel);
                             }
-                            escFlag = false;
-                            moveFlag = false;
+                            escPuttingFlag = false;
+                            escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_ENTER:
-                            editFlag = false;
+                            editingFlag = false;
                             //input.append(LF);
-                            escFlag = true;
-                            escFlag = false;
-                            moveFlag = false;
+                            escPuttingFlag = true;
+                            escPuttingFlag = false;
+                            escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_ESC:
-                            escFlag = true;
-                            moveFlag = false;
+                            escPuttingFlag = true;
+                            escapeMoveFlag = false;
                             break;
                         case "7a":
-                            if(escFlag){
-                                input.append("esc + Z");
-                                escFlag = false;
+                            if(escPuttingFlag){
+                                inputEditText.append("esc + Z");
+                                escPuttingFlag = false;
                                 break;
                             }
                         default:
                             //2桁の入力を可能にする　できた
-                            if (escFlag && data.matches("[0-9]")) {
+                            if (escPuttingFlag && data.matches("[0-9]")) {
                                 Log.d(TAG, "move flag is true");
-                                moveStr += data;
-                                moveFlag = true;
+                                escapeMoveNum += data;
+                                escapeMoveFlag = true;
                                 break;
                             }
-                            if(escFlag && data.matches("[A-H]")){
+                            if(escPuttingFlag && data.matches("[A-H]")){
                                 //escapeシーケンス用
                                 int move;
-                                if(moveFlag) {
-                                    move = Integer.parseInt(moveStr);
+                                if(escapeMoveFlag) {
+                                    move = Integer.parseInt(escapeMoveNum);
                                 }else {
                                     move = 1;
                                 }
-                                moveStr = "";
+                                escapeMoveNum = "";
 
                                 Log.d(TAG, "moveFlag true && A-H");
                                 if(str.equals(KeyHexString.KEY_A)){
@@ -537,19 +539,19 @@ public class MainActivity extends AppCompatActivity{
                                     //TODO ここの引数２個なんとかする
                                     escapeSequence.moveSelection(move, move);
                                 }
-                                moveFlag = false;
-                                escFlag = false;
+                                escapeMoveFlag = false;
+                                escPuttingFlag = false;
                                 break;
                             }
 
-                            editable = input.getText();
-                            escFlag = false;
+                            editable = inputEditText.getText();
+                            escPuttingFlag = false;
                             editable.replace(Math.min(startSel, endSel), Math.max(startSel, endSel), data);
                             //input.append(str);
-                            input.setSelection(input.getText().length());
-                            escFlag = true;
-                            escFlag = false;
-                            moveFlag = false;
+                            inputEditText.setSelection(inputEditText.getText().length());
+                            escPuttingFlag = true;
+                            escPuttingFlag = false;
+                            escapeMoveFlag = false;
 
                             break;
                     }
@@ -605,9 +607,9 @@ public class MainActivity extends AppCompatActivity{
                         break;
                     case CONNECTING:
                         setProgressBarIndeterminateVisibility(true);
-                        input.removeTextChangedListener(mOutgoingTextWatcher);
-                        input.removeTextChangedListener(mInputTextWatcher);
-                        input.addTextChangedListener(mOutgoingTextWatcher);
+                        inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
+                        inputEditText.removeTextChangedListener(mInputTextWatcher);
+                        inputEditText.addTextChangedListener(mOutgoingTextWatcher);
                         break;
                     case CONNECTED:
                         addNewLine("connected to " + bleDeviceName);
@@ -616,8 +618,8 @@ public class MainActivity extends AppCompatActivity{
                     case DISCONNECTING:
                         setProgressBarIndeterminateVisibility(false);
                         addNewLine("disconnected from " + bleDeviceName);
-                        input.removeTextChangedListener(mOutgoingTextWatcher);
-                        input.addTextChangedListener(mInputTextWatcher);
+                        inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
+                        inputEditText.addTextChangedListener(mInputTextWatcher);
                         break;
                     default:
                         state = State.STARTING;
@@ -685,10 +687,10 @@ public class MainActivity extends AppCompatActivity{
     };
 
     private void addNewLine(String newStr) {
-        input.append(newStr);
-        input.append(LF);
-        before_str = inputText;
-        input.setSelection(input.getText().length());
+        inputEditText.append(newStr);
+        inputEditText.append(LF);
+        before_str = inputStrText;
+        inputEditText.setSelection(inputEditText.getText().length());
     }
 
     private int getMaxRowLength(){
@@ -713,16 +715,16 @@ public class MainActivity extends AppCompatActivity{
 
     //端っこのいくまでスペース追加
     private void addSpace() {
-        editFlag = false;
+        editingFlag = false;
 
         StringBuilder space = new StringBuilder();
         Log.d(TAG, "add Space");
-        for (int i = lineText.length() % maxChar; i <= maxChar; i++) {
+        for (int i = lineText.length() % maxRowLength; i <= maxRowLength; i++) {
             space.append(" ");
         }
-        input.append(space.toString());
+        inputEditText.append(space.toString());
         lineText += space;
-        editFlag = true;
+        editingFlag = true;
     }
 
     private String getLineString(){
