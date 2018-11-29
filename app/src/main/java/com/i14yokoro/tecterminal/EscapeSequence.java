@@ -109,14 +109,17 @@ public class EscapeSequence {
             editText.setSelection(editText.getSelectionStart() - editText.getSelectionStart() % max - max * n);
         }
     }
+
     public void moveRowDown(int n){
         if (editText.getSelectionStart() + max * n < editText.length()){
             editText.setSelection(editText.getSelectionStart() - editText.getSelectionStart() % max + max * n);
         }
     }
+
     public void moveSelection(int n){
         editText.setSelection(editText.getSelectionStart() - editText.getSelectionStart() % max + n);
     }
+
     public void moveSelection(int n, int m){
         editText.setSelection(max * n + m);
     }
@@ -136,9 +139,17 @@ public class EscapeSequence {
         }
     }
 
+    public void clearRow(){
+
+    }
     public void clearRow(int n){
 
     }
+    public void scrollNext(int n){
 
+    }
+    public void scrollBack(int n){
+
+    }
 
 }

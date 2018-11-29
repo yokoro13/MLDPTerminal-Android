@@ -350,7 +350,7 @@ public class MainActivity extends AppCompatActivity{
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            if (editingFlag) {
+            if (editingFlag && deletePutFlag) {
                 currCursor = inputEditText.getSelectionStart();
                 inputStrText = s.toString(); //おされた瞬間のテキストを保持
 
@@ -360,7 +360,6 @@ public class MainActivity extends AppCompatActivity{
                     position = count;
                 }
             }
-
         }
 
         @Override
