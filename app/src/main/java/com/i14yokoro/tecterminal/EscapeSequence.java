@@ -142,12 +142,15 @@ public class EscapeSequence {
     public void clearRow(){
 
     }
+
     public void clearRow(int n){
 
     }
+
     public void scrollNext(int n){
 
     }
+
     public void scrollBack(int n){
 
     }
