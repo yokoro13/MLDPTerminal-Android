@@ -36,7 +36,7 @@ import java.nio.charset.StandardCharsets;
  * TODO 画面を回転させた時のデータ保持(onCreateがもう一回発動するから全部消える?)
  * TODO ４０になるまで空白をいれる形式だと色々まずいので，移動してgetSelect%maxChar<nだったら空白をその分いれるようにする
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
- * TODO
+ * TODO ctlキー（押したらふらぐたて）
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -107,6 +107,9 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1A");
                 }
                 else {
+                    if ((input.getSelectionStart()/maxChar - 1) != input.getLineCount()-1){
+                        return;
+                    }
                     escapeSequence.moveUp();
                 }
             }
@@ -119,6 +122,9 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1B");
                 }
                 else {
+                    if ((input.getSelectionStart()/maxChar + 1) != input.getLineCount()-1){
+                        return;
+                    }
                     escapeSequence.moveDown();
                 }
             }
@@ -131,6 +137,9 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1C");
                 }
                 else {
+                    if ((input.getSelectionStart() + 1)/maxChar != input.getLineCount()-1){
+                        return;
+                    }
                     escapeSequence.moveRight();
                 }
             }
@@ -143,6 +152,9 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1D");
                 }
                 else {
+                    if ((input.getSelectionStart() - 1)/maxChar != input.getLineCount()-1){
+                        return;
+                    }
                     escapeSequence.moveLeft();
                 }
             }
@@ -331,6 +343,8 @@ public class MainActivity extends AppCompatActivity{
     private boolean editFlag = true;
     private boolean deleteFlag = true;
     private boolean enter = true;
+    private int eStart;
+    private int eCount;
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -349,7 +363,8 @@ public class MainActivity extends AppCompatActivity{
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-
+            eStart = start;
+            eCount = count;
             if (before > 0 && input.getSelectionStart() > 0) { //削除される文字が存在するとき
                 if (s.subSequence(input.getSelectionStart() - 1, input.getSelectionStart()).equals(LF)) { //その前の文字が改行コードまたは，編集可能じゃなかったら
                     Log.d(TAG, "deleteFlag is false");
