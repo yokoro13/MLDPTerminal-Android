@@ -200,6 +200,7 @@ public class MainActivity extends AppCompatActivity{
             }
         }
 
+        /**
         //画面タッチされた時のイベント
         inputEditText.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -217,7 +218,7 @@ public class MainActivity extends AppCompatActivity{
 
                 return true;
             }
-        });
+        });**/
 
     }
 
@@ -402,8 +403,8 @@ public class MainActivity extends AppCompatActivity{
                         Log.d(TAG, "lineText is " + lineText);
                         //enterPutFlag = false; //最後に改行をいれるのでループしないように
                         editingFlag = false;
-                        inputEditText.setText(inputStrText);//エンター入力前にもどす
-                        inputEditText.setSelection(currCursor);
+                        //inputEditText.setText(inputStrText);//エンター入力前にもどす
+                        //inputEditText.setSelection(currCursor);
                         lineText = lineText.substring(0, lineText.length() - 1);
                         addList(lineText);
                         //inputEditText.append(LF);
