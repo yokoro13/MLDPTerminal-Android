@@ -124,10 +124,9 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1A");
                 }
                 else {
-                    if ((inputEditText.getSelectionStart()/maxRowLength - 1) != inputEditText.getLineCount()-1){
-                        return;
+                    if (items.get(getSelectRow()).isWritable()){
+                        escapeSequence.moveUp();
                     }
-                    escapeSequence.moveUp();
                 }
             }
         });
@@ -139,10 +138,10 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1B");
                 }
                 else {
-                    if ((inputEditText.getSelectionStart()/maxRowLength + 1) != inputEditText.getLineCount()-1){
-                        return;
+                    if (items.get(getSelectRow()).isWritable()){
+                        escapeSequence.moveDown();
+
                     }
-                    escapeSequence.moveDown();
                 }
             }
         });
@@ -154,14 +153,12 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1C");
                 }
                 else {
-                    if ((inputEditText.getSelectionStart() + 1)/maxRowLength != inputEditText.getLineCount()-1){
-                        return;
+                    if (items.get(getSelectRow()).isWritable()){
+                        escapeSequence.moveRight();
                     }
-                    escapeSequence.moveRight();
                 }
             }
         });
-
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -169,10 +166,9 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\\x1b[1D");
                 }
                 else {
-                    if ((inputEditText.getSelectionStart() - 1)/maxRowLength != inputEditText.getLineCount()-1){
-                        return;
+                    if (items.get(getSelectRow()).isWritable()){
+                        escapeSequence.moveLeft();
                     }
-                    escapeSequence.moveLeft();
                 }
             }
         });
@@ -764,6 +760,22 @@ public class MainActivity extends AppCompatActivity{
         lineText += space;
         editingFlag = true;
     }
+
+    //選択中の行番号を返す
+    public int getSelectRow(){
+        int count = 0;
+        int start = inputEditText.getSelectionStart();
+        int row = 0;
+        for (; count < start; row++){
+            if(row < items.size()){
+                count += items.get(row).getText().length();
+            }
+            else break;
+        }
+        Log.d("TAG", "number/ " + Integer.toString(row) + " contents/ " + items.get(row-1).getText());
+        return row-1;
+    }
+
 
     private String getLineString(){
         return null;

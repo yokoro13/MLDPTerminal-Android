@@ -183,13 +183,13 @@ public class EscapeSequence {
         int start = editText.getSelectionStart();
         int row = 0;
         for (; count < start; row++){
-            if(row < items.size() - 1){
+            if(row < items.size()){
                 count += items.get(row).getText().length();
             }
             else break;
         }
         Log.d("debug**** / getselect", Integer.toString(row));
-        return row;
+        return row-1;
     }
 
     private int getSelectRowLength(int selectRow){
