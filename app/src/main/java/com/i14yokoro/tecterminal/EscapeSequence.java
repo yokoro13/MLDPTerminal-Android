@@ -132,7 +132,7 @@ public class EscapeSequence {
     }
 
     public void moveSelection(int n, int m){
-        editText.setSelection(max * n + m);
+        editText.setSelection(getSelectRowLength(0, n) + m);
     }
 
     public void clearDisplay(){

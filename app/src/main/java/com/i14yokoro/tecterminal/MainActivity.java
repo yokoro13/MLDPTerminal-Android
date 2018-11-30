@@ -710,7 +710,7 @@ public class MainActivity extends AppCompatActivity{
         String text; //一行の文字列を格納
         String str = newText; //ちぎるやつ
         boolean hasNext; //次の行がある場合はtrue
-        int rowNum = str.length()/maxRowLength+1; //入力に使われる行数
+        int rowNum = str.length()/maxRowLength; //入力に使われる行数
         if(str.length()%maxRowLength > 0){
             rowNum++;
         }
@@ -723,12 +723,11 @@ public class MainActivity extends AppCompatActivity{
                 hasNext = false;
                 text = str;
             }
-            Log.d(TAG, "add list");
             rowItem = new RowItem(items.size()-1, text, hasNext, false);
             items.set(items.size()-1, rowItem);
             rowItem = new RowItem(items.size(), "", false, true);
             items.add(rowItem);
-            Log.d(TAG, "add list /" + str);
+            Log.d(TAG, "add list /" + str + " length /" + str.length());
         }
     }
 
