@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity{
     private int eCount;
 
     private boolean escPuttingFlag = false; //escキーがおされたらtrue
+    private boolean squarePuttingFlag = false;
     private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
     private boolean editingFlag = true;
     private boolean deletePutFlag = true;
@@ -488,12 +489,20 @@ public class MainActivity extends AppCompatActivity{
                             editingFlag = false;
                             addList(RNtext);
                             RNtext = "";
-                            escPuttingFlag = true;
                             escPuttingFlag = false;
+                            squarePuttingFlag = false;
                             escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_ESC:
                             escPuttingFlag = true;
+                            squarePuttingFlag = false;
+                            escapeMoveFlag = false;
+                            break;
+                        case KeyHexString.KEY_SQUARE_LEFT:
+                            if(escPuttingFlag) {
+                                squarePuttingFlag = true;
+                            }
+                            escPuttingFlag = false;
                             escapeMoveFlag = false;
                             break;
                         case "7a":
@@ -504,13 +513,13 @@ public class MainActivity extends AppCompatActivity{
                             }
                         default:
                             //2桁の入力を可能にする　できた
-                            if (escPuttingFlag && data.matches("[0-9]")) {
+                            if (squarePuttingFlag && data.matches("[0-9]")) {
                                 Log.d(TAG, "move flag is true");
                                 escapeMoveNum += data;
                                 escapeMoveFlag = true;
                                 break;
                             }
-                            if(escPuttingFlag && data.matches("[A-H]")){
+                            if(squarePuttingFlag && data.matches("[A-H]")){
                                 //escapeシーケンス用
                                 int move;
                                 if(escapeMoveFlag) {
@@ -547,6 +556,7 @@ public class MainActivity extends AppCompatActivity{
                                     escapeSequence.moveSelection(move, move);
                                 }
                                 escapeMoveFlag = false;
+                                squarePuttingFlag = false;
                                 escPuttingFlag = false;
                                 break;
                             }
@@ -554,6 +564,7 @@ public class MainActivity extends AppCompatActivity{
 
                             editable = inputEditText.getText();
                             escPuttingFlag = false;
+                            squarePuttingFlag = false;
                             editable.replace(Math.min(startSel, endSel), Math.max(startSel, endSel), data);
                             //input.append(str);
                             inputEditText.setSelection(inputEditText.getText().length());
