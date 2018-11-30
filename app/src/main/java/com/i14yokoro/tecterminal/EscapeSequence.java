@@ -188,7 +188,7 @@ public class EscapeSequence {
             }
             else break;
         }
-        Log.d("debug**** / getselect", Integer.toString(row));
+        Log.d("TAG", "number/ " + Integer.toString(row) + " contents/ " + items.get(row-1).getText());
         return row-1;
     }
 

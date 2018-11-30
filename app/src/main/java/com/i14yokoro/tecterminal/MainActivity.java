@@ -772,7 +772,6 @@ public class MainActivity extends AppCompatActivity{
             }
             else break;
         }
-        Log.d("TAG", "number/ " + Integer.toString(row) + " contents/ " + items.get(row-1).getText());
         return row-1;
     }
 
