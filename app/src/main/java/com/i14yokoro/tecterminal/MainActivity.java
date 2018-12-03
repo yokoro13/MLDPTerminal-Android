@@ -420,24 +420,14 @@ public class MainActivity extends AppCompatActivity{
                 lineText += str;
                 Log.d(TAG, "ASCII code/ " + str);
                 if (str.equals(LF)) {
-                    if (enterPutFlag) {
-                        Log.d(TAG, "lineText is " + lineText);
-                        //enterPutFlag = false; //最後に改行をいれるのでループしないように
-                        editingFlag = false;
-                        //inputEditText.setText(inputStrText);//エンター入力前にもどす
-                        //inputEditText.setSelection(currCursor);
-                        lineText = lineText.substring(0, lineText.length());
-                        addList(lineText);
-                        //inputEditText.append(LF);
+                    Log.d(TAG, "lineText is " + lineText);
+                    editingFlag = false;
+                    addList(lineText);
 
-                        before_str = inputStrText;
-                        Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
-                        lineText = "";
-                        //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
-                    }
-                    else {
-                        enterPutFlag = true;
-                    }
+                    before_str = inputStrText;
+                    Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
+                    lineText = "";
+                    //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                 }
 
             }
@@ -732,7 +722,7 @@ public class MainActivity extends AppCompatActivity{
     private void addNewLine(String newText) {
         inputEditText.append(newText);
         inputEditText.append(LF);
-        addList(newText);
+        addList(newText + LF);
         before_str = inputStrText;
         inputEditText.setSelection(inputEditText.getText().length());
     }
@@ -748,7 +738,7 @@ public class MainActivity extends AppCompatActivity{
         for(int i = rowNum; i > 0; i--) {
             if (i > 1) {
                 hasNext = true;
-                text = str.substring(0, maxRowLength-1);
+                text = str.substring(0, maxRowLength);
                 str = str.substring(maxRowLength, str.length());
             } else { //あと１行
                 hasNext = false;
@@ -758,7 +748,7 @@ public class MainActivity extends AppCompatActivity{
             items.set(items.size()-1, rowItem);
             rowItem = new RowItem(items.size(), "", false, true);
             items.add(rowItem);
-            Log.d(TAG, "add list /" + str + " length /" + str.length());
+            Log.d(TAG, "add list /" + text + " length /" + text.length());
         }
     }
 
