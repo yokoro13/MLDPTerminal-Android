@@ -18,6 +18,7 @@ import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.Layout;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ActionMode;
@@ -110,6 +111,7 @@ public class MainActivity extends AppCompatActivity{
         maxRowLength = getMaxRowLength();
         items = new ArrayList<>();
         rowItem = new RowItem(items.size(), "", false, true);
+        items.add(rowItem);
 
         escapeSequence = new EscapeSequence(this, items, maxRowLength); //今のContentを渡す
         state = State.STARTING;
@@ -141,7 +143,6 @@ public class MainActivity extends AppCompatActivity{
                 else {
                     if (items.get(getSelectRow()).isWritable()){
                         escapeSequence.moveDown();
-
                     }
                 }
             }
@@ -182,6 +183,16 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
+        findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Layout layout = inputEditText.getLayout();
+                int vertical = layout.getLineForVertical(14);
+                long offset = layout.getOffsetForHorizontal(vertical, 14);
+                Log.d(TAG, "vertical" + Integer.toString(vertical) + "offset:" + Long.toString(offset));
+            }
+        });
+
         //SDK23以降はBLEをスキャンするのに位置情報が必要
         if(Build.VERSION.SDK_INT >= 23) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
@@ -197,26 +208,25 @@ public class MainActivity extends AppCompatActivity{
             }
         }
 
-        /**
+
         //画面タッチされた時のイベント
         inputEditText.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-
-                    if (inputEditText.getSelectionStart() < before_str.length()) {
+                showKeyboard();
+                Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
+                    if (!items.get(getSelectRow()).isWritable()) {
                         inputEditText.setSelection(currCursor);
-                        showKeyboard();
-                        return true;
+
+                        return false;
                     }
                     else{
                         currCursor = inputEditText.getSelectionStart();
-                        showKeyboard();
                     }
 
-                return true;
+                return false;
             }
-        });**/
-
+        });
     }
 
     @Override
@@ -342,7 +352,7 @@ public class MainActivity extends AppCompatActivity{
         }
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
             if(count > before) {
-                if(editingFlag)
+                //if(editingFlag)
                     bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
                     //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
                 //else editFlag = true;
@@ -388,7 +398,7 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
-            String str = s.subSequence(s.length()-1, s.length()).toString();//入力文字
+            String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
 
             Log.d(TAG, "afterTextChange");
             //TODO ２文字以上の判定ができない？
@@ -402,7 +412,7 @@ public class MainActivity extends AppCompatActivity{
                         editingFlag = false;
                         //inputEditText.setText(inputStrText);//エンター入力前にもどす
                         //inputEditText.setSelection(currCursor);
-                        lineText = lineText.substring(0, lineText.length() - 1);
+                        lineText = lineText.substring(0, lineText.length());
                         addList(lineText);
                         //inputEditText.append(LF);
 
@@ -486,7 +496,7 @@ public class MainActivity extends AppCompatActivity{
                             escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_ENTER:
-                            editingFlag = false;
+                            //editingFlag = false;
                             addList(RNtext);
                             RNtext = "";
                             escPuttingFlag = false;
@@ -758,25 +768,14 @@ public class MainActivity extends AppCompatActivity{
         return dispWidth/textWidth;
     }
 
-    //端っこのいくまでスペース追加
-    private void addSpace() {
-        editingFlag = false;
-
-        StringBuilder space = new StringBuilder();
-        Log.d(TAG, "add Space");
-        for (int i = lineText.length() % maxRowLength; i <= maxRowLength; i++) {
-            space.append(" ");
-        }
-        inputEditText.append(space.toString());
-        lineText += space;
-        editingFlag = true;
-    }
-
     //選択中の行番号を返す
     public int getSelectRow(){
         int count = 0;
         int start = inputEditText.getSelectionStart();
         int row = 0;
+        if(start == 0){
+            return 1;
+        }
         for (; count < start; row++){
             if(row < items.size()){
                 count += items.get(row).getText().length();

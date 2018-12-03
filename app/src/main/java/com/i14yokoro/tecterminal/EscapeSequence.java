@@ -205,4 +205,19 @@ public class EscapeSequence {
         return length;
     }
 
+    /**
+    //端っこのいくまでスペース追加
+    private void addSpace() {
+        editingFlag = false;
+
+        StringBuilder space = new StringBuilder();
+        Log.d(TAG, "add Space");
+        for (int i = lineText.length() % maxRowLength; i <= maxRowLength; i++) {
+            space.append(" ");
+        }
+        inputEditText.append(space.toString());
+        lineText += space;
+        editingFlag = true;
+    }**/
+
 }
