@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity{
         rowItem = new RowItem(items.size(), "", false, true);
         items.add(rowItem);
 
-        escapeSequence = new EscapeSequence(this, items, maxRowLength); //今のContentを渡す
+        escapeSequence = new EscapeSequence(this, items, maxRowLength, getTextWidth()); //今のContentを渡す
         state = State.STARTING;
         inputStrText = inputEditText.getText().toString();
         connectTimeoutHandler = new Handler();
@@ -200,10 +200,9 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Layout layout = inputEditText.getLayout();
-                int vertical = layout.getLineForVertical(14);
-                long offset = layout.getOffsetForHorizontal(vertical, 14);
-                Log.d(TAG, "vertical" + Integer.toString(vertical) + "offset:" + Long.toString(offset));
+                int position = inputEditText.getOffsetForPosition(0,0);
+                inputEditText.setSelection(position);
+
             }
         });
 
@@ -759,6 +758,11 @@ public class MainActivity extends AppCompatActivity{
 
         int dispWidth = disp.getWidth();
         Log.d(TAG, "display weight is " + Integer.toString(dispWidth));
+        int textWidth = getTextWidth();
+        return dispWidth/textWidth;
+    }
+
+    private int getTextWidth(){
 
         // 文字サイズが30pxで，TypefaceがMonospace 「" "」の幅を取得
         Paint paint = new Paint();
@@ -768,8 +772,7 @@ public class MainActivity extends AppCompatActivity{
         int textWidth = (int)paint.measureText(" ");
 
         Log.d(TAG, "text size is " + Integer.toString(textWidth));
-
-        return dispWidth/textWidth;
+        return textWidth;
     }
 
     //選択中の行番号を返す

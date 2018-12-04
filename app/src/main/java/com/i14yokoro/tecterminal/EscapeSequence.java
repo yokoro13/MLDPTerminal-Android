@@ -11,12 +11,14 @@ public class EscapeSequence {
     private Context context;
     private int max;
     private ArrayList<RowItem> items;
+    private int textWidth;
 
-    EscapeSequence(Context context, ArrayList<RowItem> items,int max){
+    EscapeSequence(Context context, ArrayList<RowItem> items,int max, int textWidth){
         this.context = context;
         this.editText = (EditText) ((MainActivity)context).findViewById(R.id.main_display);
         this.items = items;
         this.max = max;
+        this.textWidth = textWidth;
     }
 
     public void moveRight(){
