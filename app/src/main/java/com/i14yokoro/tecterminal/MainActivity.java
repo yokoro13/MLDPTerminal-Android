@@ -230,14 +230,12 @@ public class MainActivity extends AppCompatActivity{
                 Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
                     if (!items.get(getSelectRow()).isWritable()) {
                         inputEditText.setSelection(currCursor);
-
-                        return false;
+                        return true;
                     }
                     else{
                         currCursor = inputEditText.getSelectionStart();
+                        return false;
                     }
-
-                return false;
             }
         });
     }
@@ -382,7 +380,9 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             if (editingFlag && deletePutFlag) {
-                currCursor = inputEditText.getSelectionStart();
+                if(items.get(getSelectRow()).isWritable()) {
+                    currCursor = inputEditText.getSelectionStart();
+                }
                 inputStrText = s.toString(); //おされた瞬間のテキストを保持
 
                 position = start;
@@ -397,12 +397,6 @@ public class MainActivity extends AppCompatActivity{
         public void onTextChanged(CharSequence s, int start, int before, int count) {
             eStart = start;
             eCount = count;
-            if (before > 0 && inputEditText.getSelectionStart() > 0) { //削除される文字が存在するとき
-                if (s.subSequence(inputEditText.getSelectionStart() - 1, inputEditText.getSelectionStart()).equals(LF)) { //その前の文字が改行コードまたは，編集可能じゃなかったら
-                    Log.d(TAG, "deleteFlag is false");
-                    deletePutFlag = false;//削除フラグをおる
-                }
-            }
         }
 
         //TODO ループにはいっているので直す
@@ -415,28 +409,27 @@ public class MainActivity extends AppCompatActivity{
 
             Log.d(TAG, "afterTextChange");
             //TODO ２文字以上の判定ができない？
-            if (str.matches("[\\p{ASCII}]*") && deletePutFlag ) {
+            if (str.matches("[\\p{ASCII}]*") && items.get(getSelectRow()).isWritable() ) {
                 lineText += str;
                 Log.d(TAG, "ASCII code/ " + str);
                 if (str.equals(LF)) {
                     Log.d(TAG, "lineText is " + lineText);
                     Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
-                    editingFlag = false;
                     addList(lineText);
 
                     before_str = inputStrText;
                     lineText = "";
                     //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                 }
-
             }
             else {
-                editingFlag = false;
-                inputEditText.setText(inputStrText);
-                inputEditText.setSelection(position);
-                lineText = lineText.substring(0, lineText.length()-1);
-                editingFlag = true;
-                deletePutFlag = true;
+                if(editingFlag) {
+                    editingFlag = false;
+                    inputEditText.setText(inputStrText);
+                    inputEditText.setSelection(position);
+                    lineText = lineText.substring(0, lineText.length() - 1);
+                    editingFlag = true;
+                }
             }
         }
     };
