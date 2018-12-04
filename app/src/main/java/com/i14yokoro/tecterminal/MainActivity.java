@@ -98,6 +98,8 @@ public class MainActivity extends AppCompatActivity{
     private boolean deletePutFlag = true;
     private boolean enterPutFlag = true;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -227,6 +229,12 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 showKeyboard();
+                float x = event.getX();
+                float y = event.getY();
+                int touchPosition = inputEditText.getOffsetForPosition(x, y);
+                if(touchPosition > 0){
+                    inputEditText.setSelection(touchPosition);
+                }
                 Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
                     if (!items.get(getSelectRow()).isWritable()) {
                         inputEditText.setSelection(currCursor);
@@ -362,6 +370,7 @@ public class MainActivity extends AppCompatActivity{
         public void beforeTextChanged(CharSequence cs, int i, int i1, int i2) {
         }
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
+            before_str = inputEditText.getText().toString();
             if(count > before) {
                 //if(editingFlag)
                     bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
@@ -379,7 +388,7 @@ public class MainActivity extends AppCompatActivity{
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            if (editingFlag && deletePutFlag) {
+            if (editingFlag && enterPutFlag) {
                 if(items.get(getSelectRow()).isWritable()) {
                     currCursor = inputEditText.getSelectionStart();
                 }
@@ -397,11 +406,12 @@ public class MainActivity extends AppCompatActivity{
         public void onTextChanged(CharSequence s, int start, int before, int count) {
             eStart = start;
             eCount = count;
+            if(before > 0){
+                deletePutFlag = false;
+            }
         }
 
-        //TODO ループにはいっているので直す
-        //TODO 一番した以外で文字が追加したときに改行が入るのを直す
-
+        //TODO deleteキーがおされてもlineTextの中身がきえない
         @Override
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
@@ -410,16 +420,24 @@ public class MainActivity extends AppCompatActivity{
             Log.d(TAG, "afterTextChange");
             //TODO ２文字以上の判定ができない？
             if (str.matches("[\\p{ASCII}]*") && items.get(getSelectRow()).isWritable() ) {
-                lineText += str;
-                Log.d(TAG, "ASCII code/ " + str);
-                if (str.equals(LF)) {
-                    Log.d(TAG, "lineText is " + lineText);
-                    Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
-                    addList(lineText);
+                if(enterPutFlag) {
+                    //lineText += str;
+                    Log.d(TAG, "ASCII code/ " + str);
+                    if (str.equals(LF)) {
+                        enterPutFlag = false;
+                        inputEditText.setText(inputStrText);
+                        inputEditText.setSelection(inputEditText.length());
+                        inputEditText.append(LF);
+                        enterPutFlag = true;
+                        //addList(lineText);
+                        lineText = inputEditText.getText().toString().substring(before_str.length(),inputEditText.getText().length());
+                        addList(lineText);
+                        Log.d(TAG, "lineText is " + lineText);
+                        Log.d(TAG, "linetext length is " + lineText);
 
-                    before_str = inputStrText;
-                    lineText = "";
-                    //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+                        lineText = "";
+                        //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+                    }
                 }
             }
             else {
@@ -427,7 +445,6 @@ public class MainActivity extends AppCompatActivity{
                     editingFlag = false;
                     inputEditText.setText(inputStrText);
                     inputEditText.setSelection(position);
-                    lineText = lineText.substring(0, lineText.length() - 1);
                     editingFlag = true;
                 }
             }
@@ -715,11 +732,11 @@ public class MainActivity extends AppCompatActivity{
         inputEditText.append(newText);
         inputEditText.append(LF);
         addList(newText + LF);
-        before_str = inputStrText;
         inputEditText.setSelection(inputEditText.getText().length());
     }
 
     private void addList(String newText){
+        before_str = inputEditText.getText().toString();
         String text; //一行の文字列を格納
         String str = newText; //ちぎるやつ
         boolean hasNext; //次の行がある場合はtrue
@@ -768,7 +785,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
     //選択中の行番号を返す
-    public int getSelectRow(){
+    private int getSelectRow(){
         int count = 0;
         int start = inputEditText.getSelectionStart()+1;
         int row = 0;

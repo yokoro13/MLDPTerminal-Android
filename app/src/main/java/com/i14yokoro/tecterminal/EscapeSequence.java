@@ -58,7 +58,7 @@ public class EscapeSequence {
          if(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n) < editText.length()){
          editText.setSelection(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n));
          }**/
-        if (getSelectRow() < items.size()){
+        if (editText.getSelectionStart() + getSelectRowLength(getSelectRow()) <= editText.length()){
             editText.setSelection(editText.getSelectionStart() + getSelectRowLength(getSelectRow()));
         }
         else {
