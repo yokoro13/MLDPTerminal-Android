@@ -420,11 +420,11 @@ public class MainActivity extends AppCompatActivity{
                 Log.d(TAG, "ASCII code/ " + str);
                 if (str.equals(LF)) {
                     Log.d(TAG, "lineText is " + lineText);
+                    Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
                     editingFlag = false;
                     addList(lineText);
 
                     before_str = inputStrText;
-                    Log.d(TAG, "linetext length is " + Integer.toString(lineText.length()));
                     lineText = "";
                     //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                 }
@@ -757,21 +757,20 @@ public class MainActivity extends AppCompatActivity{
         Display disp = wm.getDefaultDisplay();
 
         int dispWidth = disp.getWidth();
-        Log.d(TAG, "display weight is " + Integer.toString(dispWidth));
+        Log.d(TAG, "display width is " + Integer.toString(dispWidth));
         int textWidth = getTextWidth();
         return dispWidth/textWidth;
     }
 
     private int getTextWidth(){
 
-        // 文字サイズが30pxで，TypefaceがMonospace 「" "」の幅を取得
+        // TypefaceがMonospace 「" "」の幅を取得
         Paint paint = new Paint();
-        paint.setTextSize(30);
-        paint.setAntiAlias(true);
+        paint.setTextSize(inputEditText.getTextSize());
         paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
         int textWidth = (int)paint.measureText(" ");
 
-        Log.d(TAG, "text size is " + Integer.toString(textWidth));
+        Log.d(TAG, "text width is " + Integer.toString(textWidth));
         return textWidth;
     }
 
