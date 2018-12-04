@@ -128,12 +128,12 @@ public class MainActivity extends AppCompatActivity{
                 }
                 else {
                     currCursor = inputEditText.getSelectionStart();
-                    if (items.get(getSelectRow()).isWritable()){
+                    //if (items.get(getSelectRow()).isWritable()){
                         escapeSequence.moveUp();
-                        if(!items.get(getSelectRow()).isWritable()){
-                            inputEditText.setSelection(currCursor);
-                        }
-                    }
+                        //if(!items.get(getSelectRow()).isWritable()){
+                        //    inputEditText.setSelection(currCursor);
+                       // }
+                   // }
                 }
             }
         });
@@ -372,7 +372,7 @@ public class MainActivity extends AppCompatActivity{
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
             before_str = inputEditText.getText().toString();
             if(count > before) {
-                //if(editingFlag)
+                if(editingFlag)
                     bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
                     //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
                 //else editFlag = true;
@@ -491,6 +491,11 @@ public class MainActivity extends AppCompatActivity{
                     int startSel = inputEditText.getSelectionStart();
                     int endSel = inputEditText.getSelectionEnd();
                     switch (str) {
+                        case KeyHexString.KEY_UP:
+                            escapeSequence.moveUp(1);
+                            escPuttingFlag = false;
+                            escapeMoveFlag = false;
+                            break;
                         case KeyHexString.KEY_RIGHT:
                             escapeSequence.moveRight(1);
                             escPuttingFlag = false;
@@ -511,17 +516,20 @@ public class MainActivity extends AppCompatActivity{
                         case KeyHexString.KEY_ENTER:
                             //editingFlag = false;
                             addList(RNtext);
+                            //inputEditText.append(LF);
                             RNtext = "";
                             escPuttingFlag = false;
                             squarePuttingFlag = false;
                             escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_ESC:
+                            Log.d(TAG, "esc square");
                             escPuttingFlag = true;
                             squarePuttingFlag = false;
                             escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_SQUARE_LEFT:
+                            Log.d(TAG, "receive square");
                             if(escPuttingFlag) {
                                 squarePuttingFlag = true;
                             }
@@ -540,6 +548,7 @@ public class MainActivity extends AppCompatActivity{
                                 Log.d(TAG, "move flag is true");
                                 escapeMoveNum += data;
                                 escapeMoveFlag = true;
+                                squarePuttingFlag = false;
                                 break;
                             }
                             if(squarePuttingFlag && data.matches("[A-H]")){
@@ -588,11 +597,11 @@ public class MainActivity extends AppCompatActivity{
                             editable = inputEditText.getText();
                             escPuttingFlag = false;
                             squarePuttingFlag = false;
+                            editingFlag = false;
                             editable.replace(Math.min(startSel, endSel), Math.max(startSel, endSel), data);
                             //input.append(str);
+                            editingFlag = true;
                             inputEditText.setSelection(inputEditText.getText().length());
-                            escPuttingFlag = true;
-                            escPuttingFlag = false;
                             escapeMoveFlag = false;
 
                             break;
@@ -650,7 +659,7 @@ public class MainActivity extends AppCompatActivity{
                     case CONNECTING:
                         setProgressBarIndeterminateVisibility(true);
                         inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
-                        inputEditText.removeTextChangedListener(mInputTextWatcher);
+                        //inputEditText.removeTextChangedListener(mInputTextWatcher);
                         inputEditText.addTextChangedListener(mOutgoingTextWatcher);
                         break;
                     case CONNECTED:
@@ -661,7 +670,7 @@ public class MainActivity extends AppCompatActivity{
                         setProgressBarIndeterminateVisibility(false);
                         addNewLine("disconnected from " + bleDeviceName);
                         inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
-                        inputEditText.addTextChangedListener(mInputTextWatcher);
+                        //inputEditText.addTextChangedListener(mInputTextWatcher);
                         break;
                     default:
                         state = State.STARTING;
