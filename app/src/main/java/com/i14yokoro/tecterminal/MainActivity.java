@@ -13,12 +13,11 @@ import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.Editable;
-import android.text.Layout;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ActionMode;
@@ -95,7 +94,6 @@ public class MainActivity extends AppCompatActivity{
     private boolean squarePuttingFlag = false;
     private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
     private boolean editingFlag = true;
-    private boolean deletePutFlag = true;
     private boolean enterPutFlag = true;
 
 
@@ -406,9 +404,6 @@ public class MainActivity extends AppCompatActivity{
         public void onTextChanged(CharSequence s, int start, int before, int count) {
             eStart = start;
             eCount = count;
-            if(before > 0){
-                deletePutFlag = false;
-            }
         }
 
         //TODO deleteキーがおされてもlineTextの中身がきえない
@@ -616,7 +611,7 @@ public class MainActivity extends AppCompatActivity{
         state = State.CONNECTING;
         updateConnectionState();                                                                    
         connectTimeoutHandler.postDelayed(abortConnection, CONNECT_TIME);
-        return bleService.connect(address);                                                         
+        return bleService.connect(address);
     }
 
     private Runnable abortConnection = new Runnable() {
@@ -773,9 +768,15 @@ public class MainActivity extends AppCompatActivity{
     private int getMaxRowLength(){
         //int weight = input.getWidth();
         WindowManager wm =  (WindowManager)getSystemService(WINDOW_SERVICE);
-        Display disp = wm.getDefaultDisplay();
+        Display disp = null;
+        if (wm != null) {
+            disp = wm.getDefaultDisplay();
+        }
 
-        int dispWidth = disp.getWidth();
+        int dispWidth = 0;
+        if (disp != null) {
+            dispWidth = disp.getWidth();
+        }
         Log.d(TAG, "display width is " + Integer.toString(dispWidth));
         int textWidth = getTextWidth();
         return dispWidth/textWidth;
@@ -811,14 +812,12 @@ public class MainActivity extends AppCompatActivity{
     }
 
 
-    private String getLineString(){
-        return null;
-    }
-
     private void showKeyboard() {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         View v = getCurrentFocus();
         if (v != null)
-            imm.showSoftInput(v, 0);
+            if (imm != null) {
+                imm.showSoftInput(v, 0);
+            }
     }
 }

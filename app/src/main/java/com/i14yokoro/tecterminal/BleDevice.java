@@ -4,7 +4,7 @@ class BleDevice {
     private String address;
     private String name;
 
-    public BleDevice(String a, String n) {
+    BleDevice(String a, String n) {
         address = a;
         name = n;
     }
@@ -19,10 +19,8 @@ class BleDevice {
 
     @Override
     public boolean equals(Object object) {
-        if (object != null && object instanceof BleDevice) {
-            if (this.address.equals(((BleDevice) object).address)) {
-                return true;
-            }
+        if (object instanceof BleDevice) {
+            return this.address.equals(((BleDevice) object).address);
         }
         return false;
     }
@@ -34,7 +32,7 @@ class BleDevice {
 
     @Override
     public String toString(){
-        String str = "";
+        String str;
         str = "Name: " + this.name  + "   --address: " + this.address;
         return str;
     }
