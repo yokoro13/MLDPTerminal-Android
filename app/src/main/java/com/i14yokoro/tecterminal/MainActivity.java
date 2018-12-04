@@ -192,8 +192,8 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                r = inputEditText.getWidth()/inputEditText.getTextSize();
-                addNewLine(Float.toString(r));
+                int left = inputEditText.getLeft();
+                Log.d(TAG, "left is: " + Integer.toString(left));
             }
         });
 
