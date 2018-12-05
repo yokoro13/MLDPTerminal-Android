@@ -34,8 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
- * TODO 画面を回転させた時のデータ保持(onCreateがもう一回発動するから全部消える?)
- * TODO ４０になるまで空白をいれる形式だと色々まずいので，移動してgetSelect%maxChar<nだったら空白をその分いれるようにする
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
  * TODO ctlキー（押したらふらぐたて）
  */
@@ -406,14 +404,12 @@ public class MainActivity extends AppCompatActivity{
             eCount = count;
         }
 
-        //TODO deleteキーがおされてもlineTextの中身がきえない
         @Override
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
 
             Log.d(TAG, "afterTextChange");
-            //TODO ２文字以上の判定ができない？
             if (str.matches("[\\p{ASCII}]*") && items.get(getSelectRow()).isWritable() ) {
                 if(enterPutFlag) {
                     //lineText += str;
