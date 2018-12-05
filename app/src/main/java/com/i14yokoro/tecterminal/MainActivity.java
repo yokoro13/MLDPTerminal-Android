@@ -88,6 +88,9 @@ public class MainActivity extends AppCompatActivity{
     private int eStart;
     private int eCount;
 
+    private boolean btn_ctl = false;
+    private boolean btn_esc = false;
+
     private boolean escPuttingFlag = false; //escキーがおされたらtrue
     private boolean squarePuttingFlag = false;
     private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
