@@ -29,6 +29,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 /**
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
  * TODO ctlキー（押したらふらぐたて）
+ * TODO 画面を１画面に表示にして，上にスクロールを感知で上に，下の場合は下に移動する
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -84,6 +86,7 @@ public class MainActivity extends AppCompatActivity{
     private String lineText = "";
     private String RNtext = "";
     private int maxRowLength;
+    private int maxColumnLength;
     private int position;
     private int eStart;
     private int eCount;
@@ -97,7 +100,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean editingFlag = true;
     private boolean enterPutFlag = true;
 
-
+    private String[][] display;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +113,8 @@ public class MainActivity extends AppCompatActivity{
         inputEditText.addTextChangedListener(mInputTextWatcher);
 
         maxRowLength = getMaxRowLength();
+        maxColumnLength = getMaxColumnLength();
+
         items = new ArrayList<>();
         rowItem = new RowItem(items.size(), "", false, true);
         items.add(rowItem);
@@ -118,6 +123,8 @@ public class MainActivity extends AppCompatActivity{
         state = State.STARTING;
         inputStrText = inputEditText.getText().toString();
         connectTimeoutHandler = new Handler();
+
+        display = new String[maxColumnLength][maxRowLength];
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -193,8 +200,8 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int left = inputEditText.getLeft();
-                Log.d(TAG, "left is: " + Integer.toString(left));
+
+                Log.d(TAG, "max column: " + maxColumnLength);
             }
         });
 
@@ -781,6 +788,22 @@ public class MainActivity extends AppCompatActivity{
         return dispWidth/textWidth;
     }
 
+    private int getMaxColumnLength(){
+        WindowManager wm =  (WindowManager)getSystemService(WINDOW_SERVICE);
+        Display disp = null;
+        if (wm != null) {
+            disp = wm.getDefaultDisplay();
+        }
+        int dispHeight = 0;
+        if (disp != null) {
+            dispHeight = disp.getHeight();
+        }
+        LinearLayout layout = (LinearLayout) findViewById(R.id.linearLayout);
+        int height = dispHeight - layout.getHeight();
+        int text = (int)inputEditText.getTextSize();
+        return height/text;
+    }
+
     private int getTextWidth(){
 
         // TypefaceがMonospace 「" "」の幅を取得
@@ -788,9 +811,24 @@ public class MainActivity extends AppCompatActivity{
         paint.setTextSize(inputEditText.getTextSize());
         paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
         int textWidth = (int)paint.measureText(" ");
+        Paint.FontMetrics fontMetrics = paint.getFontMetrics();
+        float textHeight = (Math.abs(fontMetrics.top)) + (Math.abs(fontMetrics.descent));
 
         Log.d(TAG, "text width is " + Integer.toString(textWidth));
         return textWidth;
+    }
+
+    private int getTextHeight(){
+
+        // TypefaceがMonospace 「" "」の幅を取得
+        Paint paint = new Paint();
+        paint.setTextSize(inputEditText.getTextSize());
+        paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
+        Paint.FontMetrics fontMetrics = paint.getFontMetrics();
+        float textHeight = (Math.abs(fontMetrics.top)) + (Math.abs(fontMetrics.descent));
+
+        Log.d(TAG, "text width is " + textHeight);
+        return (int)textHeight;
     }
 
     //選択中の行番号を返す
@@ -810,6 +848,14 @@ public class MainActivity extends AppCompatActivity{
         return row-1;
     }
 
+    private int getTopPositionRow(){
+        int currCursor = inputEditText.getSelectionStart();
+        int position = inputEditText.getOffsetForPosition(0,0);
+        inputEditText.setSelection(position);
+        int topRow = getSelectRow();
+        inputEditText.setSelection(currCursor);
+        return topRow;
+    }
 
     private void showKeyboard() {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
