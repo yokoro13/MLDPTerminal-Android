@@ -235,8 +235,31 @@ public class MainActivity extends AppCompatActivity{
 
         //画面タッチされた時のイベント
         inputEditText.setOnTouchListener(new View.OnTouchListener() {
+            int oldY;
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        // タップした時に ScrollViewのScrollY座標を保持
+                        oldY = (int)event.getY();
+                        Log.d(TAG, "action down");
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        // 指を動かした時に、現在のscrollY座標とoldYを比較して、違いがあるならスクロール状態とみなす
+                        Log.d(TAG, "action move");
+                        if (oldY > v.getScrollY()) {
+                            Log.v(TAG, "scrollView up");
+                        }
+                        if (oldY < v.getScrollY()){
+                            Log.d(TAG, "scroll down");
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+
+                        break;
+                    default:
+                        break;
+                }
                 showKeyboard();
                 float x = event.getX();
                 float y = event.getY();
@@ -244,7 +267,7 @@ public class MainActivity extends AppCompatActivity{
                 if(touchPosition > 0){
                     inputEditText.setSelection(touchPosition);
                 }
-                Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
+                //Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
                     if (!items.get(getSelectRow()).isWritable()) {
                         //inputEditText.setSelection(currCursor);
                         return true;
