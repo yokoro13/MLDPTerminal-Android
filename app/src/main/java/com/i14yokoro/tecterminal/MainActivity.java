@@ -37,7 +37,8 @@ import java.util.ArrayList;
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
  * TODO ctlキー（押したらふらぐたて）
  * TODO 画面を１画面に表示にして，上にスクロールを感知で上に，下の場合は下に移動する
- * 
+ * TODO 縦列はmaxColumn以上入らないようにする.
+ * TODO getTopでくる値がおかしいのでなおす
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -132,6 +133,7 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                /*
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\\x1b[1A");
                 }
@@ -143,6 +145,9 @@ public class MainActivity extends AppCompatActivity{
                         //    inputEditText.setSelection(currCursor);
                        // }
                    // }
+                }*/
+                if(getTopPositionRow() - 1 >= 0){
+                    termDisplay.changeDisplay(getTopPositionRow()-1);
                 }
             }
         });
@@ -150,6 +155,7 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_down).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                /*
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\\x1b[1B");
                 }
@@ -161,6 +167,9 @@ public class MainActivity extends AppCompatActivity{
                             inputEditText.setSelection(currCursor);
                         }
                     }
+                }*/
+                if(getTopPositionRow() + 1 < items.size()){
+                    termDisplay.changeDisplay(getTopPositionRow()+1);
                 }
             }
         });
@@ -885,7 +894,7 @@ public class MainActivity extends AppCompatActivity{
 
     private int getTopPositionRow(){
         int currCursor = inputEditText.getSelectionStart();
-        int position = inputEditText.getOffsetForPosition(0,0);
+        int position = inputEditText.getOffsetForPosition(0,14);
         inputEditText.setSelection(position);
         int topRow = getSelectRow();
         inputEditText.setSelection(currCursor);
