@@ -29,7 +29,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -79,6 +78,7 @@ public class MainActivity extends AppCompatActivity{
 
     private Editable editable;
     private EscapeSequence escapeSequence;
+    private TermDisplay termDisplay;
 
     float r;
     private int currCursor = 0;
@@ -120,6 +120,8 @@ public class MainActivity extends AppCompatActivity{
         items.add(rowItem);
 
         escapeSequence = new EscapeSequence(this, items, maxRowLength, getTextWidth()); //今のContentを渡す
+        termDisplay = new TermDisplay(this, items, maxRowLength, maxColumnLength);
+
         state = State.STARTING;
         inputStrText = inputEditText.getText().toString();
         connectTimeoutHandler = new Handler();
@@ -244,7 +246,7 @@ public class MainActivity extends AppCompatActivity{
                 }
                 Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
                     if (!items.get(getSelectRow()).isWritable()) {
-                        inputEditText.setSelection(currCursor);
+                        //inputEditText.setSelection(currCursor);
                         return true;
                     }
                     else{
@@ -432,8 +434,10 @@ public class MainActivity extends AppCompatActivity{
                         inputEditText.append(LF);
                         enterPutFlag = true;
                         //addList(lineText);
-                        lineText = inputEditText.getText().toString().substring(before_str.length(),inputEditText.getText().length());
-                        addList(lineText);
+                        if(before_str.length() <= inputEditText.length()) {
+                            lineText = inputEditText.getText().toString().substring(before_str.length(), inputEditText.getText().length());
+                            addList(lineText);
+                        }
                         Log.d(TAG, "lineText is " + lineText);
                         Log.d(TAG, "linetext length is " + lineText);
 
@@ -799,7 +803,7 @@ public class MainActivity extends AppCompatActivity{
         if (disp != null) {
             dispHeight = disp.getHeight();
         }
-        LinearLayout layout = (LinearLayout) findViewById(R.id.linearLayout);
+
         int height = dispHeight - 100;
         int text = (int)getTextHeight();
         Log.d(TAG, Float.toString(height/text));
