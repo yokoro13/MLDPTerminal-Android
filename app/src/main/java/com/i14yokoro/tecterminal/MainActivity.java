@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity{
         inputStrText = inputEditText.getText().toString();
         connectTimeoutHandler = new Handler();
 
-        display = new String[maxColumnLength][maxRowLength];
+        //display = new String[maxColumnLength][maxRowLength];
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -208,8 +208,9 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int position = inputEditText.getOffsetForPosition(0,0);
-                inputEditText.setSelection(position);
+                //int position = inputEditText.getOffsetForPosition(0,0);
+                //inputEditText.setSelection(position);
+                termDisplay.changeDisplay(getTopPositionRow());
 
             }
         });
@@ -420,7 +421,7 @@ public class MainActivity extends AppCompatActivity{
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
 
             Log.d(TAG, "afterTextChange");
-            if (str.matches("[\\p{ASCII}]*") && items.get(getSelectRow()).isWritable() ) {
+            if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if(enterPutFlag) {
                     //lineText += str;
                     Log.d(TAG, "ASCII code/ " + str);
@@ -799,9 +800,11 @@ public class MainActivity extends AppCompatActivity{
             dispHeight = disp.getHeight();
         }
         LinearLayout layout = (LinearLayout) findViewById(R.id.linearLayout);
-        int height = dispHeight - layout.getHeight();
-        int text = (int)inputEditText.getTextSize();
-        return height/text;
+        int height = dispHeight - 100;
+        int text = (int)getTextHeight();
+        Log.d(TAG, Float.toString(height/text));
+
+        return (height/text)-1;
     }
 
     private int getTextWidth(){
@@ -811,24 +814,22 @@ public class MainActivity extends AppCompatActivity{
         paint.setTextSize(inputEditText.getTextSize());
         paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
         int textWidth = (int)paint.measureText(" ");
-        Paint.FontMetrics fontMetrics = paint.getFontMetrics();
-        float textHeight = (Math.abs(fontMetrics.top)) + (Math.abs(fontMetrics.descent));
 
         Log.d(TAG, "text width is " + Integer.toString(textWidth));
         return textWidth;
     }
 
-    private int getTextHeight(){
+    private float getTextHeight(){
 
         // TypefaceがMonospace 「" "」の幅を取得
         Paint paint = new Paint();
         paint.setTextSize(inputEditText.getTextSize());
         paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
         Paint.FontMetrics fontMetrics = paint.getFontMetrics();
-        float textHeight = (Math.abs(fontMetrics.top)) + (Math.abs(fontMetrics.descent));
+        float textHeight = Math.abs(fontMetrics.top) + Math.abs(fontMetrics.bottom);
 
-        Log.d(TAG, "text width is " + textHeight);
-        return (int)textHeight;
+        Log.d(TAG, "text Height is " + textHeight);
+        return textHeight;
     }
 
     //選択中の行番号を返す

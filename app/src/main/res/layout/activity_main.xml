@@ -6,7 +6,8 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity"
     android:orientation="vertical"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    android:id="@+id/topLayout">
 
     <LinearLayout
         android:id="@+id/linear_display"
@@ -23,7 +24,8 @@
             android:fontFamily="monospace"
             android:gravity="top|left"
             android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
-            android:paddingBottom="50dp"
+            android:paddingBottom="100px"
+            android:text="1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n1\n1\n1\n"
             android:textSize="30px"
             android:typeface="monospace" />
 
