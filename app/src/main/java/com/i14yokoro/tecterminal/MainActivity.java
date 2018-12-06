@@ -37,6 +37,7 @@ import java.util.ArrayList;
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
  * TODO ctlキー（押したらふらぐたて）
  * TODO 画面を１画面に表示にして，上にスクロールを感知で上に，下の場合は下に移動する
+ * 
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -202,7 +203,7 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                test();
                 Log.d(TAG, "max column: " + maxColumnLength);
             }
         });
@@ -249,9 +250,15 @@ public class MainActivity extends AppCompatActivity{
                         Log.d(TAG, "action move");
                         if (oldY > v.getScrollY()) {
                             Log.v(TAG, "scrollView up");
+                            if(getTopPositionRow() - 1 >= 0){
+                                termDisplay.changeDisplay(getTopPositionRow()-1);
+                            }
                         }
                         if (oldY < v.getScrollY()){
                             Log.d(TAG, "scroll down");
+                            if(getTopPositionRow() + 1 < items.size()){
+                                termDisplay.changeDisplay(getTopPositionRow()+1);
+                            }
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -892,5 +899,10 @@ public class MainActivity extends AppCompatActivity{
             if (imm != null) {
                 imm.showSoftInput(v, 0);
             }
+    }
+    private void test(){
+        for(int i = 0; i < 100; i++){
+            addNewLine(Integer.toString(i));
+        }
     }
 }
