@@ -220,9 +220,9 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //int position = inputEditText.getOffsetForPosition(0,0);
-                //inputEditText.setSelection(position);
-                termDisplay.changeDisplay(getTopPositionRow());
+                int position = inputEditText.getOffsetForPosition(0,0);
+                inputEditText.setSelection(position);
+               // termDisplay.changeDisplay(getTopPositionRow());
 
             }
         });
@@ -876,6 +876,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
     //選択中の行番号を返す
+    //TODO 選択中の文字が入っている行を求める方法がこれじゃ無理
     private int getSelectRow(){
         int count = 0;
         int start = inputEditText.getSelectionStart()+1;

@@ -30,6 +30,7 @@ public class TermDisplay {
     }
 
     public void changeDisplay(int topRow){
+        Log.d("debug****", "topRow/ " + topRow);
         editText.setText("");
         for (int i = topRow; i < items.size() && i < topRow+height-1; i++){
             Log.d("debug***", items.get(i).getText());
