@@ -1,6 +1,7 @@
 package com.i14yokoro.tecterminal;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity{
     private EditText inputEditText; //ディスプレイのEdittext
     private String inputStrText; //入力したテキスト
 
-    private String before_str = ""; //１つ前の行までのテキスト情報
+    //private String before_str = ""; //１つ前の行までのテキスト情報
 
     private static final String PREFS = "PREFS";
     private static final String PREFS_NAME = "NAME";
@@ -103,7 +104,9 @@ public class MainActivity extends AppCompatActivity{
     private String[][] display;
 
     private int topRow = 0;
+    private boolean receivingFlag = true;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -148,7 +151,7 @@ public class MainActivity extends AppCompatActivity{
                 }*/
                 if(topRow-1 >= 0){
                     topRow--;
-                    termDisplay.changeDisplay(topRow);
+                    changeDisplay();
                 }
             }
         });
@@ -171,7 +174,7 @@ public class MainActivity extends AppCompatActivity{
                 }*/
                 if(topRow + 1 <= items.size()){
                     topRow++;
-                    termDisplay.changeDisplay(topRow);
+                    changeDisplay();
                 }
             }
         });
@@ -253,7 +256,7 @@ public class MainActivity extends AppCompatActivity{
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         // タップした時に ScrollViewのScrollY座標を保持
-                        oldY = (int)event.getY();
+                        oldY = (int)event.getRawY();
                         Log.d(TAG, "action down");
                         break;
                     case MotionEvent.ACTION_MOVE:
@@ -263,14 +266,14 @@ public class MainActivity extends AppCompatActivity{
                             Log.v(TAG, "scrollView up");
                             if(topRow - 1 >= 0){
                                 topRow--;
-                                termDisplay.changeDisplay(topRow);
+                                changeDisplay();
                             }
                         }
                         if (oldY < v.getScrollY()){
                             Log.d(TAG, "scroll down");
                             if(topRow + 1 <= items.size()){
                                 topRow++;
-                                termDisplay.changeDisplay(topRow);
+                                changeDisplay();
                             }
                         }
                         break;
@@ -422,9 +425,9 @@ public class MainActivity extends AppCompatActivity{
         public void beforeTextChanged(CharSequence cs, int i, int i1, int i2) {
         }
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
-            before_str = inputEditText.getText().toString();
+            //before_str = inputEditText.getText().toString();
             if(count > before) {
-                if(editingFlag)
+                if(receivingFlag)
                     bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
                     //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
                 //else editFlag = true;
@@ -467,8 +470,9 @@ public class MainActivity extends AppCompatActivity{
 
             Log.d(TAG, "afterTextChange");
             if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
+                if (editingFlag)lineText += str;
+
                 if(enterPutFlag) {
-                    //lineText += str;
                     Log.d(TAG, "ASCII code/ " + str);
                     if (str.equals(LF)) {
                         enterPutFlag = false;
@@ -477,10 +481,9 @@ public class MainActivity extends AppCompatActivity{
                         //inputEditText.append(LF);
                         enterPutFlag = true;
                         //addList(lineText);
-                        if(before_str.length() <= inputEditText.length()) {
-                            lineText = inputEditText.getText().toString().substring(before_str.length(), inputEditText.getText().length());
-                            //addList(lineText);
-                        }
+
+                        addList(lineText);
+
                         Log.d(TAG, "lineText is " + lineText);
                         Log.d(TAG, "linetext length is " + lineText);
 
@@ -535,6 +538,8 @@ public class MainActivity extends AppCompatActivity{
                     byte[] utf = data.getBytes(StandardCharsets.UTF_8);
                     for (byte b : utf){
                         str = Integer.toHexString(b & 0xff);
+                        Log.d(TAG, "coming HEX : " + str);
+                        bleService.writeMLDP(str + " ");
                     }
 
                     int startSel = inputEditText.getSelectionStart();
@@ -564,7 +569,8 @@ public class MainActivity extends AppCompatActivity{
                             break;
                         case KeyHexString.KEY_ENTER:
                             //editingFlag = false;
-                            addList(RNtext);
+                            //addList(RNtext);
+                            //changeDisplay();
                             //inputEditText.append(LF);
                             RNtext = "";
                             escPuttingFlag = false;
@@ -572,7 +578,7 @@ public class MainActivity extends AppCompatActivity{
                             escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_ESC:
-                            Log.d(TAG, "esc square");
+                            Log.d(TAG, "receive esc");
                             escPuttingFlag = true;
                             squarePuttingFlag = false;
                             escapeMoveFlag = false;
@@ -597,7 +603,7 @@ public class MainActivity extends AppCompatActivity{
                                 Log.d(TAG, "move flag is true");
                                 escapeMoveNum += data;
                                 escapeMoveFlag = true;
-                                squarePuttingFlag = false;
+                                //squarePuttingFlag = false;
                                 break;
                             }
                             if(squarePuttingFlag && data.matches("[A-H]")){
@@ -646,10 +652,10 @@ public class MainActivity extends AppCompatActivity{
                             editable = inputEditText.getText();
                             escPuttingFlag = false;
                             squarePuttingFlag = false;
-                            editingFlag = false;
+                            receivingFlag = false;
                             editable.replace(Math.min(startSel, endSel), Math.max(startSel, endSel), data);
                             //input.append(str);
-                            editingFlag = true;
+                            receivingFlag = true;
                             inputEditText.setSelection(inputEditText.getText().length());
                             escapeMoveFlag = false;
 
@@ -794,7 +800,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void addList(String newText){
-        before_str = inputEditText.getText().toString();
+        //before_str = inputEditText.getText().toString();
         String text; //一行の文字列を格納
         String str = newText; //ちぎるやつ
         boolean hasNext; //次の行がある場合はtrue
@@ -817,7 +823,6 @@ public class MainActivity extends AppCompatActivity{
             items.add(rowItem);
             if(items.size() > maxColumnLength && topRow+1 <= items.size()){
                 topRow++;
-                termDisplay.changeDisplay(topRow);
             }
             Log.d(TAG, "add list /" + text + " length /" + text.length());
         }
@@ -885,37 +890,22 @@ public class MainActivity extends AppCompatActivity{
 
     //選択中の行番号を返す
     //TODO 選択中の文字が入っている行を求める方法がこれじゃ無理
-    private int getSelectRow(){
-        int row = 0;
 
 
-        return row;
-    }
-
-    /*
-    private int getSelectRow(){
+    private int getSelectRow() {
         int count = 0;
-        int start = inputEditText.getSelectionStart()+1;
+        int start = inputEditText.getSelectionStart() + 1;
         int row = 0;
-        if(start == 0){
+        if (start == 0) {
             return 0;
         }
-        for (; count < start; row++){
-            if(row < items.size()){
-                count += items.get(row).getText().length();
-            }
-            else break;
+        for (; count < start; row++) {
+            if (row + topRow < items.size()) {
+                count += items.get(row+topRow).getText().length();
+            } else break;
         }
-        return row-1;
-    }*/
-
-    private int getTopPositionRow(){
-        int currCursor = inputEditText.getSelectionStart();
-        int position = inputEditText.getOffsetForPosition(0,14);
-        inputEditText.setSelection(position);
-        int topRow = getSelectRow();
-        inputEditText.setSelection(currCursor);
-        return topRow;
+        if(row == 0) return 0;
+        return row - 1;
     }
 
     private void showKeyboard() {
@@ -930,5 +920,11 @@ public class MainActivity extends AppCompatActivity{
         for(int i = 0; i < 100; i++){
             addNewLine(Integer.toString(i));
         }
+        changeDisplay();
+    }
+    private void changeDisplay(){
+        receivingFlag = false;
+        termDisplay.changeDisplay(topRow);
+        receivingFlag = true;
     }
 }
