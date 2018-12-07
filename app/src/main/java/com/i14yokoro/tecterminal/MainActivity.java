@@ -36,9 +36,7 @@ import java.util.ArrayList;
 /**
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
  * TODO ctlキー（押したらふらぐたて）
- * TODO 画面を１画面に表示にして，上にスクロールを感知で上に，下の場合は下に移動する
  * TODO 縦列はmaxColumn以上入らないようにする.
- * TODO getTopでくる値がおかしいのでなおす
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -104,6 +102,8 @@ public class MainActivity extends AppCompatActivity{
 
     private String[][] display;
 
+    private int topRow = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -146,8 +146,9 @@ public class MainActivity extends AppCompatActivity{
                        // }
                    // }
                 }*/
-                if(getTopPositionRow() - 1 >= 0){
-                    termDisplay.changeDisplay(getTopPositionRow()-1);
+                if(topRow-1 >= 0){
+                    topRow--;
+                    termDisplay.changeDisplay(topRow);
                 }
             }
         });
@@ -168,8 +169,9 @@ public class MainActivity extends AppCompatActivity{
                         }
                     }
                 }*/
-                if(getTopPositionRow() + 1 < items.size()){
-                    termDisplay.changeDisplay(getTopPositionRow()+1);
+                if(topRow + 1 <= items.size()){
+                    topRow++;
+                    termDisplay.changeDisplay(topRow);
                 }
             }
         });
@@ -259,14 +261,16 @@ public class MainActivity extends AppCompatActivity{
                         Log.d(TAG, "action move");
                         if (oldY > v.getScrollY()) {
                             Log.v(TAG, "scrollView up");
-                            if(getTopPositionRow() - 1 >= 0){
-                                termDisplay.changeDisplay(getTopPositionRow()-1);
+                            if(topRow - 1 >= 0){
+                                topRow--;
+                                termDisplay.changeDisplay(topRow);
                             }
                         }
                         if (oldY < v.getScrollY()){
                             Log.d(TAG, "scroll down");
-                            if(getTopPositionRow() + 1 < items.size()){
-                                termDisplay.changeDisplay(getTopPositionRow()+1);
+                            if(topRow + 1 <= items.size()){
+                                topRow++;
+                                termDisplay.changeDisplay(topRow);
                             }
                         }
                         break;
@@ -468,14 +472,14 @@ public class MainActivity extends AppCompatActivity{
                     Log.d(TAG, "ASCII code/ " + str);
                     if (str.equals(LF)) {
                         enterPutFlag = false;
-                        inputEditText.setText(inputStrText);
+                        //inputEditText.setText(inputStrText);
                         inputEditText.setSelection(inputEditText.length());
-                        inputEditText.append(LF);
+                        //inputEditText.append(LF);
                         enterPutFlag = true;
                         //addList(lineText);
                         if(before_str.length() <= inputEditText.length()) {
                             lineText = inputEditText.getText().toString().substring(before_str.length(), inputEditText.getText().length());
-                            addList(lineText);
+                            //addList(lineText);
                         }
                         Log.d(TAG, "lineText is " + lineText);
                         Log.d(TAG, "linetext length is " + lineText);
@@ -811,6 +815,10 @@ public class MainActivity extends AppCompatActivity{
             items.set(items.size()-1, rowItem);
             rowItem = new RowItem(items.size(), "", false, true);
             items.add(rowItem);
+            if(items.size() > maxColumnLength && topRow+1 <= items.size()){
+                topRow++;
+                termDisplay.changeDisplay(topRow);
+            }
             Log.d(TAG, "add list /" + text + " length /" + text.length());
         }
     }
@@ -878,6 +886,14 @@ public class MainActivity extends AppCompatActivity{
     //選択中の行番号を返す
     //TODO 選択中の文字が入っている行を求める方法がこれじゃ無理
     private int getSelectRow(){
+        int row = 0;
+
+
+        return row;
+    }
+
+    /*
+    private int getSelectRow(){
         int count = 0;
         int start = inputEditText.getSelectionStart()+1;
         int row = 0;
@@ -891,7 +907,7 @@ public class MainActivity extends AppCompatActivity{
             else break;
         }
         return row-1;
-    }
+    }*/
 
     private int getTopPositionRow(){
         int currCursor = inputEditText.getSelectionStart();
