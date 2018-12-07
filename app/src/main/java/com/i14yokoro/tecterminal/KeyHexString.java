@@ -10,7 +10,7 @@ class KeyHexString {
     static final String KEY_F = "46";
     static final String KEY_G = "47";
     static final String KEY_H = "48";
-    static final String KEY_SQUARE_LEFT = "5B";
+    static final String KEY_SQUARE_LEFT = "5b";
 
     static final String KEY_RIGHT = "1d";
     static final String KEY_LEFT = "1c";
