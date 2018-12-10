@@ -9,16 +9,28 @@ import java.util.ArrayList;
 public class EscapeSequence {
     private EditText editText;
     private Context context;
-    private int max;
+    private int width;
     private ArrayList<RowItem> items;
-    private int textWidth;
+    private int height;
 
-    EscapeSequence(Context context, ArrayList<RowItem> items,int max, int textWidth){
+    EscapeSequence(Context context, ArrayList<RowItem> items,int width, int height){
         this.context = context;
         this.editText = (EditText) ((MainActivity)context).findViewById(R.id.main_display);
         this.items = items;
-        this.max = max;
-        this.textWidth = textWidth;
+        this.width = width;
+        this.height = height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setHeight(int height){
+        this.height = height;
+    }
+
+    public int getHeight() {
+        return height;
     }
 
     public void moveRight(){
@@ -208,6 +220,15 @@ public class EscapeSequence {
             length += items.get(i).getText().length();
         }
         return length;
+    }
+
+    public void changeDisplay(int topRow){
+        Log.d("debug****", "topRow/ " + topRow);
+        editText.setText("");
+        for (int i = topRow; i < items.size() && i < topRow+height-1; i++){
+            Log.d("debug***", items.get(i).getText());
+            editText.append(items.get(i).getText());
+        }
     }
 
     /**
