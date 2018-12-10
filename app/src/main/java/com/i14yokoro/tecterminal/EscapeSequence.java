@@ -105,9 +105,15 @@ public class EscapeSequence {
             //editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
             editText.setSelection(editText.getSelectionStart()-42);
         }**/
-        if(getSelectRow() - n >= 0 || n <= 0){
+
+
+        if(getSelectRow() - n < 0 || n <= 0){
             return;
         }
+        Log.d("debug***",
+                "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() - getSelectRowLength(getSelectRow() - n, getSelectRow())) + "\n"
+                        +" selectRow " + getSelectRow() + "\n" + " length " +getSelectRowLength(getSelectRow()));
+
         if(editText.getSelectionStart() - getSelectRowLength(getSelectRow() - n, getSelectRow()) >= 0){
             editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow() - n, getSelectRow()));
         }
@@ -121,7 +127,11 @@ public class EscapeSequence {
         if(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n) < editText.length()){
             editText.setSelection(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n));
         }**/
-        if (getSelectRow() + n < items.size() && n <= 0){
+        Log.d("debug***",
+                "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n)) + "\n"
+                        +" selectRow " + getSelectRow() + "\n" + " length " + getSelectRowLength(getSelectRow(), getSelectRow() + n));
+
+        if (getSelectRow() + n > items.size() || n <= 0){
             return;
         }
         if (editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n) < editText.length()){
@@ -135,6 +145,9 @@ public class EscapeSequence {
     public void moveRowUp(int n){
         if(editText.getSelectionStart() - getSelectRowLength(getSelectRow() - n, getSelectRow()) * n > 0){
             editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow()) - getSelectRowLength(getSelectRow() - n, getSelectRow()));
+        }
+        else {
+
         }
     }
 
@@ -175,12 +188,14 @@ public class EscapeSequence {
 
     }
 
-    public void scrollNext(int n){
-
+    public void scrollNext(int top, int n){
+        if (top + n > items.size()) return;
+        changeDisplay(top + n);
     }
 
-    public void scrollBack(int n){
-
+    public void scrollBack(int top, int n){
+        if(top - n < 0) return;
+        changeDisplay(top - n);
     }
 
     //row行までの文字数をかえす
@@ -216,7 +231,8 @@ public class EscapeSequence {
     //start行からrow行までの文字数を返す
     private int getSelectRowLength(int start, int end){
         int length = 0;
-        for(int i = start; i <= end; i++){
+        //行の初めからの字数を出してタス必要あり
+        for(int i = start; i < end; i++){
             length += items.get(i).getText().length();
         }
         return length;
