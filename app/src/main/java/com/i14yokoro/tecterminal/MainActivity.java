@@ -468,7 +468,7 @@ public class MainActivity extends AppCompatActivity{
 
             Log.d(TAG, "afterTextChange");
             if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
-                if (editingFlag)lineText += str;
+                if (receivingFlag)lineText += str;
 
                 if(enterPutFlag) {
                     Log.d(TAG, "ASCII code/ " + str);
@@ -543,21 +543,6 @@ public class MainActivity extends AppCompatActivity{
                     int startSel = inputEditText.getSelectionStart();
                     int endSel = inputEditText.getSelectionEnd();
                     switch (str) {
-                        case KeyHexString.KEY_UP:
-                            escapeSequence.moveUp(1);
-                            escPuttingFlag = false;
-                            escapeMoveFlag = false;
-                            break;
-                        case KeyHexString.KEY_RIGHT:
-                            escapeSequence.moveRight(1);
-                            escPuttingFlag = false;
-                            escapeMoveFlag = false;
-                            break;
-                        case KeyHexString.KEY_LEFT:
-                            escapeSequence.moveLeft(1);
-                            escPuttingFlag = false;
-                            escapeMoveFlag = false;
-                            break;
                         case KeyHexString.KEY_DEL:
                             if(startSel >= 1) {
                                 inputEditText.getText().delete(startSel - 1, endSel);
@@ -568,8 +553,8 @@ public class MainActivity extends AppCompatActivity{
                         case KeyHexString.KEY_ENTER:
                             //editingFlag = false;
                             //addList(RNtext);
-                            //changeDisplay();
                             inputEditText.append(LF);
+                            changeDisplay();
                             RNtext = "";
                             escPuttingFlag = false;
                             squarePuttingFlag = false;
@@ -585,10 +570,10 @@ public class MainActivity extends AppCompatActivity{
                             Log.d(TAG, "receive square");
                             if(escPuttingFlag) {
                                 squarePuttingFlag = true;
+                                break;
                             }
                             escPuttingFlag = false;
                             escapeMoveFlag = false;
-                            break;
                         default:
                             //2桁の入力を可能にする　できた
                             int h1 = 1;
@@ -611,14 +596,14 @@ public class MainActivity extends AppCompatActivity{
                                 escapeMoveFlag = false;
                                 break;
                             }
-                            if(Hflag && !data.equals("H")){
+                            if(Hflag && !data.matches("[Hf]")){
                                 escapeMoveNum = "";
                                 escapeMoveFlag = false;
                                 squarePuttingFlag = false;
                                 escPuttingFlag = false;
                                 break;
                             }
-                            if(squarePuttingFlag && data.matches("[A-H]")){
+                            if(squarePuttingFlag && data.matches("[A-HJKSTf]")){
                                 //escapeシーケンス用
                                 int move;
                                 if(escapeMoveFlag) {
@@ -650,10 +635,35 @@ public class MainActivity extends AppCompatActivity{
                                 if(str.equals(KeyHexString.KEY_G)){
                                     escapeSequence.moveSelection(move);
                                 }
-                                if(str.equals(KeyHexString.KEY_H)){
-                                    //TODO ここの引数２個なんとかする
+                                if(str.equals(KeyHexString.KEY_H) || str.equals(KeyHexString.KEY_f)){
+                                    if(!Hflag){
+                                        h1 = 1;
+                                        move = 1;
+                                    }
                                     escapeSequence.moveSelection(h1, move);
                                     Hflag = false;
+                                }
+                                if(str.equals(KeyHexString.KEY_J)){
+
+                                }
+                                if (str.equals(KeyHexString.KEY_K)){
+
+                                }
+                                if (str.equals(KeyHexString.KEY_S)){
+                                    receivingFlag = false;
+                                    if (topRow + move <= items.size()) {
+                                        escapeSequence.scrollNext(topRow, move);
+                                        topRow = topRow + move;
+                                    }
+                                    receivingFlag = true;
+                                }
+                                if (str.equals(KeyHexString.KEY_T)){
+                                    receivingFlag = false;
+                                    if(topRow - move >= 0) {
+                                        escapeSequence.scrollBack(topRow, move);
+                                        topRow = topRow - move;
+                                    }
+                                    receivingFlag = true;
                                 }
                                 escapeMoveFlag = false;
                                 squarePuttingFlag = false;
@@ -666,6 +676,7 @@ public class MainActivity extends AppCompatActivity{
                             escPuttingFlag = false;
                             squarePuttingFlag = false;
                             receivingFlag = false;
+                            lineText += data;
                             editable.replace(Math.min(startSel, endSel), Math.max(startSel, endSel), data);
                             //input.append(str);
                             receivingFlag = true;
@@ -772,7 +783,9 @@ public class MainActivity extends AppCompatActivity{
                 else {
                     state = State.CONNECTING;
                     updateConnectionState();
-                    connectWithAddress(bleDeviceAddress);
+                    if(!connectWithAddress(bleDeviceAddress)){
+                        addNewLine("connect is failed");
+                    }
                 }
             }
             else {
@@ -834,7 +847,7 @@ public class MainActivity extends AppCompatActivity{
             items.set(items.size()-1, rowItem);
             rowItem = new RowItem(items.size(), "", false, true);
             items.add(rowItem);
-            if(items.size() > maxColumnLength && topRow+1 <= items.size()){
+            if(items.size() > maxColumnLength && topRow+1 <= items.size() && inputEditText.getLineCount() > maxColumnLength){
                 topRow++;
             }
             Log.d(TAG, "add list /" + text + " length /" + text.length());
@@ -939,5 +952,13 @@ public class MainActivity extends AppCompatActivity{
         receivingFlag = false;
         escapeSequence.changeDisplay(topRow);
         receivingFlag = true;
+        //showDisplay();
+    }
+    private void showDisplay(){
+        Log.d(TAG, "******showDisplay******");
+
+        for(int i = 0; i < inputEditText.getLineCount(); i++){
+            Log.d(TAG, (items.get(i + topRow).getText()));
+        }
     }
 }
