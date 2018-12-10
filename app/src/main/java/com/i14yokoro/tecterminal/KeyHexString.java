@@ -10,6 +10,14 @@ class KeyHexString {
     static final String KEY_F = "46";
     static final String KEY_G = "47";
     static final String KEY_H = "48";
+    static final String KEY_I = "48";
+    static final String KEY_J = "4a";
+    static final String KEY_K = "4b";
+    static final String KEY_S = "53";
+    static final String KEY_T = "54";
+    static final String KEY_f = "66";
+
+
     static final String KEY_SQUARE_LEFT = "5b";
 
     static final String KEY_RIGHT = "1d";
