@@ -79,7 +79,6 @@ public class MainActivity extends AppCompatActivity{
 
     private Editable editable;
     private EscapeSequence escapeSequence;
-    private TermDisplay termDisplay;
 
     float r;
     private int currCursor = 0;
@@ -124,8 +123,7 @@ public class MainActivity extends AppCompatActivity{
         rowItem = new RowItem(items.size(), "", false, true);
         items.add(rowItem);
 
-        escapeSequence = new EscapeSequence(this, items, maxRowLength, getTextWidth()); //今のContentを渡す
-        termDisplay = new TermDisplay(this, items, maxRowLength, maxColumnLength);
+        escapeSequence = new EscapeSequence(this, items, maxRowLength, maxColumnLength); //今のContentを渡す
 
         state = State.STARTING;
         inputStrText = inputEditText.getText().toString();
@@ -571,7 +569,7 @@ public class MainActivity extends AppCompatActivity{
                             //editingFlag = false;
                             //addList(RNtext);
                             //changeDisplay();
-                            //inputEditText.append(LF);
+                            inputEditText.append(LF);
                             RNtext = "";
                             escPuttingFlag = false;
                             squarePuttingFlag = false;
@@ -591,19 +589,33 @@ public class MainActivity extends AppCompatActivity{
                             escPuttingFlag = false;
                             escapeMoveFlag = false;
                             break;
-                        case "7a":
-                            if(escPuttingFlag){
-                                inputEditText.append("esc + Z");
-                                escPuttingFlag = false;
-                                break;
-                            }
                         default:
                             //2桁の入力を可能にする　できた
+                            int h1 = 1;
+                            boolean Hflag = false;
                             if (squarePuttingFlag && data.matches("[0-9]")) {
                                 Log.d(TAG, "move flag is true");
                                 escapeMoveNum += data;
                                 escapeMoveFlag = true;
                                 //squarePuttingFlag = false;
+                                break;
+                            }
+                            if(squarePuttingFlag && data.equals(";")){
+                                if(escapeMoveFlag) {
+                                    h1 = Integer.parseInt(escapeMoveNum);
+                                }else {
+                                    h1 = 1;
+                                }
+                                escapeMoveNum = "";
+                                Hflag = true;
+                                escapeMoveFlag = false;
+                                break;
+                            }
+                            if(Hflag && !data.equals("H")){
+                                escapeMoveNum = "";
+                                escapeMoveFlag = false;
+                                squarePuttingFlag = false;
+                                escPuttingFlag = false;
                                 break;
                             }
                             if(squarePuttingFlag && data.matches("[A-H]")){
@@ -640,7 +652,8 @@ public class MainActivity extends AppCompatActivity{
                                 }
                                 if(str.equals(KeyHexString.KEY_H)){
                                     //TODO ここの引数２個なんとかする
-                                    escapeSequence.moveSelection(move, move);
+                                    escapeSequence.moveSelection(h1, move);
+                                    Hflag = false;
                                 }
                                 escapeMoveFlag = false;
                                 squarePuttingFlag = false;
@@ -924,7 +937,7 @@ public class MainActivity extends AppCompatActivity{
     }
     private void changeDisplay(){
         receivingFlag = false;
-        termDisplay.changeDisplay(topRow);
+        escapeSequence.changeDisplay(topRow);
         receivingFlag = true;
     }
 }
