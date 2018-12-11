@@ -37,6 +37,7 @@ import java.util.ArrayList;
 /**
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
  * TODO ctlキー（押したらふらぐたて）
+ * TODO 入力文字が横幅を超えた場合は自動でリストに追加するようにする
  */
 public class MainActivity extends AppCompatActivity{
 
