@@ -37,7 +37,6 @@ import java.util.ArrayList;
 /**
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
  * TODO ctlキー（押したらふらぐたて）
- * TODO 縦列はmaxColumn以上入らないようにする.
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -134,9 +133,9 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /*
+
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\\x1b[1A");
+                    bleService.writeMLDP("\u001b" + "[1A");
                 }
                 else {
                     currCursor = inputEditText.getSelectionStart();
@@ -146,20 +145,21 @@ public class MainActivity extends AppCompatActivity{
                         //    inputEditText.setSelection(currCursor);
                        // }
                    // }
-                }*/
+                }
+                /*
                 if(topRow-1 >= 0){
                     topRow--;
                     changeDisplay();
-                }
+                }*/
             }
         });
 
         findViewById(R.id.btn_down).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /*
+
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\\x1b[1B");
+                    bleService.writeMLDP("\u001b" + "[1B");
                 }
                 else {
                     currCursor = inputEditText.getSelectionStart();
@@ -169,11 +169,12 @@ public class MainActivity extends AppCompatActivity{
                             inputEditText.setSelection(currCursor);
                         }
                     }
-                }*/
+                }
+                /*
                 if(topRow + 1 <= items.size()){
                     topRow++;
                     changeDisplay();
-                }
+                }*/
             }
         });
 
@@ -181,7 +182,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\\x1b[1C");
+                    bleService.writeMLDP("\u001b" + "[1C");
                 }
                 else {
                     currCursor = inputEditText.getSelectionStart();
@@ -198,7 +199,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\\x1b[1D");
+                    bleService.writeMLDP("\u001b" + "[1D");
                 }
                 else {
                     currCursor = inputEditText.getSelectionStart();
