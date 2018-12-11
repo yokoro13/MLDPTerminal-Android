@@ -256,19 +256,22 @@ public class MainActivity extends AppCompatActivity{
                     case MotionEvent.ACTION_DOWN:
                         // タップした時に ScrollViewのScrollY座標を保持
                         oldY = (int)event.getRawY();
+                        Log.d(TAG, "old Y: " + oldY);
                         Log.d(TAG, "action down");
                         break;
                     case MotionEvent.ACTION_MOVE:
                         // 指を動かした時に、現在のscrollY座標とoldYを比較して、違いがあるならスクロール状態とみなす
                         Log.d(TAG, "action move");
-                        if (oldY > v.getScrollY()) {
+                        Log.d(TAG, "getScrollY" + v.getScrollY());
+                        if (oldY > event.getRawY()) {
                             Log.v(TAG, "scrollView up");
+
                             if(topRow - 1 >= 0){
                                 topRow--;
                                 changeDisplay();
                             }
                         }
-                        if (oldY < v.getScrollY()){
+                        if (oldY < event.getRawY()){
                             Log.d(TAG, "scroll down");
                             if(topRow + 1 <= items.size()){
                                 topRow++;
