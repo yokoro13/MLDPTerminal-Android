@@ -38,6 +38,7 @@ import java.util.ArrayList;
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
  * TODO ctlキー（押したらふらぐたて）
  * TODO 入力文字が横幅を超えた場合は自動でリストに追加するようにする
+ * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
     private boolean editingFlag = true;
     private boolean enterPutFlag = true;
+    private boolean isBtn_ctl = false;
 
     private String[][] display;
 
@@ -227,6 +229,7 @@ public class MainActivity extends AppCompatActivity{
             public void onClick(View v) {
                 int position = inputEditText.getOffsetForPosition(0,0);
                 inputEditText.setSelection(position);
+                isBtn_ctl = true;
                // termDisplay.changeDisplay(getTopPositionRow());
 
             }
@@ -920,8 +923,6 @@ public class MainActivity extends AppCompatActivity{
     }
 
     //選択中の行番号を返す
-    //TODO 選択中の文字が入っている行を求める方法がこれじゃ無理
-
 
     private int getSelectRow() {
         int count = 0;
