@@ -126,6 +126,8 @@ public class MainActivity extends AppCompatActivity{
         rowItem = new RowItem(items.size(), "", false, true);
         items.add(rowItem);
 
+        inputEditText.setTransformationMethod(WordBreakTransformationMethod.getInstance());
+
         escapeSequence = new EscapeSequence(this, items, maxRowLength, maxColumnLength); //今のContentを渡す
 
         state = State.STARTING;
