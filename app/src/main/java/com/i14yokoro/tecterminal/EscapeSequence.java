@@ -6,6 +6,9 @@ import android.widget.EditText;
 
 import java.util.ArrayList;
 
+/**
+ *
+ **/
 public class EscapeSequence {
     private EditText editText;
     private Context context;
@@ -60,6 +63,7 @@ public class EscapeSequence {
         Log.d("debug***",
                 "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() - getSelectRowLength(getSelectRow())) + "\n"
                         +" selectRow " + getSelectRow() + "\n" + " length " +getSelectRowLength(getSelectRow()));
+        //FIXME 上下移動のエズケープシーケンスの移動量算出をなおす
         if(editText.getSelectionStart() - getSelectRowLength(getSelectRow()) >= 0){
             editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow()));
         }
@@ -210,6 +214,7 @@ public class EscapeSequence {
 
 
     //選択中の行番号を返す
+    //FIXME リストの先頭からではなく表示範囲の先頭からにする
     private int getSelectRow(){
         int count = 0;
         int start = editText.getSelectionStart();
@@ -229,6 +234,7 @@ public class EscapeSequence {
     }
 
     //start行からrow行までの文字数を返す
+    //FIXME 上下移動のエズケープシーケンスの移動量算出をなおす
     private int getSelectRowLength(int start, int end){
         int length = 0;
         //行の初めからの字数を出してタス必要あり
