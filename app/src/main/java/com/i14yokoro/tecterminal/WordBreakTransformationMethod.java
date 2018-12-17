@@ -2,6 +2,8 @@ package com.i14yokoro.tecterminal;
 
 import android.text.method.ReplacementTransformationMethod;
 
+
+//FIXME びっくりマークとはてなマークのnon-breakingがない
 public class WordBreakTransformationMethod extends ReplacementTransformationMethod {
     private static WordBreakTransformationMethod instance;
 
