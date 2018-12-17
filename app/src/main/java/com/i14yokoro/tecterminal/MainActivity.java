@@ -39,6 +39,7 @@ import java.util.ArrayList;
  * TODO ctlキー（押したらふらぐたて）
  * TODO 入力文字が横幅を超えた場合は自動でリストに追加するようにする
  * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
+ * TODO 英文字が行をまたぐときに自動で改行するのをやめさせる
  */
 public class MainActivity extends AppCompatActivity{
 
