@@ -10,11 +10,13 @@ import java.util.ArrayList;
  *
  **/
 public class EscapeSequence {
+    private String TAG = "**debug**";
     private EditText editText;
     private Context context;
     private int width;
     private ArrayList<RowItem> items;
     private int height;
+    private int top;
 
     EscapeSequence(Context context, ArrayList<RowItem> items,int width, int height){
         this.context = context;
@@ -34,6 +36,13 @@ public class EscapeSequence {
 
     public int getHeight() {
         return height;
+    }
+
+    public int getTop(){
+        return top;
+    }
+    public void setTop(int top){
+        this.top = top;
     }
 
     public void moveRight(){
@@ -60,7 +69,7 @@ public class EscapeSequence {
          //editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
          editText.setSelection(editText.getSelectionStart()-42);
          }**/
-        Log.d("debug***",
+        Log.d(TAG,
                 "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() - getSelectRowLength(getSelectRow())) + "\n"
                         +" selectRow " + getSelectRow() + "\n" + " length " +getSelectRowLength(getSelectRow()));
         //FIXME 上下移動のエズケープシーケンスの移動量算出をなおす
@@ -114,7 +123,7 @@ public class EscapeSequence {
         if(getSelectRow() - n < 0 || n <= 0){
             return;
         }
-        Log.d("debug***",
+        Log.d(TAG,
                 "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() - getSelectRowLength(getSelectRow() - n, getSelectRow())) + "\n"
                         +" selectRow " + getSelectRow() + "\n" + " length " +getSelectRowLength(getSelectRow()));
 
@@ -131,7 +140,7 @@ public class EscapeSequence {
         if(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n) < editText.length()){
             editText.setSelection(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n));
         }**/
-        Log.d("debug***",
+        Log.d(TAG,
                 "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n)) + "\n"
                         +" selectRow " + getSelectRow() + "\n" + " length " + getSelectRowLength(getSelectRow(), getSelectRow() + n));
 
@@ -192,60 +201,74 @@ public class EscapeSequence {
 
     }
 
-    public void scrollNext(int top, int n){
+    public void scrollNext(int n){
         if (top + n > items.size()) return;
-        changeDisplay(top + n);
+        setTop(top+n);
+        changeDisplay();
     }
 
-    public void scrollBack(int top, int n){
+    public void scrollBack(int n){
+
         if(top - n < 0) return;
-        changeDisplay(top - n);
+        setTop(top-n);
+        changeDisplay();
     }
 
     //row行までの文字数をかえす
     private int getLength(int row){
         int length = 0;
-        for(int i = 0; i < row; i++){
+        int rowId = rowNumToListId(row);
+        for(int i = 0; i < rowId; i++){
             length += items.get(i).getText().length();
-            Log.d("debug****", Integer.toString(items.get(i).getText().length()));
+            Log.d(TAG, "getLength" + Integer.toString(items.get(i).getText().length()));
         }
         return length;
     }
 
 
     //選択中の行番号を返す
-    //FIXME リストの先頭からではなく表示範囲の先頭からにする
+    //FIXME rowに基準がわからん
     private int getSelectRow(){
         int count = 0;
         int start = editText.getSelectionStart();
-        int row = 0;
+        int row = getTop();
+        if(row < 1){
+            return 0;
+        }
         for (; count < start; row++){
             if(row < items.size()){
                 count += items.get(row).getText().length();
             }
             else break;
         }
-        Log.d("TAG", "number/ " + Integer.toString(row) + " contents/ " + items.get(row-1).getText());
+        Log.d(TAG, "number/ " + Integer.toString(row-1) + " contents/ " + items.get(row-1).getText());
         return row-1;
     }
 
     private int getSelectRowLength(int selectRow){
-        return items.get(selectRow).getText().length();
+        Log.d(TAG, "getSelectionRowLength : " + rowNumToListId(selectRow));
+        return items.get(rowNumToListId(selectRow)).getText().length();
     }
 
     //start行からrow行までの文字数を返す
     //FIXME 上下移動のエズケープシーケンスの移動量算出をなおす
     private int getSelectRowLength(int start, int end){
         int length = 0;
-        //行の初めからの字数を出してタス必要あり
-        for(int i = start; i < end; i++){
+        int startId = rowNumToListId(start);
+        int endId = rowNumToListId(end);
+        for(int i = startId; i < endId; i++){
             length += items.get(i).getText().length();
         }
         return length;
     }
 
-    public void changeDisplay(int topRow){
-        Log.d("debug****", "topRow/ " + topRow);
+    private int rowNumToListId(int rowNum){
+        return getTop() + rowNum;
+    }
+
+    public void changeDisplay(){
+        int topRow = getTop();
+        Log.d(TAG, "topRow/ " + topRow);
         editText.setText("");
         for (int i = topRow; i < items.size() && i < topRow+height-1; i++){
             Log.d("debug***", items.get(i).getText());

@@ -275,6 +275,7 @@ public class MainActivity extends AppCompatActivity{
 
                             if(topRow - 1 >= 0){
                                 topRow--;
+                                escapeSequence.setTop(topRow);
                                 changeDisplay();
                             }
                         }
@@ -282,6 +283,7 @@ public class MainActivity extends AppCompatActivity{
                             Log.d(TAG, "scroll down");
                             if(topRow + 1 <= items.size()){
                                 topRow++;
+                                escapeSequence.setTop(topRow);
                                 changeDisplay();
                             }
                         }
@@ -663,16 +665,18 @@ public class MainActivity extends AppCompatActivity{
                                 if (str.equals(KeyHexString.KEY_S)){
                                     receivingFlag = false;
                                     if (topRow + move <= items.size()) {
-                                        escapeSequence.scrollNext(topRow, move);
+                                        escapeSequence.scrollNext(move);
                                         topRow = topRow + move;
+                                        escapeSequence.setTop(topRow);
                                     }
                                     receivingFlag = true;
                                 }
                                 if (str.equals(KeyHexString.KEY_T)){
                                     receivingFlag = false;
                                     if(topRow - move >= 0) {
-                                        escapeSequence.scrollBack(topRow, move);
+                                        escapeSequence.scrollBack(move);
                                         topRow = topRow - move;
+                                        escapeSequence.setTop(topRow);
                                     }
                                     receivingFlag = true;
                                 }
@@ -863,6 +867,7 @@ public class MainActivity extends AppCompatActivity{
             }
             Log.d(TAG, "add list /" + text + " length /" + text.length());
         }
+        escapeSequence.setTop(topRow);
     }
 
     private int getMaxRowLength(){
@@ -959,7 +964,7 @@ public class MainActivity extends AppCompatActivity{
     }
     private void changeDisplay(){
         receivingFlag = false;
-        escapeSequence.changeDisplay(topRow);
+        escapeSequence.changeDisplay();
         receivingFlag = true;
         //showDisplay();
     }
