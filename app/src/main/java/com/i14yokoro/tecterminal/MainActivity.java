@@ -49,8 +49,6 @@ public class MainActivity extends AppCompatActivity{
     private EditText inputEditText; //ディスプレイのEdittext
     private String inputStrText; //入力したテキスト
 
-    //private String before_str = ""; //１つ前の行までのテキスト情報
-
     private static final String PREFS = "PREFS";
     private static final String PREFS_NAME = "NAME";
     private static final String PREFS_ADDRESS = "ADDR";
@@ -77,8 +75,6 @@ public class MainActivity extends AppCompatActivity{
 
     private String escapeMoveNum = ""; //escapeシーケンスできたString型の数字を保存
 
-    //private String comingText = ""; //RNからきたテキストを一行分保存する
-
     private Editable editable;
     private EscapeSequence escapeSequence;
 
@@ -94,7 +90,7 @@ public class MainActivity extends AppCompatActivity{
     private int eCount;
 
     private boolean btn_ctl = false;
-    private boolean btn_esc = false;
+
 
     private boolean escPuttingFlag = false; //escキーがおされたらtrue
     private boolean squarePuttingFlag = false;
@@ -102,11 +98,12 @@ public class MainActivity extends AppCompatActivity{
     private boolean editingFlag = true;
     private boolean enterPutFlag = true;
     private boolean isBtn_ctl = false;
+    private boolean isBtn_esc = false;
 
     private String[][] display;
 
     private int topRow = 0;
-    private boolean receivingFlag = true;
+    private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -223,6 +220,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 test();
+                isBtn_esc = true;
                 Log.d(TAG, "max column: " + maxColumnLength);
             }
         });
@@ -483,25 +481,35 @@ public class MainActivity extends AppCompatActivity{
             if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (receivingFlag)lineText += str;
 
-                if(enterPutFlag) {
-                    Log.d(TAG, "ASCII code/ " + str);
-                    if (str.equals(LF)) {
-                        enterPutFlag = false;
-                        //inputEditText.setText(inputStrText);
-                        inputEditText.setSelection(inputEditText.length());
-                        //inputEditText.append(LF);
-                        enterPutFlag = true;
-                        //addList(lineText);
+                    if (enterPutFlag) {
+                        Log.d(TAG, "ASCII code/ " + str);
 
-                        addList(lineText);
+                        if(lineText.length() >= getMaxRowLength()){
+                            enterPutFlag = false;
+                            receivingFlag = false;
+                            addList(lineText);
+                            inputEditText.append(LF);
+                            enterPutFlag = true;
+                            receivingFlag = true;
+                            lineText = "";
+                        }
 
-                        Log.d(TAG, "lineText is " + lineText);
-                        Log.d(TAG, "linetext length is " + lineText);
+                        if (str.equals(LF)) {
+                            enterPutFlag = false;
+                            //inputEditText.setText(inputStrText);
+                            inputEditText.setSelection(inputEditText.length());
+                            //inputEditText.append(LF);
+                            enterPutFlag = true;
 
-                        lineText = "";
-                        //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+                            addList(lineText);
+
+                            Log.d(TAG, "lineText is " + lineText);
+                            Log.d(TAG, "linetext length is " + lineText.length());
+
+                            lineText = "";
+                            //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+                        }
                     }
-                }
             }
             else {
                 if(editingFlag) {
