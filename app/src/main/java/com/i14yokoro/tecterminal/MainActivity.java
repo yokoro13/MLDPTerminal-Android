@@ -983,4 +983,60 @@ public class MainActivity extends AppCompatActivity{
             Log.d(TAG, (items.get(i + topRow).getText()));
         }
     }
+
+    private void changeDisplaySize(){
+
+    }
+
+    private void replaceList(){
+        ArrayList<RowItem> repItems = new ArrayList<>();
+        int maxRowLength = getMaxRowLength();
+        String rowText = "";
+        String text; //一行の文字列を格納
+        boolean hasNext; //次の行がある場合はtrue
+        int rowNum; //入力に使われる行数
+
+        topRow = 0;
+
+        rowItem = new RowItem(repItems.size(), "", false, true);
+        repItems.add(rowItem);
+
+        for (int i = 0; i < items.size(); i++){
+
+            if(items.get(i).isHasNext()){
+                while (items.get(i).isWritable()){
+                    rowText += items.get(i);
+                    i++;
+                }
+            }
+            rowText += items.get(i).getText();
+            rowNum = rowText.length()/maxRowLength;
+            if(rowText.length()%maxRowLength > 0){
+                rowNum++;
+            }
+            for(int j = rowNum; j > 0; j--) {
+                if (j > 1) {
+                    hasNext = true;
+                    text = rowText.substring(0, maxRowLength);
+                    rowText = rowText.substring(maxRowLength, rowText.length());
+                } else { //あと１行
+                    hasNext = false;
+                    text = rowText;
+                }
+                rowItem = new RowItem(repItems.size()-1, text, hasNext, false);
+                repItems.set(repItems.size()-1, rowItem);
+                rowItem = new RowItem(repItems.size(), "", false, true);
+                repItems.add(rowItem);
+                if(repItems.size() > maxColumnLength && topRow+1 <= repItems.size() && inputEditText.getLineCount() > maxColumnLength){
+                    topRow++;
+                }
+                Log.d(TAG, "add list /" + text + " length /" + text.length());
+            }
+            escapeSequence.setTop(topRow);
+        }
+        items.clear();
+        for (RowItem rowItem : repItems){
+            items.add(rowItem.clone());
+        }
+    }
 }
