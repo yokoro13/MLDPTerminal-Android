@@ -1,6 +1,6 @@
 package com.i14yokoro.tecterminal;
 
-public class RowItem {
+public class RowItem implements Cloneable{
     private int id;
     private String text;
     private boolean hasNext;
@@ -11,24 +11,19 @@ public class RowItem {
         this.hasNext = hasNext;
         this.writable = writable;
     }
-    public void setText(String text) {
-        this.text = text;
+
+    @Override
+    public RowItem clone(){
+        RowItem rowItem = null;
+        try {
+            rowItem = (RowItem)super.clone();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return rowItem;
     }
-    public void setId(int id){
-        this.id = id;
-    }
-    public void setHasNext(boolean hasNext){
-        this.hasNext = hasNext;
-    }
-    public String getText() {
-        return this.text;
-    }
-    public long getId(){
-        return this.id;
-    }
-    public boolean isWritable() {
-        return this.writable;
-    }
+
+    @Override
     public String toString(){
         String str = "";
         str += "id/" + Integer.toString(this.id);
@@ -42,5 +37,37 @@ public class RowItem {
         }
         else str += " writable/false";
         return str;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public void setId(int id){
+        this.id = id;
+    }
+
+    public void setHasNext(boolean hasNext){
+        this.hasNext = hasNext;
+    }
+
+    public void setWritable(boolean writable) {
+        this.writable = writable;
+    }
+
+    public String getText() {
+        return this.text;
+    }
+
+    public long getId(){
+        return this.id;
+    }
+
+    public boolean isHasNext() {
+        return hasNext;
+    }
+
+    public boolean isWritable() {
+        return this.writable;
     }
 }
