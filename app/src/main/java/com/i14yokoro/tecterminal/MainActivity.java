@@ -483,7 +483,7 @@ public class MainActivity extends AppCompatActivity{
 
                     if (enterPutFlag) {
                         Log.d(TAG, "ASCII code/ " + str);
-
+                        //TODO 削除をしたばあい１文字余計に追加される
                         if(lineText.length() >= getMaxRowLength()){
                             enterPutFlag = false;
                             receivingFlag = false;
