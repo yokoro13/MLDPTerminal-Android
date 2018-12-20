@@ -83,11 +83,9 @@ public class MainActivity extends AppCompatActivity{
 
     private String lineText = "";
     private String RNtext = "";
-    private int maxRowLength;
-    private int maxColumnLength;
+    private int maxRowLength, maxColumnLength;
     private int position;
-    private int eStart;
-    private int eCount;
+    private int eStart, eCount, eBefore;
 
     private boolean btn_ctl = false;
 
@@ -104,6 +102,8 @@ public class MainActivity extends AppCompatActivity{
 
     private int topRow = 0;
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
+
+    private int currX = 0; //0~maxRowLength-1
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -123,9 +123,9 @@ public class MainActivity extends AppCompatActivity{
         rowItem = new RowItem(items.size(), "", false, true);
         items.add(rowItem);
 
-        inputEditText.setTransformationMethod(WordBreakTransformationMethod.getInstance());
-
         escapeSequence = new EscapeSequence(this, items, maxRowLength, maxColumnLength); //今のContentを渡す
+
+        inputEditText.setTransformationMethod(WordBreakTransformationMethod.getInstance());
 
         state = State.STARTING;
         inputStrText = inputEditText.getText().toString();
@@ -166,9 +166,9 @@ public class MainActivity extends AppCompatActivity{
                 }
                 else {
                     currCursor = inputEditText.getSelectionStart();
-                    if (items.get(getSelectRow()).isWritable()){
+                    if (items.get(getSelectRowIndex()).isWritable()){
                         escapeSequence.moveDown();
-                        if(!items.get(getSelectRow()).isWritable()){
+                        if(!items.get(getSelectRowIndex()).isWritable()){
                             inputEditText.setSelection(currCursor);
                         }
                     }
@@ -189,9 +189,9 @@ public class MainActivity extends AppCompatActivity{
                 }
                 else {
                     currCursor = inputEditText.getSelectionStart();
-                    if (items.get(getSelectRow()).isWritable()){
+                    if (items.get(getSelectRowIndex()).isWritable()){
                         escapeSequence.moveRight();
-                        if(!items.get(getSelectRow()).isWritable()){
+                        if(!items.get(getSelectRowIndex()).isWritable()){
                             inputEditText.setSelection(currCursor);
                         }
                     }
@@ -206,9 +206,9 @@ public class MainActivity extends AppCompatActivity{
                 }
                 else {
                     currCursor = inputEditText.getSelectionStart();
-                    if (items.get(getSelectRow()).isWritable()){
+                    if (items.get(getSelectRowIndex()).isWritable()){
                         escapeSequence.moveLeft();
-                        if(!items.get(getSelectRow()).isWritable()){
+                        if(!items.get(getSelectRowIndex()).isWritable()){
                             inputEditText.setSelection(currCursor);
                         }
                     }
@@ -300,7 +300,7 @@ public class MainActivity extends AppCompatActivity{
                     inputEditText.setSelection(touchPosition);
                 }
                 //Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
-                    if (!items.get(getSelectRow()).isWritable()) {
+                    if (!items.get(getSelectRowIndex()).isWritable()) {
                         //inputEditText.setSelection(currCursor);
                         return true;
                     }
@@ -453,7 +453,7 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             if (editingFlag && enterPutFlag) {
-                if(items.get(getSelectRow()).isWritable()) {
+                if(items.get(getSelectRowIndex()).isWritable()) {
                     currCursor = inputEditText.getSelectionStart();
                 }
                 inputStrText = s.toString(); //おされた瞬間のテキストを保持
@@ -468,23 +468,34 @@ public class MainActivity extends AppCompatActivity{
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-            eStart = start;
-            eCount = count;
+            eStart = start;//文字列のスタート位置
+            eCount = count;//追加される文字
+            eBefore = before;//削除すう
         }
 
         @Override
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
+            currX = (currX + eCount)%maxRowLength;
+            Log.d(TAG, "currX : " + currX);
+
 
             Log.d(TAG, "afterTextChange");
             if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (receivingFlag)lineText += str;
 
-                    if (enterPutFlag) {
+                    if (enterPutFlag) { //無限ループ防止
+                        if(eBefore > 0){
+                            StringBuilder stringBuilder = new StringBuilder(lineText);
+                            lineText = stringBuilder.deleteCharAt(currX-1).toString();
+                            currX--;
+                        }
+                        updateListContent(getSelectRowIndex(), lineText);
+
                         Log.d(TAG, "ASCII code/ " + str);
                         //TODO 削除をしたばあい１文字余計に追加される
-                        if(lineText.length() >= getMaxRowLength()){
+                        if(lineText.length() >= maxRowLength){
                             enterPutFlag = false;
                             receivingFlag = false;
                             addList(lineText);
@@ -492,6 +503,7 @@ public class MainActivity extends AppCompatActivity{
                             enterPutFlag = true;
                             receivingFlag = true;
                             lineText = "";
+                            currX = 0;
                         }
 
                         if (str.equals(LF)) {
@@ -507,11 +519,12 @@ public class MainActivity extends AppCompatActivity{
                             Log.d(TAG, "linetext length is " + lineText.length());
 
                             lineText = "";
+                            currX = 0;
                             //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                         }
                     }
             }
-            else {
+            else { //ASCIIじゃなければ入力前の状態にもどす
                 if(editingFlag) {
                     editingFlag = false;
                     inputEditText.setText(inputStrText);
@@ -939,20 +952,8 @@ public class MainActivity extends AppCompatActivity{
 
     //選択中の行番号を返す
 
-    private int getSelectRow() {
-        int count = 0;
-        int start = inputEditText.getSelectionStart() + 1;
-        int row = 0;
-        if (start == 0) {
-            return 0;
-        }
-        for (; count < start; row++) {
-            if (row + topRow < items.size()) {
-                count += items.get(row+topRow).getText().length();
-            } else break;
-        }
-        if(row == 0) return 0;
-        return row - 1;
+    private int getSelectRowIndex() {
+        return escapeSequence.getSelectRow() + escapeSequence.getTop();
     }
 
     private void showKeyboard() {
@@ -1037,5 +1038,21 @@ public class MainActivity extends AppCompatActivity{
         for (RowItem rowItem : repItems){
             items.add(rowItem.clone());
         }
+    }
+
+    private void updateListContent(int index, String newText){
+        rowItem = new RowItem(index, newText, items.get(index).isHasNext(), items.get(index).isWritable());
+        items.set(index, rowItem);
+    }
+
+    private String getSelectLineText(){
+        StringBuilder sb = new StringBuilder(inputEditText.getText());
+        int start = sb.lastIndexOf(LF, inputEditText.getSelectionStart());
+        int end = sb.indexOf(LF, inputEditText.getSelectionEnd());
+        if(end == -1){
+            end = inputEditText.length();
+        }
+        Log.d(TAG, "SelectLineText: " + sb.substring(start, end));
+        return sb.substring(start, end);
     }
 }

@@ -226,9 +226,9 @@ public class EscapeSequence {
     }
 
 
-    //選択中の行番号を返す
+    //ディスプレイ上で選択中の行番号を返す
     //FIXME rowに基準がわからん
-    private int getSelectRow(){
+    public int getSelectRow(){
         int count = 0;
         int start = editText.getSelectionStart();
         int row = getTop();
