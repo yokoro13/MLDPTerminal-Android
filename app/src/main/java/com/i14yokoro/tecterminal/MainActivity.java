@@ -927,7 +927,6 @@ public class MainActivity extends AppCompatActivity{
 
     private float getTextHeight(){
 
-        // TypefaceがMonospace 「" "」の幅を取得
         Paint paint = new Paint();
         paint.setTextSize(inputEditText.getTextSize());
         paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
