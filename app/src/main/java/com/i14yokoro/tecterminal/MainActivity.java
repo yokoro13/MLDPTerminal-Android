@@ -494,7 +494,6 @@ public class MainActivity extends AppCompatActivity{
                         updateListContent(getSelectRowIndex(), lineText);
 
                         Log.d(TAG, "ASCII code/ " + str);
-                        //TODO 削除をしたばあい１文字余計に追加される
                         if(lineText.length() >= maxRowLength){
                             enterPutFlag = false;
                             receivingFlag = false;
@@ -953,7 +952,7 @@ public class MainActivity extends AppCompatActivity{
     //選択中の行番号を返す
 
     private int getSelectRowIndex() {
-        return escapeSequence.getSelectRow() + escapeSequence.getTop();
+        return escapeSequence.getSelectRow() + escapeSequence.getTop() - 1;
     }
 
     private void showKeyboard() {
@@ -972,7 +971,9 @@ public class MainActivity extends AppCompatActivity{
     }
     private void changeDisplay(){
         receivingFlag = false;
+        enterPutFlag = false;
         escapeSequence.changeDisplay();
+        enterPutFlag = true;
         receivingFlag = true;
         //showDisplay();
     }

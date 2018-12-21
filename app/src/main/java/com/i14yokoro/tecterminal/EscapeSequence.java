@@ -69,12 +69,20 @@ public class EscapeSequence {
          //editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
          editText.setSelection(editText.getSelectionStart()-42);
          }**/
-        Log.d(TAG,
-                "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() - getSelectRowLength(getSelectRow())) + "\n"
-                        +" selectRow " + getSelectRow() + "\n" + " length " +getSelectRowLength(getSelectRow()));
         //FIXME 上下移動のエズケープシーケンスの移動量算出をなおす
         if(editText.getSelectionStart() - getSelectRowLength(getSelectRow()) >= 0){
-            editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow()));
+            Log.d(TAG,
+                    "\n"
+                            + "moveUP" + "\n"
+                            + " goto " + (editText.getSelectionStart() - getSelectRowLength(getSelectRow())) + "\n"
+                            + " selectRow " + getSelectRow() + " " + items.get(rowNumToListId(getSelectRow())).getText()+ "\n"
+                            + " length " +getSelectRowLength(getSelectRow()));
+            if(getSelectRowLength(getSelectRow()) < getSelectRowLength(getSelectRow()+1)){
+                editText.setSelection(getSelectRowLength(1, getSelectRow()+1)-1);
+            }
+            else {
+                editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow()));
+            }
         }
         else {
             editText.setSelection(0);
@@ -227,11 +235,12 @@ public class EscapeSequence {
 
 
     //ディスプレイ上で選択中の行番号を返す
-    //FIXME rowに基準がわからん
+    //rowは0から
     public int getSelectRow(){
-        int count = 0;
         int start = editText.getSelectionStart();
-        int row = getTop();
+        int row = getTop()+1;
+        int count = items.get(getTop()).getText().length();
+
         if(row < 1){
             return 0;
         }
@@ -240,13 +249,17 @@ public class EscapeSequence {
                 count += items.get(row).getText().length();
             }
             else break;
+
+            Log.d(TAG, "count : " + count);
         }
         Log.d(TAG, "number/ " + Integer.toString(row-1) + " contents/ " + items.get(row-1).getText());
         return row-1;
     }
 
     private int getSelectRowLength(int selectRow){
-        Log.d(TAG, "getSelectionRowLength : " + rowNumToListId(selectRow));
+        Log.d(TAG, "getSelectionRowIndex : " + (rowNumToListId(selectRow)));
+        int row = selectRow;
+        if (selectRow == 0) row = 0;
         return items.get(rowNumToListId(selectRow)).getText().length();
     }
 
@@ -263,7 +276,11 @@ public class EscapeSequence {
     }
 
     private int rowNumToListId(int rowNum){
-        return getTop() + rowNum;
+        if (rowNum > 0) {
+            return getTop()-1 + rowNum;
+        }
+        return 0;
+
     }
 
     public void changeDisplay(){
