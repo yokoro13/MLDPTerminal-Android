@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity{
     private MldpBluetoothService bleService;
     private RowItem rowItem;
     private ArrayList<RowItem> items;
+    private ArrayList<ArrayList<TextItem>> textItems;
 
     private String bleDeviceName, bleDeviceAddress;
 
@@ -77,6 +78,7 @@ public class MainActivity extends AppCompatActivity{
 
     private Editable editable;
     private EscapeSequence escapeSequence;
+    private TermDisplay termDisplay;
 
     float r;
     private int currCursor = 0;
@@ -88,7 +90,6 @@ public class MainActivity extends AppCompatActivity{
     private int eStart, eCount, eBefore;
 
     private boolean btn_ctl = false;
-
 
     private boolean escPuttingFlag = false; //escキーがおされたらtrue
     private boolean squarePuttingFlag = false;
@@ -104,6 +105,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
 
     private int currX = 0; //0~maxRowLength-1
+    private int currY = 0;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -120,6 +122,10 @@ public class MainActivity extends AppCompatActivity{
         maxColumnLength = getMaxColumnLength();
 
         items = new ArrayList<>();
+        textItems = new ArrayList<ArrayList<TextItem>>();
+
+
+
         rowItem = new RowItem(items.size(), "", false, true);
         items.add(rowItem);
 
@@ -196,6 +202,10 @@ public class MainActivity extends AppCompatActivity{
                         }
                     }
                 }
+                if(termDisplay.getDisplay(currX, currY).equals(LF) || currX > maxRowLength){
+                    currX = 0;
+                    currY++;
+                }
             }
         });
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
@@ -211,6 +221,12 @@ public class MainActivity extends AppCompatActivity{
                         if(!items.get(getSelectRowIndex()).isWritable()){
                             inputEditText.setSelection(currCursor);
                         }
+                    }
+                }
+                if(currX < 0){
+                    currX = 0;
+                    if(currY > 0){
+                        currY--;
                     }
                 }
             }
@@ -263,7 +279,7 @@ public class MainActivity extends AppCompatActivity{
                         oldY = (int)event.getRawY();
                         Log.d(TAG, "old Y: " + oldY);
                         Log.d(TAG, "action down");
-                        break;
+                        return true;
                     case MotionEvent.ACTION_MOVE:
                         // 指を動かした時に、現在のscrollY座標とoldYを比較して、違いがあるならスクロール状態とみなす
                         Log.d(TAG, "action move");
@@ -479,8 +495,7 @@ public class MainActivity extends AppCompatActivity{
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
             currX = (currX + eCount)%maxRowLength;
             Log.d(TAG, "currX : " + currX);
-
-
+            
             Log.d(TAG, "afterTextChange");
             if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (receivingFlag)lineText += str;
@@ -503,6 +518,7 @@ public class MainActivity extends AppCompatActivity{
                             receivingFlag = true;
                             lineText = "";
                             currX = 0;
+                            currY++;
                         }
 
                         if (str.equals(LF)) {
@@ -519,6 +535,7 @@ public class MainActivity extends AppCompatActivity{
 
                             lineText = "";
                             currX = 0;
+                            currY++;
                             //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                         }
                     }
@@ -1055,5 +1072,16 @@ public class MainActivity extends AppCompatActivity{
         }
         Log.d(TAG, "SelectLineText: " + sb.substring(start, end));
         return sb.substring(start, end);
+    }
+
+    private void init(){
+        int x = maxRowLength;
+        int y = maxColumnLength;
+        termDisplay = new TermDisplay(x, y);
+        for (int i = 0; i < y; i++){
+            for (int j = 0; j < x; j++){
+                termDisplay.setDisplay(x,y," ");
+            }
+        }
     }
 }

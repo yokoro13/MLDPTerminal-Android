@@ -7,7 +7,8 @@ import android.widget.EditText;
 import java.util.ArrayList;
 
 /**
- *
+ * TODO 表示ようの配列をつくる
+ * TODO カーソル位置記憶用の変数を作る
  **/
 public class EscapeSequence {
     private String TAG = "**debug**";
@@ -17,6 +18,7 @@ public class EscapeSequence {
     private ArrayList<RowItem> items;
     private int height;
     private int top;
+    private TermDisplay display;
 
     EscapeSequence(Context context, ArrayList<RowItem> items,int width, int height){
         this.context = context;
@@ -24,6 +26,7 @@ public class EscapeSequence {
         this.items = items;
         this.width = width;
         this.height = height;
+        display = new TermDisplay(width, height);
     }
 
     public int getWidth() {
@@ -64,11 +67,6 @@ public class EscapeSequence {
     }
 
     public void moveUp(){
-        /**
-         if(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()) >= 0){
-         //editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
-         editText.setSelection(editText.getSelectionStart()-42);
-         }**/
         //FIXME 上下移動のエズケープシーケンスの移動量算出をなおす
         if(editText.getSelectionStart() - getSelectRowLength(getSelectRow()) >= 0){
             Log.d(TAG,
@@ -90,10 +88,6 @@ public class EscapeSequence {
 
     }
     public void moveDown(){
-        /**
-         if(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n) < editText.length()){
-         editText.setSelection(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n));
-         }**/
         if (editText.getSelectionStart() + getSelectRowLength(getSelectRow()) <= editText.length()){
             editText.setSelection(editText.getSelectionStart() + getSelectRowLength(getSelectRow()));
         }
@@ -121,13 +115,6 @@ public class EscapeSequence {
     }
 
     public void moveUp(int n){
-        /**
-        if(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()) >= 0){
-            //editText.setSelection(editText.getSelectionStart() - getLength(getSelectRow()-n, getSelectRow()));
-            editText.setSelection(editText.getSelectionStart()-42);
-        }**/
-
-
         if(getSelectRow() - n < 0 || n <= 0){
             return;
         }
@@ -144,10 +131,6 @@ public class EscapeSequence {
 
     }
     public void moveDown(int n){
-        /**
-        if(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n) < editText.length()){
-            editText.setSelection(editText.getSelectionStart() + getLength( getSelectRow(), getSelectRow() + n));
-        }**/
         Log.d(TAG,
                 "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n)) + "\n"
                         +" selectRow " + getSelectRow() + "\n" + " length " + getSelectRowLength(getSelectRow(), getSelectRow() + n));
@@ -293,19 +276,16 @@ public class EscapeSequence {
         }
     }
 
-    /**
-    //端っこのいくまでスペース追加
-    private void addSpace() {
-        editingFlag = false;
-
-        StringBuilder space = new StringBuilder();
-        Log.d(TAG, "add Space");
-        for (int i = lineText.length() % maxRowLength; i <= maxRowLength; i++) {
-            space.append(" ");
+    public void changeDisplay_(){
+        editText.setText("");
+        for (int y = 0; y < display.getScreenColumns(); y++){
+            for (int x = 0; x < display.getScreenRows(); x++) {
+                editText.append(display.getDisplay(x, y));
+                if(display.getDisplay(x, y) == "\n"){
+                    break;
+                }
+            }
         }
-        inputEditText.append(space.toString());
-        lineText += space;
-        editingFlag = true;
-    }**/
+    }
 
 }
