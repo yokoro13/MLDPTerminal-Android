@@ -2,6 +2,7 @@ package com.i14yokoro.tecterminal;
 
 import java.util.ArrayList;
 
+//TODO 改行コードを入れるようにdisplayの横幅を１つ増やす必要がありそう？？
 public class TermDisplay {
 
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
@@ -14,6 +15,8 @@ public class TermDisplay {
 
     private int cursorX;
     private int cursorY;
+
+    private int displaySize = 0;
 
     private int topRow;
     private ArrayList<ArrayList<TextItem>> textList;
@@ -122,20 +125,81 @@ public class TermDisplay {
     }
 
     public void createDisplay(){
+        int move = 0;
+        int displayY = 0;//displayの縦移動用
+        displaySize = 0;
+
+        for(int y = 0; y < screenColumns; y++){//これはリストの縦移動用（最大スクリーンの最大値分移動）
+            if(displayY >= getScreenColumns()){ //displayの描画が終わったらおわり
+                break;
+            }
+            if(y > getTotalColumns()){ //yがリストよりでかくなったら
+                setDisplay(0, displayY, "EOL"); //そのyの最初に "EOL" という目印をつける
+                break;
+            }
+            for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
+                setDisplay(x, displayY, textList.get(y+topRow).get(x + move).getText()); //そのないようをdisplayに
+                displaySize++; //ついでにサイズも保存しておく
+                if(x > screenRows){ //その行の文字数が横文字の最大数をこえそうならもういっかいループ
+                    move = x + move; //移動分をたす
+                    y--;
+                    displayY++; //displayのyは移動
+                    break;
+                }
+                move = 0; //こえないならリセット
+                if(textList.get(y+topRow).get(x).getText().equals(LF)){ //改行はあれば次のyへ
+                    displayY++;
+                    break;
+                }
+            }
+            if (y == getTotalColumns()){
+                break;
+            }
+        }
+        setDisplaySize(displaySize);
+    }
+
+    public int getRowLength(int y){
+        return this.textList.get(y).size();
+    }
+
+    public String getRowText(int y){
+        String str = "";
+        for (int x = 0; x < getRowLength(y); x++){
+            str += getText(x, y);
+        }
+        return str;
+    }
+
+    public int getDisplaySize(){
+        return displaySize;
+    }
+
+    private void setDisplaySize(int displaySize) {
+        this.displaySize = displaySize;
+    }
+
+    public int getDisplayContentsSize(){
+        int size = 0;
         for(int y = 0; y < screenColumns; y++){
+            if(getDisplay(0, y).equals("EOL")){
+                break;
+            }
             for (int x = 0; x < textList.get(y+topRow).size(); x++){
-                setDisplay(x, y, textList.get(y+topRow).get(x).getText());
+                if(getDisplay(x, y) == null){
+                    break;
+                }
+                size += getDisplay(x,y).length();
                 if(x > screenRows){
                     break;
                 }
-                if(textList.get(y+topRow).get(x).getText().equals(LF)){
+                if(getDisplay(x, y).equals(LF)){
                     break;
                 }
             }
         }
+        return size;
     }
 
-    public int getRowSize(int y){
-        return this.textList.get(y).size();
-    }
+
 }
