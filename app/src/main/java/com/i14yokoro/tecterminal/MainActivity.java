@@ -32,7 +32,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 
 /**
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
@@ -40,6 +39,7 @@ import java.util.ArrayList;
  * TODO 入力文字が横幅を超えた場合は自動でリストに追加するようにする
  * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
  * TODO 英文字が行をまたぐときに自動で改行するのをやめさせる
+ * TODO RowItem -> TextItem への移行（行単位でのデータ構造から１文字単位のデータ構造へ）
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -60,9 +60,6 @@ public class MainActivity extends AppCompatActivity{
     private static final long CONNECT_TIME = 5000; //スキャンする時間
     private Handler connectTimeoutHandler;
     private MldpBluetoothService bleService;
-    private RowItem rowItem;
-    private ArrayList<RowItem> items;
-    private ArrayList<ArrayList<TextItem>> textItems;
 
     private String bleDeviceName, bleDeviceAddress;
 
@@ -81,7 +78,6 @@ public class MainActivity extends AppCompatActivity{
     private TermDisplay termDisplay;
 
     float r;
-    private int currCursor = 0;
 
     private String lineText = "";
     private String RNtext = "";
@@ -121,15 +117,10 @@ public class MainActivity extends AppCompatActivity{
         maxRowLength = getMaxRowLength();
         maxColumnLength = getMaxColumnLength();
 
-        items = new ArrayList<>();
-        textItems = new ArrayList<ArrayList<TextItem>>();
+        termDisplay.setTextItem("", 0);
+        init();
 
-
-
-        rowItem = new RowItem(items.size(), "", false, true);
-        items.add(rowItem);
-
-        escapeSequence = new EscapeSequence(this, items, maxRowLength, maxColumnLength); //今のContentを渡す
+        escapeSequence = new EscapeSequence(this, termDisplay); //今のContentを渡す
 
         inputEditText.setTransformationMethod(WordBreakTransformationMethod.getInstance());
 
@@ -147,7 +138,6 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\u001b" + "[1A");
                 }
                 else {
-                    currCursor = inputEditText.getSelectionStart();
                     //if (items.get(getSelectRow()).isWritable()){
                         escapeSequence.moveUp();
                         //if(!items.get(getSelectRow()).isWritable()){
@@ -171,13 +161,13 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\u001b" + "[1B");
                 }
                 else {
-                    currCursor = inputEditText.getSelectionStart();
+                    /**
                     if (items.get(getSelectRowIndex()).isWritable()){
                         escapeSequence.moveDown();
                         if(!items.get(getSelectRowIndex()).isWritable()){
                             inputEditText.setSelection(currCursor);
                         }
-                    }
+                    }**/
                 }
                 /*
                 if(topRow + 1 <= items.size()){
@@ -194,13 +184,13 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\u001b" + "[1C");
                 }
                 else {
-                    currCursor = inputEditText.getSelectionStart();
+                    /**
                     if (items.get(getSelectRowIndex()).isWritable()){
                         escapeSequence.moveRight();
                         if(!items.get(getSelectRowIndex()).isWritable()){
                             inputEditText.setSelection(currCursor);
                         }
-                    }
+                    }**/
                 }
                 if(termDisplay.getDisplay(currX, currY).equals(LF) || currX > maxRowLength){
                     currX = 0;
@@ -215,13 +205,13 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\u001b" + "[1D");
                 }
                 else {
-                    currCursor = inputEditText.getSelectionStart();
+                    /**
                     if (items.get(getSelectRowIndex()).isWritable()){
                         escapeSequence.moveLeft();
                         if(!items.get(getSelectRowIndex()).isWritable()){
                             inputEditText.setSelection(currCursor);
                         }
-                    }
+                    }**/
                 }
                 if(currX < 0){
                     currX = 0;
@@ -295,7 +285,8 @@ public class MainActivity extends AppCompatActivity{
                         }
                         if (oldY < event.getRawY()){
                             Log.d(TAG, "scroll down");
-                            if(topRow + 1 <= items.size()){
+                            //TODO さいごの行 > screenColumn の場合の処理が必要
+                            if(topRow + 1 <= termDisplay.getTotalColumns() + termDisplay.getRowLength(topRow)/getMaxColumnLength()){
                                 topRow++;
                                 escapeSequence.setTop(topRow);
                                 changeDisplay();
@@ -316,6 +307,7 @@ public class MainActivity extends AppCompatActivity{
                     inputEditText.setSelection(touchPosition);
                 }
                 //Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
+                /**
                     if (!items.get(getSelectRowIndex()).isWritable()) {
                         //inputEditText.setSelection(currCursor);
                         return true;
@@ -323,7 +315,8 @@ public class MainActivity extends AppCompatActivity{
                     else{
                         currCursor = inputEditText.getSelectionStart();
                         return false;
-                    }
+                    }**/
+                return false;
             }
         });
     }
@@ -469,9 +462,10 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             if (editingFlag && enterPutFlag) {
+                /**
                 if(items.get(getSelectRowIndex()).isWritable()) {
                     currCursor = inputEditText.getSelectionStart();
-                }
+                }**/
                 inputStrText = s.toString(); //おされた瞬間のテキストを保持
 
                 position = start;
@@ -502,17 +496,25 @@ public class MainActivity extends AppCompatActivity{
 
                     if (enterPutFlag) { //無限ループ防止
                         if(eBefore > 0){
+                            /**
+                             * 文字が削除された時の流れ
+                             * １．カーソル位置のx，yをとってくる
+                             * ２．list.get(y).remove(x)をする
+                             * ３．changeDisplay
+                             * ４．しゅうりょう
+                             */
                             StringBuilder stringBuilder = new StringBuilder(lineText);
                             lineText = stringBuilder.deleteCharAt(currX-1).toString();
                             currX--;
+
                         }
-                        updateListContent(getSelectRowIndex(), lineText);
+
 
                         Log.d(TAG, "ASCII code/ " + str);
                         if(lineText.length() >= maxRowLength){
                             enterPutFlag = false;
                             receivingFlag = false;
-                            addList(lineText);
+                            termDisplay.setTextItem(lineText, 0);
                             inputEditText.append(LF);
                             enterPutFlag = true;
                             receivingFlag = true;
@@ -528,7 +530,7 @@ public class MainActivity extends AppCompatActivity{
                             //inputEditText.append(LF);
                             enterPutFlag = true;
 
-                            addList(lineText);
+                            termDisplay.setTextItem(lineText,0);
 
                             Log.d(TAG, "lineText is " + lineText);
                             Log.d(TAG, "linetext length is " + lineText.length());
@@ -701,7 +703,7 @@ public class MainActivity extends AppCompatActivity{
                                 }
                                 if (str.equals(KeyHexString.KEY_S)){
                                     receivingFlag = false;
-                                    if (topRow + move <= items.size()) {
+                                    if (topRow + move <= termDisplay.getTotalColumns()) {
                                         escapeSequence.scrollNext(move);
                                         topRow = topRow + move;
                                         escapeSequence.setTop(topRow);
@@ -870,41 +872,14 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    private void addNewLine(String newText) {
-        inputEditText.append(newText);
-        inputEditText.append(LF);
-        addList(newText + LF);
+    private void addNewLine(String newText){
+        for(int i = 0; i < newText.length(); i++){
+            termDisplay.setTextItem(Character.toString(newText.charAt(i)), 0);
+        }
+        termDisplay.setTextItem(LF, 0);
+        termDisplay.addTopRow(1);
+        changeDisplay();
         inputEditText.setSelection(inputEditText.getText().length());
-    }
-
-    private void addList(String newText){
-        //before_str = inputEditText.getText().toString();
-        String text; //一行の文字列を格納
-        String str = newText; //ちぎるやつ
-        boolean hasNext; //次の行がある場合はtrue
-        int rowNum = str.length()/maxRowLength; //入力に使われる行数
-        if(str.length()%maxRowLength > 0){
-            rowNum++;
-        }
-        for(int i = rowNum; i > 0; i--) {
-            if (i > 1) {
-                hasNext = true;
-                text = str.substring(0, maxRowLength);
-                str = str.substring(maxRowLength, str.length());
-            } else { //あと１行
-                hasNext = false;
-                text = str;
-            }
-            rowItem = new RowItem(items.size()-1, text, hasNext, false);
-            items.set(items.size()-1, rowItem);
-            rowItem = new RowItem(items.size(), "", false, true);
-            items.add(rowItem);
-            if(items.size() > maxColumnLength && topRow+1 <= items.size() && inputEditText.getLineCount() > maxColumnLength){
-                topRow++;
-            }
-            Log.d(TAG, "add list /" + text + " length /" + text.length());
-        }
-        escapeSequence.setTop(topRow);
     }
 
     private int getMaxRowLength(){
@@ -994,73 +969,16 @@ public class MainActivity extends AppCompatActivity{
         receivingFlag = true;
         //showDisplay();
     }
+
     private void showDisplay(){
         Log.d(TAG, "******showDisplay******");
-
-        for(int i = 0; i < inputEditText.getLineCount(); i++){
-            Log.d(TAG, (items.get(i + topRow).getText()));
-        }
-    }
-
-    private void changeDisplaySize(){
-
-    }
-
-    private void replaceList(){
-        ArrayList<RowItem> repItems = new ArrayList<>();
-        int maxRowLength = getMaxRowLength();
-        String rowText = "";
-        String text; //一行の文字列を格納
-        boolean hasNext; //次の行がある場合はtrue
-        int rowNum; //入力に使われる行数
-
-        topRow = 0;
-
-        rowItem = new RowItem(repItems.size(), "", false, true);
-        repItems.add(rowItem);
-
-        for (int i = 0; i < items.size(); i++){
-
-            if(items.get(i).isHasNext()){
-                while (items.get(i).isWritable()){
-                    rowText += items.get(i);
-                    i++;
-                }
+        String row = "";
+        for (int y = 0; y < termDisplay.getScreenColumns(); y++){
+            for (int x = 0; x < termDisplay.getScreenRows(); x++){
+                row = row + "  " + termDisplay.getDisplay(x,y);
             }
-            rowText += items.get(i).getText();
-            rowNum = rowText.length()/maxRowLength;
-            if(rowText.length()%maxRowLength > 0){
-                rowNum++;
-            }
-            for(int j = rowNum; j > 0; j--) {
-                if (j > 1) {
-                    hasNext = true;
-                    text = rowText.substring(0, maxRowLength);
-                    rowText = rowText.substring(maxRowLength, rowText.length());
-                } else { //あと１行
-                    hasNext = false;
-                    text = rowText;
-                }
-                rowItem = new RowItem(repItems.size()-1, text, hasNext, false);
-                repItems.set(repItems.size()-1, rowItem);
-                rowItem = new RowItem(repItems.size(), "", false, true);
-                repItems.add(rowItem);
-                if(repItems.size() > maxColumnLength && topRow+1 <= repItems.size() && inputEditText.getLineCount() > maxColumnLength){
-                    topRow++;
-                }
-                Log.d(TAG, "add list /" + text + " length /" + text.length());
-            }
-            escapeSequence.setTop(topRow);
+            Log.d(TAG, row);
         }
-        items.clear();
-        for (RowItem rowItem : repItems){
-            items.add(rowItem.clone());
-        }
-    }
-
-    private void updateListContent(int index, String newText){
-        rowItem = new RowItem(index, newText, items.get(index).isHasNext(), items.get(index).isWritable());
-        items.set(index, rowItem);
     }
 
     private String getSelectLineText(){
@@ -1078,10 +996,5 @@ public class MainActivity extends AppCompatActivity{
         int x = maxRowLength;
         int y = maxColumnLength;
         termDisplay = new TermDisplay(x, y);
-        for (int i = 0; i < y; i++){
-            for (int j = 0; j < x; j++){
-                termDisplay.setDisplay(x,y," ");
-            }
-        }
     }
 }
