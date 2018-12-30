@@ -4,48 +4,28 @@ import android.content.Context;
 import android.util.Log;
 import android.widget.EditText;
 
-import java.util.ArrayList;
-
 /**
  * TODO 表示ようの配列をつくる
  * TODO カーソル位置記憶用の変数を作る
  **/
 public class EscapeSequence {
     private String TAG = "**debug**";
+    private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
+
     private EditText editText;
-    private Context context;
-    private int width;
-    private ArrayList<RowItem> items;
-    private int height;
-    private int top;
-    private TermDisplay display;
+    private TermDisplay termDisplay;
 
-    EscapeSequence(Context context, ArrayList<RowItem> items,int width, int height){
-        this.context = context;
+    EscapeSequence(Context context, TermDisplay termDisplay){
         this.editText = (EditText) ((MainActivity)context).findViewById(R.id.main_display);
-        this.items = items;
-        this.width = width;
-        this.height = height;
-        display = new TermDisplay(width, height);
-    }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public void setHeight(int height){
-        this.height = height;
-    }
-
-    public int getHeight() {
-        return height;
+        this.termDisplay = termDisplay;
     }
 
     public int getTop(){
-        return top;
+        return termDisplay.getTopRow();
     }
+
     public void setTop(int top){
-        this.top = top;
+        termDisplay.setTopRow(top);
     }
 
     public void moveRight(){
@@ -73,7 +53,7 @@ public class EscapeSequence {
                     "\n"
                             + "moveUP" + "\n"
                             + " goto " + (editText.getSelectionStart() - getSelectRowLength(getSelectRow())) + "\n"
-                            + " selectRow " + getSelectRow() + " " + items.get(rowNumToListId(getSelectRow())).getText()+ "\n"
+                            + " selectRow " + getSelectRow() + " " + termDisplay.getRowLength(rowNumToListId(getSelectRow()))+ "\n"
                             + " length " +getSelectRowLength(getSelectRow()));
             if(getSelectRowLength(getSelectRow()) < getSelectRowLength(getSelectRow()+1)){
                 editText.setSelection(getSelectRowLength(1, getSelectRow()+1)-1);
@@ -135,7 +115,7 @@ public class EscapeSequence {
                 "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n)) + "\n"
                         +" selectRow " + getSelectRow() + "\n" + " length " + getSelectRowLength(getSelectRow(), getSelectRow() + n));
 
-        if (getSelectRow() + n > items.size() || n <= 0){
+        if (getSelectRow() + n > termDisplay.getTotalColumns() || n <= 0){
             return;
         }
         if (editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n) < editText.length()){
@@ -193,15 +173,15 @@ public class EscapeSequence {
     }
 
     public void scrollNext(int n){
-        if (top + n > items.size()) return;
-        setTop(top+n);
+        if (getTop() + n > termDisplay.getTotalColumns()) return;
+        setTop(getTop()+n);
         changeDisplay();
     }
 
     public void scrollBack(int n){
 
-        if(top - n < 0) return;
-        setTop(top-n);
+        if(getTop() - n < 0) return;
+        setTop(getTop()-n);
         changeDisplay();
     }
 
@@ -210,8 +190,8 @@ public class EscapeSequence {
         int length = 0;
         int rowId = rowNumToListId(row);
         for(int i = 0; i < rowId; i++){
-            length += items.get(i).getText().length();
-            Log.d(TAG, "getLength" + Integer.toString(items.get(i).getText().length()));
+            length += termDisplay.getRowLength(i);
+            Log.d(TAG, "getLength" + Integer.toString(termDisplay.getRowLength(i)));
         }
         return length;
     }
@@ -222,20 +202,21 @@ public class EscapeSequence {
     public int getSelectRow(){
         int start = editText.getSelectionStart();
         int row = getTop()+1;
-        int count = items.get(getTop()).getText().length();
+        //int count = items.get(getTop()).getText().length();
+        int count = termDisplay.getRowLength(getTop());
 
         if(row < 1){
             return 0;
         }
         for (; count < start; row++){
-            if(row < items.size()){
-                count += items.get(row).getText().length();
+            if(row < termDisplay.getTotalColumns()){
+                count += termDisplay.getRowLength(row);
             }
             else break;
 
             Log.d(TAG, "count : " + count);
         }
-        Log.d(TAG, "number/ " + Integer.toString(row-1) + " contents/ " + items.get(row-1).getText());
+        Log.d(TAG, "number/ " + Integer.toString(row-1) + " contents/ " + termDisplay.getRowText(row-1));
         return row-1;
     }
 
@@ -243,7 +224,7 @@ public class EscapeSequence {
         Log.d(TAG, "getSelectionRowIndex : " + (rowNumToListId(selectRow)));
         int row = selectRow;
         if (selectRow == 0) row = 0;
-        return items.get(rowNumToListId(selectRow)).getText().length();
+        return termDisplay.getRowLength(rowNumToListId(row));
     }
 
     //start行からrow行までの文字数を返す
@@ -252,8 +233,11 @@ public class EscapeSequence {
         int length = 0;
         int startId = rowNumToListId(start);
         int endId = rowNumToListId(end);
+        if(endId > termDisplay.getTotalColumns()){
+            endId = termDisplay.getTotalColumns();
+        }
         for(int i = startId; i < endId; i++){
-            length += items.get(i).getText().length();
+            length += termDisplay.getRowLength(i);
         }
         return length;
     }
@@ -267,25 +251,27 @@ public class EscapeSequence {
     }
 
     public void changeDisplay(){
-        int topRow = getTop();
+        int topRow = termDisplay.getTopRow();
         Log.d(TAG, "topRow/ " + topRow);
         editText.setText("");
-        for (int i = topRow; i < items.size() && i < topRow+height-1; i++){
-            Log.d("debug***", items.get(i).getText());
-            editText.append(items.get(i).getText());
-        }
-    }
-
-    public void changeDisplay_(){
-        editText.setText("");
-        for (int y = 0; y < display.getScreenColumns(); y++){
-            for (int x = 0; x < display.getScreenRows(); x++) {
-                editText.append(display.getDisplay(x, y));
-                if(display.getDisplay(x, y) == "\n"){
-                    break;
+        termDisplay.createDisplay();
+        for (int y = 0; y < termDisplay.getTotalColumns() && y < termDisplay.getScreenColumns(); y++){
+            for (int x = 0; x < termDisplay.getScreenRows(); x++){
+                if(!termDisplay.getDisplay(x, y).equals("EOL")) {
+                    editText.append(termDisplay.getDisplay(x, y));
+                }
+                else return;
+                if(termDisplay.getDisplay(x, y).equals(LF)){
+                    y++;
                 }
             }
         }
+    }
+
+
+    public void setCursol(int x, int y){
+        int move = getSelectRowLength(0, y) + x;
+        editText.setSelection(move);
     }
 
 }
