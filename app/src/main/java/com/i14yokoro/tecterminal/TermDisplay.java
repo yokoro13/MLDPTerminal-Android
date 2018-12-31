@@ -3,6 +3,7 @@ package com.i14yokoro.tecterminal;
 import java.util.ArrayList;
 
 //TODO 改行コードを入れるようにdisplayの横幅を１つ増やす必要がありそう？？
+
 public class TermDisplay {
 
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
@@ -19,27 +20,49 @@ public class TermDisplay {
     private int displaySize = 0;
 
     private int topRow;
+    private int inputRow;
     private ArrayList<ArrayList<TextItem>> textList;
+    private ArrayList<TextItem> rowItem;
     private TextItem textItem;
 
     public TermDisplay(int screenRows, int screenColumns){
-        this.screenRows = screenRows;
+        this.screenRows = screenRows+1;
         this.screenColumns = screenColumns;
+        inputRow = 0;
+        display = new String[screenColumns][screenRows+1];
         textList = new ArrayList<>();
+        rowItem = new ArrayList<>();
     }
 
     public void setTextItem(String text, int color){
         textItem = new TextItem(text, color);
-        this.textList.get(getTotalColumns()).add(textItem);
+        System.out.println("adding text: " + text);
+        if(getTotalColumns() <= 0 ||
+                textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
+            inputRow++;
+            ArrayList<TextItem> items = new ArrayList<>();
+            items.add(textItem);
+            textList.add(items);
+        }
+        else {
+            textList.get(getTotalColumns()-1).add(textItem);
+        }
     }
 
     public TextItem getTextItem(int x, int y){
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
-            return this.textList.get(y).get(x);
+            return textList.get(y).get(x);
         } else {
             return null;
         }
+    }
 
+    public int getInputRow(){
+        return inputRow;
+    }
+
+    public void setInputRow(int inputRow) {
+        this.inputRow = inputRow;
     }
 
     public void changeText(int x, int y, String text){
@@ -89,10 +112,14 @@ public class TermDisplay {
     }
 
     public String getDisplay(int x, int y) {
+        if(display[y][x] == null){
+            return "";
+        }
         return display[y][x];
     }
 
     public void setDisplay(int x, int y, String c) {
+        System.out.println(Integer.toString(x) + " " + Integer.toString(y) + " " + c);
         this.display[y][x] = c;
     }
 
@@ -133,21 +160,28 @@ public class TermDisplay {
             if(displayY >= getScreenColumns()){ //displayの描画が終わったらおわり
                 break;
             }
-            if(y > getTotalColumns()){ //yがリストよりでかくなったら
+            if(y >= getTotalColumns()){ //yがリストよりでかくなったら
                 setDisplay(0, displayY, "EOL"); //そのyの最初に "EOL" という目印をつける
                 break;
             }
             for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
-                setDisplay(x, displayY, textList.get(y+topRow).get(x + move).getText()); //そのないようをdisplayに
-                displaySize++; //ついでにサイズも保存しておく
                 if(x > screenRows){ //その行の文字数が横文字の最大数をこえそうならもういっかいループ
+                    System.out.println(Integer.toString(x));
                     move = x + move; //移動分をたす
-                    y--;
+                    //y--;
                     displayY++; //displayのyは移動
-                    break;
+                    //break;
+                    continue;
+                } else {
+                    if(textList.get(y+topRow).size() < screenRows){
+                        move = 0;
+                    }
                 }
-                move = 0; //こえないならリセット
+                setDisplay(x % screenRows, displayY, textList.get(y+topRow).get(x + move).getText()); //そのないようをdisplayに
+                displaySize++; //ついでにサイズも保存しておく
+
                 if(textList.get(y+topRow).get(x).getText().equals(LF)){ //改行はあれば次のyへ
+                    move = 0; //こえないならリセット
                     displayY++;
                     break;
                 }
@@ -200,6 +234,5 @@ public class TermDisplay {
         }
         return size;
     }
-
-
 }
+
