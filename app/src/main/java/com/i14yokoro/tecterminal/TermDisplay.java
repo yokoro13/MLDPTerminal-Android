@@ -37,7 +37,8 @@ public class TermDisplay {
     public void setTextItem(String text, int color){
         textItem = new TextItem(text, color);
         Log.d(TAG, "adding text: " + text);
-        if(getTotalColumns() <= 0 || textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
+        //||textList.get(getTotalColumns()-1).size() >= displayRowSize;
+        if(getTotalColumns() <= 0 ||textList.get(getTotalColumns()-1).size() >= displayRowSize-1|| textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
             inputRow++;
             ArrayList<TextItem> items = new ArrayList<>();
             items.add(textItem);
@@ -156,7 +157,6 @@ public class TermDisplay {
 
     public void createDisplay(){
         int displayY = 0;//displayの縦移動用
-        int move = 0;
         displaySize = 0;
         initialDisplay();
 
@@ -164,36 +164,30 @@ public class TermDisplay {
             if(displayY >= getDisplayColumnSize()){ //displayの描画が終わったらおわり
                 break;
             }
-            if(y >= getTotalColumns() || y+topRow >= getTotalColumns()){ //yがリストよりでかくなったら
-                setDisplay(0, displayY, "EOL"); //そのyの最初に "EOL" という目印をつける
+            if((y >= getTotalColumns() || y+topRow >= getTotalColumns())){ //yがリストよりでかくなったら
+                //displayY++;
+                setDisplay(textList.get(getTotalColumns()-1).size(), displayY, "EOL"); //最後に "EOL" という目印をつける
                 break;
             }
             for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
-                int usedColumnLength = textList.get(y).size()/displayRowSize;
-                int lastRowPart = textList.get(y).size()%displayRowSize;
-                if(lastRowPart > 0){
-                    usedColumnLength++;
-                }
-                if(textList.get(y+topRow).size() > displayRowSize){
-                    String partStr = "";
-
-                    int size = textList.get(y).size();
-                    for (int movex = size - lastRowPart; movex < size; movex++){
-                        partStr = textList.get(y).get(movex).getText();
-                    }
-                }
                 if(x != 0 && x % displayRowSize == 0){
-                    displayY++; //displayのyは移動
-
+                    //displayY++; //displayのyは移動
                 }
-                setDisplay(x % displayRowSize, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
+                Log.d(TAG, "get y+topRow" + (y+topRow));
+                setDisplay(x, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
                 displaySize++; //ついでにサイズも保存しておく
 
-                if(textList.get(y+topRow).get(x).getText().equals(LF)){ //改行はあれば次のyへ
-                    displayY++;
-                    break;
-                }
+                //if(x >= displayRowSize-1){
+                    //displayY++;
+                    //break;
+                //}
+                //if(textList.get(y+topRow).get(x).getText().equals(LF)){ //改行はあれば次のyへ
+                    //displayY++;
+                    //break;
+                //}
+
             }
+            displayY++;
             if (y == getTotalColumns()){
                 break;
             }

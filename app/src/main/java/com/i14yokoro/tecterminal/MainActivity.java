@@ -232,6 +232,7 @@ public class MainActivity extends AppCompatActivity{
                 //int position = inputEditText.getOffsetForPosition(0,0);
                 //inputEditText.setSelection(position);
                 isBtn_ctl = true;
+                showListContent();
                 showDisplay();
                // termDisplay.changeDisplay(getTopPositionRow());
 
@@ -507,6 +508,7 @@ public class MainActivity extends AppCompatActivity{
                         for (int i = 0; i < str.length(); i++) { // strの先頭から1文字ずつString型にして取り出す
                             String inputStr = String.valueOf(str.charAt(i));
                             termDisplay.setTextItem(inputStr, 0);
+                            //changeDisplay();
 
                             Log.d(TAG, "ASCII code/ " + str);
                             if (inputStr.equals(LF)) {
@@ -990,7 +992,27 @@ public class MainActivity extends AppCompatActivity{
         Log.d("termDisplay**", row);
     }
 
+    private void showListContent(){
+        Log.d("termDisplay**", "******showListContent******");
+        String row = "";
+        for (int y = 0; y < termDisplay.getTotalColumns(); y++){
+            for (int x = 0; x < termDisplay.getRowLength(y); x++){
+                row = row + termDisplay.getText(x, y);
+            }
+            Log.d("termDisplay**", row);
+            row = "";
+        }
+
+    }
+
     private String getSelectLineText(){
         return termDisplay.getRowText(getSelectRowIndex());
+    }
+
+    private void setCursor(int x, int y){
+        int cursor = inputEditText.getOffsetForPosition(x * getTextWidth(), y * getTextHeight());
+        if(cursor > 0){
+            inputEditText.setSelection(cursor);
+        }
     }
 }
