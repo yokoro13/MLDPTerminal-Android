@@ -37,7 +37,6 @@ public class TermDisplay {
     public void setTextItem(String text, int color){
         textItem = new TextItem(text, color);
         Log.d(TAG, "adding text: " + text);
-        //||textList.get(getTotalColumns()-1).size() >= displayRowSize;
         if(getTotalColumns() <= 0 ||textList.get(getTotalColumns()-1).size() >= displayRowSize-1|| textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
             inputRow++;
             ArrayList<TextItem> items = new ArrayList<>();
@@ -165,27 +164,13 @@ public class TermDisplay {
                 break;
             }
             if((y >= getTotalColumns() || y+topRow >= getTotalColumns())){ //yがリストよりでかくなったら
-                //displayY++;
                 setDisplay(textList.get(getTotalColumns()-1).size(), displayY, "EOL"); //最後に "EOL" という目印をつける
                 break;
             }
             for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
-                if(x != 0 && x % displayRowSize == 0){
-                    //displayY++; //displayのyは移動
-                }
                 Log.d(TAG, "get y+topRow" + (y+topRow));
                 setDisplay(x, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
                 displaySize++; //ついでにサイズも保存しておく
-
-                //if(x >= displayRowSize-1){
-                    //displayY++;
-                    //break;
-                //}
-                //if(textList.get(y+topRow).get(x).getText().equals(LF)){ //改行はあれば次のyへ
-                    //displayY++;
-                    //break;
-                //}
-
             }
             displayY++;
             if (y == getTotalColumns()){
