@@ -4,10 +4,6 @@ import android.content.Context;
 import android.util.Log;
 import android.widget.EditText;
 
-/**
- * TODO 表示ようの配列をつくる
- * TODO カーソル位置記憶用の変数を作る
- **/
 public class EscapeSequence {
     private String TAG = "**debug**";
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
@@ -154,8 +150,6 @@ public class EscapeSequence {
         //０から取得したカーソルまでの部分をedittextから切り取る
         //貼り付け
         //getSelection % maxChar番地 のリストからうしろをクリア
-        String str = editText.getText().subSequence(0, editText.getSelectionStart()-1).toString();
-        editText.setText(str);
     }
 
     public void clearDisplay(int n){
@@ -255,21 +249,17 @@ public class EscapeSequence {
         termDisplay.createDisplay();
         for (int y = 0; y < termDisplay.getTotalColumns() && y < termDisplay.getDisplayColumnSize(); y++){
             for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
-                //Log.d("termDisplay**", "append " + termDisplay.getDisplay(x, y));
                 if(!termDisplay.getDisplay(x, y).equals("EOL")) {
-                    //Log.d("termDisplay**", "append " + termDisplay.getDisplay(x, y));
                     editText.append(termDisplay.getDisplay(x, y));
                     Log.d("termDisplay**", "append " + termDisplay.getDisplay(x, y));
                 }
                 else return;
                 if(termDisplay.getDisplay(x, y).equals(LF)){
-                    //y++;
                     break;
                 }
             }
         }
     }
-
 
     public void setCursol(int x, int y){
         int move = getSelectRowLength(0, y) + x;
