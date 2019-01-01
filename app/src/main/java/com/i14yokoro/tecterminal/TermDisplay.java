@@ -9,7 +9,7 @@ public class TermDisplay {
 
     private int totalRows;
 
-    private int screenRows, screenColumns;
+    private int displayRowSize, displayColumnSize;
 
     private String[][] display;
 
@@ -21,23 +21,20 @@ public class TermDisplay {
     private int topRow;
     private int inputRow;
     private ArrayList<ArrayList<TextItem>> textList;
-    private ArrayList<TextItem> rowItem;
     private TextItem textItem;
 
-    public TermDisplay(int screenRows, int screenColumns){
-        this.screenRows = screenRows+1;
-        this.screenColumns = screenColumns;
+    public TermDisplay(int displayRowSize, int displayColumnSize){
+        this.displayRowSize = displayRowSize+1;
+        this.displayColumnSize = displayColumnSize;
         inputRow = 0;
-        display = new String[screenColumns][screenRows+1];
+        display = new String[displayColumnSize][displayRowSize+1];
         textList = new ArrayList<>();
-        rowItem = new ArrayList<>();
     }
 
     public void setTextItem(String text, int color){
         textItem = new TextItem(text, color);
         System.out.println("adding text: " + text);
-        if(getTotalColumns() <= 0 ||
-                textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
+        if(getTotalColumns() <= 0 || textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
             inputRow++;
             ArrayList<TextItem> items = new ArrayList<>();
             items.add(textItem);
@@ -83,7 +80,7 @@ public class TermDisplay {
     }
 
     public void setCursorX(int cursorX) {
-        if(cursorX > screenRows){
+        if(cursorX > displayRowSize){
             this.cursorX = 0;
         } else {
             if(cursorX < 0){
@@ -99,7 +96,7 @@ public class TermDisplay {
     }
 
     public void setCursorY(int cursorY) {
-        if(cursorY > screenColumns){
+        if(cursorY > displayColumnSize){
             setTopRow(topRow++);
         } else {
             if(cursorY < 0){
@@ -130,12 +127,12 @@ public class TermDisplay {
         this.totalRows = totalRows;
     }
 
-    public int getScreenRows() {
-        return screenRows;
+    public int getDisplayRowSize() {
+        return displayRowSize;
     }
 
-    public int getScreenColumns() {
-        return screenColumns;
+    public int getDisplayColumnSize() {
+        return displayColumnSize;
     }
 
     public int getTopRow() {
@@ -154,8 +151,8 @@ public class TermDisplay {
         int displayY = 0;//displayの縦移動用
         displaySize = 0;
 
-        for(int y = 0; y < screenColumns; y++){//これはリストの縦移動用（最大スクリーンの最大値分移動）
-            if(displayY >= getScreenColumns()){ //displayの描画が終わったらおわり
+        for(int y = 0; y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
+            if(displayY >= getDisplayColumnSize()){ //displayの描画が終わったらおわり
                 break;
             }
             if(y >= getTotalColumns()){ //yがリストよりでかくなったら
@@ -163,10 +160,10 @@ public class TermDisplay {
                 break;
             }
             for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
-                if(x != 0 && x % screenRows == 0){
+                if(x != 0 && x % displayRowSize == 0){
                     displayY++; //displayのyは移動
                 }
-                setDisplay(x % screenRows, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
+                setDisplay(x % displayRowSize, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
                 displaySize++; //ついでにサイズも保存しておく
 
                 if(textList.get(y+topRow).get(x).getText().equals(LF)){ //改行はあれば次のyへ
@@ -203,7 +200,7 @@ public class TermDisplay {
 
     public int getDisplayContentsSize(){
         int size = 0;
-        for(int y = 0; y < screenColumns; y++){
+        for(int y = 0; y < displayColumnSize; y++){
             if(getDisplay(0, y).equals("EOL")){
                 break;
             }
@@ -212,7 +209,7 @@ public class TermDisplay {
                     break;
                 }
                 size += getDisplay(x,y).length();
-                if(x > screenRows){
+                if(x > displayRowSize){
                     break;
                 }
                 if(getDisplay(x, y).equals(LF)){
