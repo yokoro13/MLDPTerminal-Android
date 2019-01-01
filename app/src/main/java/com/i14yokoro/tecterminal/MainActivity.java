@@ -528,7 +528,6 @@ public class MainActivity extends AppCompatActivity{
 
                                 //currX = 0;
                                 //currY++;
-                                //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                             }
 
                             if (getSelectLineText().length() != 0 && getSelectLineText().length()%(termDisplay.getDisplayRowSize()-1) == 0) {
@@ -885,10 +884,6 @@ public class MainActivity extends AppCompatActivity{
             termDisplay.setTextItem(Character.toString(newText.charAt(i)), 0);
         }
         termDisplay.setTextItem(LF, 0);
-        //if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
-            //termDisplay.addTopRow(1);
-        //}
-        //changeDisplay();
         inputEditText.setSelection(inputEditText.getText().length());
         enterPutFlag = true;
         receivingFlag = true;
