@@ -273,7 +273,7 @@ public class MainActivity extends AppCompatActivity{
                         if (oldY > event.getRawY()) {
                             Log.v(TAG, "scrollView up");
 
-                            if(topRow - 1 >= 0){
+                            if(termDisplay.getTopRow() - 1 >= 0){
                                 //topRow--;
                                 //escapeSequence.setTop(topRow);
                                 termDisplay.addTopRow(-1);
@@ -283,7 +283,7 @@ public class MainActivity extends AppCompatActivity{
                         if (oldY < event.getRawY()){
                             Log.d(TAG, "scroll down");
                             //TODO さいごの行 > screenColumn の場合の処理が必要
-                            if(topRow + 1 <= termDisplay.getTotalColumns() + termDisplay.getRowLength(topRow)/getMaxColumnLength()){
+                            if(termDisplay.getTopRow() + 1 <= termDisplay.getTotalColumns() + termDisplay.getRowLength(topRow)/getMaxColumnLength()){
                                 //topRow++;
                                 //escapeSequence.setTop(topRow);
                                 termDisplay.addTopRow(1);
@@ -509,7 +509,7 @@ public class MainActivity extends AppCompatActivity{
                             termDisplay.setTextItem(inputStr, 0);
 
                             Log.d(TAG, "ASCII code/ " + str);
-                            if (getSelectLineText().length() >= maxRowLength) {
+                            if (getSelectLineText().length() != 0 && getSelectLineText().length()%(termDisplay.getDisplayRowSize()-1) == 0) {
                                 Log.d(TAG, "append LF ");
                                 enterPutFlag = false;
                                 receivingFlag = false;

@@ -264,7 +264,8 @@ public class EscapeSequence {
                 }
                 else return;
                 if(termDisplay.getDisplay(x, y).equals(LF)){
-                    y++;
+                    //y++;
+                    break;
                 }
             }
         }
