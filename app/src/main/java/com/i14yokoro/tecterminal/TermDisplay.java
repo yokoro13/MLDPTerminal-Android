@@ -3,7 +3,6 @@ package com.i14yokoro.tecterminal;
 import java.util.ArrayList;
 
 //TODO 改行コードを入れるようにdisplayの横幅を１つ増やす必要がありそう？？
-
 public class TermDisplay {
 
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
@@ -152,7 +151,6 @@ public class TermDisplay {
     }
 
     public void createDisplay(){
-        int move = 0;
         int displayY = 0;//displayの縦移動用
         displaySize = 0;
 
@@ -165,23 +163,13 @@ public class TermDisplay {
                 break;
             }
             for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
-                if(x > screenRows){ //その行の文字数が横文字の最大数をこえそうならもういっかいループ
-                    System.out.println(Integer.toString(x));
-                    move = x + move; //移動分をたす
-                    //y--;
+                if(x != 0 && x % screenRows == 0){
                     displayY++; //displayのyは移動
-                    //break;
-                    continue;
-                } else {
-                    if(textList.get(y+topRow).size() < screenRows){
-                        move = 0;
-                    }
                 }
-                setDisplay(x % screenRows, displayY, textList.get(y+topRow).get(x + move).getText()); //そのないようをdisplayに
+                setDisplay(x % screenRows, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
                 displaySize++; //ついでにサイズも保存しておく
 
                 if(textList.get(y+topRow).get(x).getText().equals(LF)){ //改行はあれば次のyへ
-                    move = 0; //こえないならリセット
                     displayY++;
                     break;
                 }
@@ -235,4 +223,3 @@ public class TermDisplay {
         return size;
     }
 }
-
