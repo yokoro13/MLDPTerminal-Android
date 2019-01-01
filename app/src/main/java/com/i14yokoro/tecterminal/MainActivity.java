@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity{
 
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
     private EditText inputEditText; //ディスプレイのEdittext
+
     private String inputStrText; //入力したテキスト
 
     private static final String PREFS = "PREFS";
@@ -111,14 +112,9 @@ public class MainActivity extends AppCompatActivity{
 
         inputEditText = (EditText) findViewById(R.id.main_display);
         inputEditText.setCustomSelectionActionModeCallback(mActionModeCallback);
-
         inputEditText.addTextChangedListener(mInputTextWatcher);
 
-        maxRowLength = getMaxRowLength();
-        maxColumnLength = getMaxColumnLength();
-
-        termDisplay.setTextItem("", 0);
-        init();
+        termDisplay = new TermDisplay(getMaxRowLength(), getMaxColumnLength());
 
         escapeSequence = new EscapeSequence(this, termDisplay); //今のContentを渡す
 
@@ -487,15 +483,16 @@ public class MainActivity extends AppCompatActivity{
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
-            currX = (currX + eCount)%maxRowLength;
+            //currX = (currX + eCount)%maxRowLength;
             Log.d(TAG, "currX : " + currX);
             
             Log.d(TAG, "afterTextChange");
             if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
-                if (receivingFlag)lineText += str;
+                if (receivingFlag) {
+                    lineText += str;
 
                     if (enterPutFlag) { //無限ループ防止
-                        if(eBefore > 0){
+                        if (eBefore > 0) {
                             /**
                              * 文字が削除された時の流れ
                              * １．カーソル位置のx，yをとってくる
@@ -504,14 +501,13 @@ public class MainActivity extends AppCompatActivity{
                              * ４．しゅうりょう
                              */
                             StringBuilder stringBuilder = new StringBuilder(lineText);
-                            lineText = stringBuilder.deleteCharAt(currX-1).toString();
-                            currX--;
+                            lineText = stringBuilder.deleteCharAt(currX - 1).toString();
+                            //currX--;
 
                         }
 
-
                         Log.d(TAG, "ASCII code/ " + str);
-                        if(lineText.length() >= maxRowLength){
+                        if (lineText.length() >= maxRowLength) {
                             enterPutFlag = false;
                             receivingFlag = false;
                             termDisplay.setTextItem(lineText, 0);
@@ -519,8 +515,8 @@ public class MainActivity extends AppCompatActivity{
                             enterPutFlag = true;
                             receivingFlag = true;
                             lineText = "";
-                            currX = 0;
-                            currY++;
+                            //currX = 0;
+                            //currY++;
                         }
 
                         if (str.equals(LF)) {
@@ -530,17 +526,18 @@ public class MainActivity extends AppCompatActivity{
                             //inputEditText.append(LF);
                             enterPutFlag = true;
 
-                            termDisplay.setTextItem(lineText,0);
+                            termDisplay.setTextItem(lineText, 0);
 
                             Log.d(TAG, "lineText is " + lineText);
                             Log.d(TAG, "linetext length is " + lineText.length());
 
                             lineText = "";
-                            currX = 0;
-                            currY++;
+                            //currX = 0;
+                            //currY++;
                             //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                         }
                     }
+                }
             }
             else { //ASCIIじゃなければ入力前の状態にもどす
                 if(editingFlag) {
@@ -961,6 +958,7 @@ public class MainActivity extends AppCompatActivity{
         }
         changeDisplay();
     }
+
     private void changeDisplay(){
         receivingFlag = false;
         enterPutFlag = false;
@@ -973,28 +971,16 @@ public class MainActivity extends AppCompatActivity{
     private void showDisplay(){
         Log.d(TAG, "******showDisplay******");
         String row = "";
-        for (int y = 0; y < termDisplay.getScreenColumns(); y++){
-            for (int x = 0; x < termDisplay.getScreenRows(); x++){
-                row = row + "  " + termDisplay.getDisplay(x,y);
+        for (int y = 0; y < termDisplay.getDisplayColumnSize(); y++){
+            for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
+                row = row  + termDisplay.getDisplay(x,y) + "  ";
             }
             Log.d(TAG, row);
+            row = "";
         }
     }
 
     private String getSelectLineText(){
-        StringBuilder sb = new StringBuilder(inputEditText.getText());
-        int start = sb.lastIndexOf(LF, inputEditText.getSelectionStart());
-        int end = sb.indexOf(LF, inputEditText.getSelectionEnd());
-        if(end == -1){
-            end = inputEditText.length();
-        }
-        Log.d(TAG, "SelectLineText: " + sb.substring(start, end));
-        return sb.substring(start, end);
-    }
-
-    private void init(){
-        int x = maxRowLength;
-        int y = maxColumnLength;
-        termDisplay = new TermDisplay(x, y);
+        return termDisplay.getRowText(getSelectRowIndex());
     }
 }
