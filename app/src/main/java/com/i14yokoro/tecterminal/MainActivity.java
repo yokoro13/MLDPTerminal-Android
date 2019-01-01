@@ -102,7 +102,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
 
     private int currX = 0; //0~maxRowLength-1
-    private int currY = 0;
+    private int currY = 0; //0~maxColumnLength-1
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
