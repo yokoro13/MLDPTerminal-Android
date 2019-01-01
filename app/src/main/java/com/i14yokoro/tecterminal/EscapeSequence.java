@@ -255,10 +255,12 @@ public class EscapeSequence {
         Log.d(TAG, "topRow/ " + topRow);
         editText.setText("");
         termDisplay.createDisplay();
-        for (int y = 0; y < termDisplay.getTotalColumns() && y < termDisplay.getScreenColumns(); y++){
-            for (int x = 0; x < termDisplay.getScreenRows(); x++){
+        for (int y = 0; y < termDisplay.getTotalColumns() && y < termDisplay.getDisplayColumnSize(); y++){
+            for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
+                Log.d("termDisplay**", "append " + termDisplay.getDisplay(x, y));
                 if(!termDisplay.getDisplay(x, y).equals("EOL")) {
                     editText.append(termDisplay.getDisplay(x, y));
+                    //Log.d("termDisplay**", "append " + termDisplay.getDisplay(x, y));
                 }
                 else return;
                 if(termDisplay.getDisplay(x, y).equals(LF)){

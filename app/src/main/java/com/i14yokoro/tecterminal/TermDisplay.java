@@ -1,9 +1,12 @@
 package com.i14yokoro.tecterminal;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 
 //TODO 改行コードを入れるようにdisplayの横幅を１つ増やす必要がありそう？？
 public class TermDisplay {
+    private final String TAG = "termDisplay**";
 
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
 
@@ -33,7 +36,7 @@ public class TermDisplay {
 
     public void setTextItem(String text, int color){
         textItem = new TextItem(text, color);
-        System.out.println("adding text: " + text);
+        Log.d(TAG, "adding text: " + text);
         if(getTotalColumns() <= 0 || textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
             inputRow++;
             ArrayList<TextItem> items = new ArrayList<>();
@@ -43,6 +46,10 @@ public class TermDisplay {
         else {
             textList.get(getTotalColumns()-1).add(textItem);
         }
+    }
+
+    public void deleteTextItem(int x, int y){
+        textList.get(y).remove(x);
     }
 
     public TextItem getTextItem(int x, int y){
@@ -150,12 +157,13 @@ public class TermDisplay {
     public void createDisplay(){
         int displayY = 0;//displayの縦移動用
         displaySize = 0;
+        initialDisplay();
 
         for(int y = 0; y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
             if(displayY >= getDisplayColumnSize()){ //displayの描画が終わったらおわり
                 break;
             }
-            if(y >= getTotalColumns()){ //yがリストよりでかくなったら
+            if(y >= getTotalColumns() || y+topRow >= getTotalColumns()){ //yがリストよりでかくなったら
                 setDisplay(0, displayY, "EOL"); //そのyの最初に "EOL" という目印をつける
                 break;
             }
@@ -179,6 +187,9 @@ public class TermDisplay {
     }
 
     public int getRowLength(int y){
+        if(textList.size() == 0 || textList.get(y).size() == 0){
+            return 0;
+        }
         return this.textList.get(y).size();
     }
 
@@ -218,5 +229,13 @@ public class TermDisplay {
             }
         }
         return size;
+    }
+
+    private void initialDisplay(){
+        for (int y = 0; y < displayColumnSize; y++){
+            for (int x = 0; x < displayRowSize; x++){
+                display[y][x] = "";
+            }
+        }
     }
 }
