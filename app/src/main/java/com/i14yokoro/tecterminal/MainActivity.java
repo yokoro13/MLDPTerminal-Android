@@ -509,6 +509,25 @@ public class MainActivity extends AppCompatActivity{
                             termDisplay.setTextItem(inputStr, 0);
 
                             Log.d(TAG, "ASCII code/ " + str);
+                            if (inputStr.equals(LF)) {
+                                Log.d(TAG, "lineText is " + getSelectLineText());
+                                Log.d(TAG, "lineText length is " + getSelectLineText().length());
+                                enterPutFlag = false;
+                                //inputEditText.setText(inputStrText);
+                                inputEditText.setSelection(inputEditText.length());
+                                //inputEditText.append(LF);
+                                enterPutFlag = true;
+
+                                if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
+                                    termDisplay.addTopRow(1);
+                                    changeDisplay();
+                                }
+
+                                //currX = 0;
+                                //currY++;
+                                //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+                            }
+
                             if (getSelectLineText().length() != 0 && getSelectLineText().length()%(termDisplay.getDisplayRowSize()-1) == 0) {
                                 Log.d(TAG, "append LF ");
                                 enterPutFlag = false;
@@ -522,26 +541,6 @@ public class MainActivity extends AppCompatActivity{
                                 }
                                 //currX = 0;
                                 //currY++;
-                            }
-
-                            if (inputStr.equals(LF)) {
-                                enterPutFlag = false;
-                                //inputEditText.setText(inputStrText);
-                                inputEditText.setSelection(inputEditText.length());
-                                //inputEditText.append(LF);
-                                enterPutFlag = true;
-
-                                if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
-                                    termDisplay.addTopRow(1);
-                                    changeDisplay();
-                                }
-
-                                Log.d(TAG, "lineText is " + getSelectLineText());
-                                Log.d(TAG, "lineText length is " + getSelectLineText().length());
-
-                                //currX = 0;
-                                //currY++;
-                                //dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                             }
                         }
                     }

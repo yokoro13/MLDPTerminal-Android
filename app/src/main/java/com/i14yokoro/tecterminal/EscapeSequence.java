@@ -222,9 +222,7 @@ public class EscapeSequence {
 
     private int getSelectRowLength(int selectRow){
         Log.d(TAG, "getSelectionRowIndex : " + (rowNumToListId(selectRow)));
-        int row = selectRow;
-        if (selectRow == 0) row = 0;
-        return termDisplay.getRowLength(rowNumToListId(row));
+        return termDisplay.getRowLength(rowNumToListId(selectRow));
     }
 
     //start行からrow行までの文字数を返す
