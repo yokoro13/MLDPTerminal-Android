@@ -35,11 +35,12 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
- * TODO ctlキー（押したらふらぐたて）
- * TODO 入力文字が横幅を超えた場合は自動でリストに追加するようにする
+ * TODO 削除された文字への対応（今のままでは，画面上の情報とリストの中身が一致していない）
+ * TODO カーソル情報を追加，およびカーソル操作
+ * TODO 文字の色への対応
+ * TODO エスケープシーケンスへの対応（変数を合わせただけなのでバグ多数）
+ * TODO あらたなエスケープシーケンスの追加（行単位でやるよりらくになったはず）
  * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
- * TODO 英文字が行をまたぐときに自動で改行するのをやめさせる
- * TODO RowItem -> TextItem への移行（行単位でのデータ構造から１文字単位のデータ構造へ）
  */
 public class MainActivity extends AppCompatActivity{
 
