@@ -29,6 +29,8 @@ public class TermDisplay {
     public TermDisplay(int displayRowSize, int displayColumnSize){
         this.displayRowSize = displayRowSize+1;
         this.displayColumnSize = displayColumnSize;
+        cursorX = 0;
+        cursorY = 0;
         inputRow = 0;
         display = new String[displayColumnSize][displayRowSize+1];
         textList = new ArrayList<>();
@@ -87,11 +89,19 @@ public class TermDisplay {
     }
 
     public void setCursorX(int cursorX) {
-        if(cursorX > displayRowSize){
-            this.cursorX = 0;
+        if(cursorX > textList.get(getCursorY() + topRow).size()-1){
+            if(getCursorY()<displayColumnSize-1) {
+                setCursorY(getCursorY() + 1);
+            }
+            this.cursorX = cursorX % displayRowSize;
         } else {
             if(cursorX < 0){
-                this.cursorX = 0;
+                if(0 < cursorY){
+                    this.cursorX = textList.get(getCursorY() + topRow).size()-1;
+                    setCursorY(getCursorY()-1);
+                } else {
+                    this.cursorX = 0;
+                }
             } else {
                 this.cursorX = cursorX;
             }

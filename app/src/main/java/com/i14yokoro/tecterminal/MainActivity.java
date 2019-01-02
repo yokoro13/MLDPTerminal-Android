@@ -19,6 +19,10 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
+import android.text.Selection;
+import android.text.SpanWatcher;
+import android.text.Spannable;
+import android.text.Spanned;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ActionMode;
@@ -93,16 +97,17 @@ public class MainActivity extends AppCompatActivity{
     private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
     private boolean editingFlag = true;
     private boolean enterPutFlag = true;
+
+    private boolean selectionMovingFlag = false;
+
     private boolean isBtn_ctl = false;
     private boolean isBtn_esc = false;
-
-    private String[][] display;
 
     private int topRow = 0;
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
 
     private int currX = 0; //0~maxRowLength-1
-    private int currY = 0;
+    private int currY = 0; //0~maxColumnLength-1
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -123,8 +128,6 @@ public class MainActivity extends AppCompatActivity{
         state = State.STARTING;
         inputStrText = inputEditText.getText().toString();
         connectTimeoutHandler = new Handler();
-
-        //display = new String[maxColumnLength][maxRowLength];
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -233,7 +236,7 @@ public class MainActivity extends AppCompatActivity{
                 //int position = inputEditText.getOffsetForPosition(0,0);
                 //inputEditText.setSelection(position);
                 isBtn_ctl = true;
-                showListContent();
+                showListContents();
                 showDisplay();
                // termDisplay.changeDisplay(getTopPositionRow());
 
@@ -457,7 +460,6 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -556,8 +558,35 @@ public class MainActivity extends AppCompatActivity{
                     editingFlag = true;
                 }
             }
+            inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         }
     };
+
+    final SpanWatcher watcher = new SpanWatcher() {
+        @Override
+        public void onSpanAdded(final Spannable text, final Object what, final int start, final int end) {
+            // Nothing here.
+        }
+
+        @Override
+        public void onSpanRemoved(final Spannable text, final Object what, final int start, final int end) {
+            // Nothing here.
+        }
+
+        @Override
+        public void onSpanChanged(final Spannable text, final Object what, final int ostart, final int oend, final int nstart, final int nend) {
+            if (what == Selection.SELECTION_START) {
+                // Selection start changed from ostart to nstart.
+                Log.d(TAG, "selection start is changed");
+                moveToSavedCursor();
+            } else if (what == Selection.SELECTION_END) {
+                // Selection end changed from ostart to nstart.
+                Log.d(TAG, "selection end is changed");
+                moveToSavedCursor();
+            }
+        }
+    };
+
 
     //通すActionを記述
     private static IntentFilter bleServiceIntentFilter() {
@@ -961,6 +990,7 @@ public class MainActivity extends AppCompatActivity{
                 imm.showSoftInput(v, 0);
             }
     }
+
     private void test(){
         for(int i = 0; i < 100; i++){
             addNewLine(Integer.toString(i));
@@ -988,7 +1018,7 @@ public class MainActivity extends AppCompatActivity{
         Log.d("termDisplay**", row);
     }
 
-    private void showListContent(){
+    private void showListContents(){
         Log.d("termDisplay**", "******showListContent******");
         String row = "";
         for (int y = 0; y < termDisplay.getTotalColumns(); y++){
@@ -1005,10 +1035,36 @@ public class MainActivity extends AppCompatActivity{
         return termDisplay.getRowText(getSelectRowIndex());
     }
 
-    private void setCursor(int x, int y){
-        int cursor = inputEditText.getOffsetForPosition(x * getTextWidth(), y * getTextHeight());
+    private void moveCursorX(int x){
+        termDisplay.setCursorX(termDisplay.getCursorX() + x);
+    }
+
+    private void moveCursorY(int y){
+        termDisplay.setCursorY(termDisplay.getCursorY() + y);
+    }
+
+    private void moveCursor(int x, int y){
+        int cursor = inputEditText.getOffsetForPosition(x * getTextWidth()+2, y * getTextHeight()+2);
         if(cursor > 0){
             inputEditText.setSelection(cursor);
         }
+    }
+
+    private void moveToSavedCursor(){
+        if(!selectionMovingFlag) {
+            selectionMovingFlag = true;
+            Log.d(TAG, "moveToSavedCursor()");
+            int cursor = inputEditText.getOffsetForPosition(termDisplay.getCursorX() * getTextWidth(), termDisplay.getCursorY() * getTextHeight());
+            if (cursor >= 0) {
+                Log.d(TAG, "cursor > 0");
+                inputEditText.setSelection(cursor);
+            }
+            selectionMovingFlag = false;
+        }
+    }
+
+    private void setCursor(int x, int y){
+        termDisplay.setCursorX(x);
+        termDisplay.setCursorY(y);
     }
 }
