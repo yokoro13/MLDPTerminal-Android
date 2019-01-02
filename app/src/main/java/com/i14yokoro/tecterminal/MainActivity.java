@@ -103,7 +103,6 @@ public class MainActivity extends AppCompatActivity{
     private boolean isBtn_ctl = false;
     private boolean isBtn_esc = false;
 
-    private int topRow = 0;
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
 
     private int currX = 0; //0~maxRowLength-1
@@ -144,11 +143,11 @@ public class MainActivity extends AppCompatActivity{
                        // }
                    // }
                 }
-                /*
-                if(topRow-1 >= 0){
-                    topRow--;
+
+                if(termDisplay.getTopRow()-1 >= 0){
+                    termDisplay.setTopRow(termDisplay.getTopRow()-1);
                     changeDisplay();
-                }*/
+                }
             }
         });
 
@@ -168,11 +167,11 @@ public class MainActivity extends AppCompatActivity{
                         }
                     }**/
                 }
-                /*
-                if(topRow + 1 <= items.size()){
-                    topRow++;
+
+                if(termDisplay.getTopRow()+1 <= termDisplay.getTotalColumns()){
+                    termDisplay.setTopRow(termDisplay.getTopRow()+1);
                     changeDisplay();
-                }*/
+                }
             }
         });
 
@@ -233,8 +232,6 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //int position = inputEditText.getOffsetForPosition(0,0);
-                //inputEditText.setSelection(position);
                 isBtn_ctl = true;
                 showListContents();
                 showDisplay();
@@ -289,7 +286,7 @@ public class MainActivity extends AppCompatActivity{
                         if (oldY < event.getRawY()){
                             Log.d(TAG, "scroll down");
                             //TODO さいごの行 > screenColumn の場合の処理が必要
-                            if(termDisplay.getTopRow() + 1 <= termDisplay.getTotalColumns() + termDisplay.getRowLength(topRow)/getMaxColumnLength()){
+                            if(termDisplay.getTopRow() + 1 <= termDisplay.getTotalColumns() + termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
                                 //topRow++;
                                 //escapeSequence.setTop(topRow);
                                 termDisplay.addTopRow(1);
@@ -304,12 +301,6 @@ public class MainActivity extends AppCompatActivity{
                         break;
                 }
                 showKeyboard();
-                float x = event.getX();
-                float y = event.getY();
-                int touchPosition = inputEditText.getOffsetForPosition(x, y);
-                if(touchPosition > 0){
-                    inputEditText.setSelection(touchPosition);
-                }
                 //Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
                 /**
                     if (!items.get(getSelectRowIndex()).isWritable()) {
@@ -507,11 +498,12 @@ public class MainActivity extends AppCompatActivity{
                              */
                             termDisplay.deleteTextItem(termDisplay.getCursorX(), termDisplay.getCursorY());
                             changeDisplay();
-                            //currX--;
+                            moveCursorX(-1);
                         }
                         for (int i = 0; i < str.length(); i++) { // strの先頭から1文字ずつString型にして取り出す
                             String inputStr = String.valueOf(str.charAt(i));
                             termDisplay.setTextItem(inputStr, 0);
+                            moveCursorX(1);
                             //changeDisplay();
 
                             Log.d(TAG, "ASCII code/ " + str);
@@ -523,14 +515,13 @@ public class MainActivity extends AppCompatActivity{
                                 inputEditText.setSelection(inputEditText.length());
                                 //inputEditText.append(LF);
                                 enterPutFlag = true;
+                                termDisplay.setCursorX(0);
+                                moveCursorY(1);
 
                                 if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
                                     termDisplay.addTopRow(1);
                                     changeDisplay();
                                 }
-
-                                //currX = 0;
-                                //currY++;
                             }
 
                             if (getSelectLineText().length() != 0 && getSelectLineText().length()%(termDisplay.getDisplayRowSize()-1) == 0) {
@@ -540,6 +531,7 @@ public class MainActivity extends AppCompatActivity{
                                 inputEditText.append(LF);
                                 enterPutFlag = true;
                                 receivingFlag = true;
+                                //moveCursorX(1);
                                 if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
                                     termDisplay.addTopRow(1);
                                     changeDisplay();
@@ -555,7 +547,6 @@ public class MainActivity extends AppCompatActivity{
                 if(editingFlag) {
                     editingFlag = false;
                     inputEditText.setText(inputStrText);
-                    inputEditText.setSelection(position);
                     editingFlag = true;
                 }
             }
@@ -587,7 +578,6 @@ public class MainActivity extends AppCompatActivity{
             }
         }
     };
-
 
     //通すActionを記述
     private static IntentFilter bleServiceIntentFilter() {
@@ -694,6 +684,7 @@ public class MainActivity extends AppCompatActivity{
                             if(squarePuttingFlag && data.matches("[A-HJKSTf]")){
                                 //escapeシーケンス用
                                 int move;
+                                int topRow = termDisplay.getTopRow();
                                 if(escapeMoveFlag) {
                                     move = Integer.parseInt(escapeMoveNum);
                                 }else {
@@ -769,7 +760,6 @@ public class MainActivity extends AppCompatActivity{
                             editable.replace(Math.min(startSel, endSel), Math.max(startSel, endSel), data);
                             //input.append(str);
                             receivingFlag = true;
-                            inputEditText.setSelection(inputEditText.getText().length());
                             escapeMoveFlag = false;
 
                             break;
@@ -914,7 +904,6 @@ public class MainActivity extends AppCompatActivity{
             termDisplay.setTextItem(Character.toString(newText.charAt(i)), 0);
         }
         termDisplay.setTextItem(LF, 0);
-        inputEditText.setSelection(inputEditText.getText().length());
         enterPutFlag = true;
         receivingFlag = true;
     }

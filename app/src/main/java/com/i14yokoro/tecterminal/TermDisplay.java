@@ -19,6 +19,7 @@ public class TermDisplay {
     private int cursorX;
     private int cursorY;
 
+    private int displayContentsLength = 0;
     private int displaySize = 0;
 
     private int topRow;
@@ -32,6 +33,7 @@ public class TermDisplay {
         cursorX = 0;
         cursorY = 0;
         inputRow = 0;
+        topRow = 0;
         display = new String[displayColumnSize][displayRowSize+1];
         textList = new ArrayList<>();
     }
@@ -89,7 +91,7 @@ public class TermDisplay {
     }
 
     public void setCursorX(int cursorX) {
-        if(cursorX > textList.get(getCursorY() + topRow).size()-1){
+        if(cursorX > textList.get(getCursorY() + topRow).size()){
             if(getCursorY()<displayColumnSize-1) {
                 setCursorY(getCursorY() + 1);
             }
@@ -113,14 +115,20 @@ public class TermDisplay {
     }
 
     public void setCursorY(int cursorY) {
+        Log.d(TAG, "setCursorY");
+
         if(cursorY > displayColumnSize){
-            setTopRow(topRow++);
+            setTopRow(topRow+1);
         } else {
-            if(cursorY < 0){
-                this.cursorY = 0;
-            } else {
-                this.cursorY = cursorY;
-            }
+            //if(cursorY >= getDisplaySize()){
+                //this.cursorY = getDisplaySize();
+            //} else {
+                if (cursorY < 0) {
+                    this.cursorY = 0;
+                } else {
+                    this.cursorY = cursorY;
+                }
+            //}
         }
     }
 
@@ -166,7 +174,7 @@ public class TermDisplay {
 
     public void createDisplay(){
         int displayY = 0;//displayの縦移動用
-        displaySize = 0;
+        displayContentsLength = 0;
         initialDisplay();
 
         for(int y = 0; y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
@@ -180,24 +188,16 @@ public class TermDisplay {
             for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
                 Log.d(TAG, "get y+topRow" + (y+topRow));
                 setDisplay(x, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
-                displaySize++; //ついでにサイズも保存しておく
+                displayContentsLength++; //ついでにサイズも保存しておく
             }
             displayY++;
             if (y == getTotalColumns()){
                 break;
             }
         }
-        setDisplaySize(displaySize);
-    }
-
-    public String subListContent(int y){
-        String partStr = "";
-        int lastRowPart = textList.get(y).size()%displayRowSize;
-        int size = textList.get(y).size();
-        for (int x = size - lastRowPart; x < size; x++){
-            partStr = textList.get(y).get(x).getText();
-        }
-        return partStr;
+        setDisplaySize(displayY);
+        Log.d(TAG, "displaySize : " + displayY);
+        setDisplayContentsLength(displayContentsLength);
     }
 
     public int getRowLength(int y){
@@ -218,42 +218,12 @@ public class TermDisplay {
         return str;
     }
 
-    public int getDisplaySize(){
-        return displaySize;
+    public int getDisplayContentsLength(){
+        return displayContentsLength;
     }
 
-    private void setDisplaySize(int displaySize) {
-        this.displaySize = displaySize;
-    }
-
-    public int getDisplayContentsSize(){
-        int size = 0;
-        for(int y = 0; y < displayColumnSize; y++){
-            if(getDisplay(0, y).equals("EOL")){
-                break;
-            }
-            for (int x = 0; x < textList.get(y+topRow).size(); x++){
-                if(getDisplay(x, y) == null){
-                    break;
-                }
-                size += getDisplay(x,y).length();
-                if(x > displayRowSize){
-                    break;
-                }
-                if(getDisplay(x, y).equals(LF)){
-                    break;
-                }
-            }
-        }
-        return size;
-    }
-
-    private int getDisplayRange(){
-        int range = 0;
-        for (int y = 0;y + topRow < textList.size() && range < displayColumnSize; y++){
-            range = range + textList.get(y).size()/displayRowSize + 1;
-        }
-        return range;
+    private void setDisplayContentsLength(int displayContentsLength) {
+        this.displayContentsLength = displayContentsLength;
     }
 
     private void initialDisplay(){
@@ -262,5 +232,13 @@ public class TermDisplay {
                 display[y][x] = "";
             }
         }
+    }
+
+    public int getDisplaySize() {
+        return displaySize;
+    }
+
+    public void setDisplaySize(int displaySize) {
+        this.displaySize = displaySize;
     }
 }
