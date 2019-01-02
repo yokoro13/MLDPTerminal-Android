@@ -238,6 +238,7 @@ public class MainActivity extends AppCompatActivity{
                 isBtn_ctl = true;
                 showListContents();
                 showDisplay();
+                setCursor(3,3);
                // termDisplay.changeDisplay(getTopPositionRow());
 
             }
