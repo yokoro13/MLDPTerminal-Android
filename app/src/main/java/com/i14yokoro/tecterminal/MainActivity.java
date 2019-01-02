@@ -96,8 +96,6 @@ public class MainActivity extends AppCompatActivity{
     private boolean isBtn_ctl = false;
     private boolean isBtn_esc = false;
 
-    private String[][] display;
-
     private int topRow = 0;
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
 
@@ -233,7 +231,7 @@ public class MainActivity extends AppCompatActivity{
                 //int position = inputEditText.getOffsetForPosition(0,0);
                 //inputEditText.setSelection(position);
                 isBtn_ctl = true;
-                showListContent();
+                showListContents();
                 showDisplay();
                // termDisplay.changeDisplay(getTopPositionRow());
 
@@ -988,7 +986,7 @@ public class MainActivity extends AppCompatActivity{
         Log.d("termDisplay**", row);
     }
 
-    private void showListContent(){
+    private void showListContents(){
         Log.d("termDisplay**", "******showListContent******");
         String row = "";
         for (int y = 0; y < termDisplay.getTotalColumns(); y++){
@@ -999,6 +997,14 @@ public class MainActivity extends AppCompatActivity{
             row = "";
         }
 
+    }
+
+    private void moveCursorX(int x){
+        termDisplay.setCursorX(termDisplay.getCursorX() + x);
+    }
+
+    private void moveCursorY(int y){
+        termDisplay.setCursorY(termDisplay.getCursorY() + y);
     }
 
     private String getSelectLineText(){
