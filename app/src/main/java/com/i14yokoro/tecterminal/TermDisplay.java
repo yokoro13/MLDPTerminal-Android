@@ -29,6 +29,8 @@ public class TermDisplay {
     public TermDisplay(int displayRowSize, int displayColumnSize){
         this.displayRowSize = displayRowSize+1;
         this.displayColumnSize = displayColumnSize;
+        cursorX = 0;
+        cursorY = 0;
         inputRow = 0;
         display = new String[displayColumnSize][displayRowSize+1];
         textList = new ArrayList<>();
