@@ -117,8 +117,9 @@ public class TermDisplay {
     public void setCursorY(int cursorY) {
         Log.d(TAG, "setCursorY");
 
-        if(cursorY > displayColumnSize){
-            setTopRow(topRow+1);
+        if(cursorY >= displayColumnSize){
+            //setTopRow(topRow+1);
+            this.cursorY = displayColumnSize-1;
         } else {
             //if(cursorY >= getDisplaySize()){
                 //this.cursorY = getDisplaySize();

@@ -105,8 +105,6 @@ public class MainActivity extends AppCompatActivity{
 
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
 
-    private int currX = 0; //0~maxRowLength-1
-    private int currY = 0; //0~maxColumnLength-1
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -190,10 +188,10 @@ public class MainActivity extends AppCompatActivity{
                         }
                     }**/
                 }
-                if(termDisplay.getDisplay(currX, currY).equals(LF) || currX > maxRowLength){
+                //if(termDisplay.getDisplay(currX, currY).equals(LF) || currX > maxRowLength){
                     //currX = 0;
                     //currY++;
-                }
+                //}
             }
         });
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
@@ -211,12 +209,13 @@ public class MainActivity extends AppCompatActivity{
                         }
                     }**/
                 }
+                /**
                 if(currX < 0){
                     //currX = 0;
                     if(currY > 0){
                         //currY--;
                     }
-                }
+                }***/
             }
         });
 
@@ -277,18 +276,13 @@ public class MainActivity extends AppCompatActivity{
                             Log.v(TAG, "scrollView up");
 
                             if(termDisplay.getTopRow() - 1 >= 0){
-                                //topRow--;
-                                //escapeSequence.setTop(topRow);
                                 termDisplay.addTopRow(-1);
                                 changeDisplay();
                             }
                         }
                         if (oldY < event.getRawY()){
                             Log.d(TAG, "scroll down");
-                            //TODO さいごの行 > screenColumn の場合の処理が必要
                             if(termDisplay.getTopRow() + 1 <= termDisplay.getTotalColumns() + termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
-                                //topRow++;
-                                //escapeSequence.setTop(topRow);
                                 termDisplay.addTopRow(1);
                                 changeDisplay();
                             }
@@ -482,7 +476,7 @@ public class MainActivity extends AppCompatActivity{
             if(s.length() < 1) return;
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
             //currX = (currX + eCount)%maxRowLength;
-            Log.d(TAG, "currX : " + currX);
+            //Log.d(TAG, "currX : " + currX);
             
             Log.d(TAG, "afterTextChange");
             if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
@@ -512,13 +506,15 @@ public class MainActivity extends AppCompatActivity{
                                 Log.d(TAG, "lineText length is " + getSelectLineText().length());
                                 enterPutFlag = false;
                                 //inputEditText.setText(inputStrText);
-                                inputEditText.setSelection(inputEditText.length());
+                                //l
+                                //inputEditText.setSelection(inputEditText.length());
                                 //inputEditText.append(LF);
                                 enterPutFlag = true;
                                 termDisplay.setCursorX(0);
                                 moveCursorY(1);
 
                                 if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
+                                    moveCursorY(-1);
                                     termDisplay.addTopRow(1);
                                     changeDisplay();
                                 }
@@ -533,11 +529,10 @@ public class MainActivity extends AppCompatActivity{
                                 receivingFlag = true;
                                 //moveCursorX(1);
                                 if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
+                                    moveCursorY(-1);
                                     termDisplay.addTopRow(1);
                                     changeDisplay();
                                 }
-                                //currX = 0;
-                                //currY++;
                             }
                         }
                     }
@@ -550,6 +545,7 @@ public class MainActivity extends AppCompatActivity{
                     editingFlag = true;
                 }
             }
+            moveToSavedCursor();
             inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         }
     };
@@ -1045,8 +1041,9 @@ public class MainActivity extends AppCompatActivity{
             selectionMovingFlag = true;
             Log.d(TAG, "moveToSavedCursor()");
             int cursor = inputEditText.getOffsetForPosition(termDisplay.getCursorX() * getTextWidth(), termDisplay.getCursorY() * getTextHeight());
+            Log.d(TAG, "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
             if (cursor >= 0) {
-                Log.d(TAG, "cursor > 0");
+                //Log.d(TAG, "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
                 inputEditText.setSelection(cursor);
             }
             selectionMovingFlag = false;
