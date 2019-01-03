@@ -10,8 +10,6 @@ public class TermDisplay {
 
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
 
-    private int totalRows;
-
     private int displayRowSize, displayColumnSize;
 
     private String[][] display;
@@ -23,26 +21,23 @@ public class TermDisplay {
     private int displaySize = 0;
 
     private int topRow;
-    private int inputRow;
+
     private ArrayList<ArrayList<TextItem>> textList;
-    private TextItem textItem;
 
     public TermDisplay(int displayRowSize, int displayColumnSize){
         this.displayRowSize = displayRowSize+1;
         this.displayColumnSize = displayColumnSize;
         cursorX = 0;
         cursorY = 0;
-        inputRow = 0;
         topRow = 0;
         display = new String[displayColumnSize][displayRowSize+1];
         textList = new ArrayList<>();
     }
 
     public void setTextItem(String text, int color){
-        textItem = new TextItem(text, color);
+        TextItem textItem = new TextItem(text, color);
         Log.d(TAG, "adding text: " + text);
         if(getTotalColumns() <= 0 ||textList.get(getTotalColumns()-1).size() >= displayRowSize-1|| textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
-            inputRow++;
             ArrayList<TextItem> items = new ArrayList<>();
             items.add(textItem);
             textList.add(items);
@@ -62,14 +57,6 @@ public class TermDisplay {
         } else {
             return null;
         }
-    }
-
-    public int getInputRow(){
-        return inputRow;
-    }
-
-    public void setInputRow(int inputRow) {
-        this.inputRow = inputRow;
     }
 
     public void changeText(int x, int y, String text){
@@ -147,10 +134,6 @@ public class TermDisplay {
 
     public int getTotalColumns() {
         return this.textList.size();
-    }
-
-    public void setTotalRows(int totalRows) {
-        this.totalRows = totalRows;
     }
 
     public int getDisplayRowSize() {

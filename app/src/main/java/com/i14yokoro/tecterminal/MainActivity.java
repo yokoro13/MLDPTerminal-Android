@@ -283,6 +283,10 @@ public class MainActivity extends AppCompatActivity{
                         }
                         if (oldY < event.getRawY()){
                             Log.d(TAG, "scroll down");
+                            //TODO リストの最終行にLFがないときにスクロールで画面外にすると，cursorYとtopRowの和がサイズを超えるのでなおす
+                            //これのときね
+                            //if(termDisplay.getTopRow() + 1 == termDisplay.getTotalColumns() + termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
+                            //TODO
                             if(termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns() + termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
                                 moveCursorY(-1);
                                 termDisplay.addTopRow(1);
