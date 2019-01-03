@@ -32,15 +32,16 @@ public class TermDisplay {
         cursorY = 0;
         topRow = 0;
         display = new String[displayColumnSize][displayRowSize+1];
+        ArrayList<TextItem> items = new ArrayList<>();
         textList = new ArrayList<>();
+        textList.add(items);
     }
 
     public void setTextItem(String text, int color){
 
         TextItem textItem = new TextItem(text, color);
         //Log.d(TAG, "adding text: " + text);
-        if (getTotalColumns() <= 0 ||
-                (textList.get(getTotalColumns() - 1).size() - 1 >= 0 &&
+        if ((textList.get(getTotalColumns() - 1).size() - 1 >= 0 &&
                         textList.get(getTotalColumns() - 1).get(textList.get(getTotalColumns() - 1).size() - 1).getText().equals(LF))) {
             ArrayList<TextItem> items = new ArrayList<>();
             items.add(textItem);Log.d(TAG, "Add new line1");
@@ -71,6 +72,27 @@ public class TermDisplay {
         }
     }
 
+    public void changeTextItem(int x, int y, String text, int color){
+        if(y < this.textList.size() && x < this.textList.get(y).size()) {
+            TextItem textItem = new TextItem(text, color);
+            this.textList.get(y).set(x, textItem);
+        }
+    }
+
+    public void addTextItem(int y, String text, int color){
+        if(y < this.textList.size()) {
+            TextItem textItem = new TextItem(text, color);
+            this.textList.get(y).add(textItem);
+        }
+    }
+
+    public void insertTextItem(int x, int y, String text, int color){
+        if(y < this.textList.size() && x < this.textList.get(y).size()) {
+            TextItem textItem = new TextItem(text, color);
+            this.textList.get(y).add(x, textItem);
+        }
+    }
+
     public void changeText(int x, int y, String text){
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
             this.textList.get(y).get(x).setText(text);
@@ -82,6 +104,20 @@ public class TermDisplay {
             return this.textList.get(y).get(x).getText();
         } else {
             return null;
+        }
+    }
+
+    public void changeColor(int x, int y, int color){
+        if(y < this.textList.size() && x < this.textList.get(y).size()) {
+            this.textList.get(y).get(x).setColor(color);
+        }
+    }
+
+    public int getColor(int x, int y){
+        if(y < this.textList.size() && x < this.textList.get(y).size()) {
+            return this.textList.get(y).get(x).getColor();
+        } else {
+            return 0;
         }
     }
 
