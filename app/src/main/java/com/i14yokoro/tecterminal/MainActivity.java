@@ -134,15 +134,21 @@ public class MainActivity extends AppCompatActivity{
                 }
                 else {
                     //if (items.get(getSelectRow()).isWritable()){
-                        escapeSequence.moveUp();
+                        //escapeSequence.moveUp();
                         //if(!items.get(getSelectRow()).isWritable()){
                         //    inputEditText.setSelection(currCursor);
                        // }
                    // }
                 }
-                if(false/* 画面一番上でだったら*/) {
-                    scrollUp();
+
+                if(termDisplay.getCursorY() > 0){
+                    escapeSequence.moveUp();
+                    moveToSavedCursor();
                 }
+                /**
+                if(false/* 画面一番上でだったら) {
+                    scrollUp();
+                }**/
             }
         });
 
@@ -163,13 +169,14 @@ public class MainActivity extends AppCompatActivity{
                     }**/
                 }
 
-                //moveCursorY(-1);
-                moveToSavedCursor();
-
-                if(false/* 画面一番下でだったら*/) {
-                    scrollDown();
+                if(termDisplay.getCursorY() < inputEditText.getLineCount()-1) {
+                    escapeSequence.moveDown();
+                    moveToSavedCursor();
                 }
-
+                /**
+                if(false/* 画面一番下でだったら) {
+                    scrollDown();
+                }**/
             }
         });
 
@@ -187,6 +194,10 @@ public class MainActivity extends AppCompatActivity{
                             inputEditText.setSelection(currCursor);
                         }
                     }**/
+                }
+                if(termDisplay.getCursorX() < termDisplay.getRowLength(getSelectRowIndex())) {
+                    escapeSequence.moveRight();
+                    moveToSavedCursor();
                 }
                 //if(termDisplay.getDisplay(currX, currY).equals(LF) || currX > maxRowLength){
                     //currX = 0;
@@ -208,6 +219,10 @@ public class MainActivity extends AppCompatActivity{
                             inputEditText.setSelection(currCursor);
                         }
                     }**/
+                }
+                if(termDisplay.getCursorX() > 0) {
+                    escapeSequence.moveLeft();
+                    moveToSavedCursor();
                 }
                 /**
                 if(currX < 0){
@@ -1023,7 +1038,6 @@ public class MainActivity extends AppCompatActivity{
             Log.d("termDisplay**", row);
             row = "";
         }
-
     }
 
     private String getSelectLineText(){

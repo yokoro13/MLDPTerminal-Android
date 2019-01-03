@@ -26,51 +26,18 @@ public class EscapeSequence {
     }
 
     public void moveRight(){
-        if(editText.length() >= editText.getSelectionStart() + 1){
-            editText.setSelection(editText.getSelectionStart() + 1);
-        }
-        else {
-            editText.setSelection(editText.length());
-        }
+        moveCursorX(1);
     }
 
     public void moveLeft(){
-        if(editText.getSelectionStart() - 1 >= 0) {
-            editText.setSelection(editText.getSelectionStart() - 1);
-        }
-        else {
-            editText.setSelection(0);
-        }
+        moveCursorX(-1);
     }
 
     public void moveUp(){
-        //FIXME 上下移動のエズケープシーケンスの移動量算出をなおす
-        if(editText.getSelectionStart() - getSelectRowLength(getSelectRow()) >= 0){
-            Log.d(TAG,
-                    "\n"
-                            + "moveUP" + "\n"
-                            + " goto " + (editText.getSelectionStart() - getSelectRowLength(getSelectRow())) + "\n"
-                            + " selectRow " + getSelectRow() + " " + termDisplay.getRowLength(rowNumToListId(getSelectRow()))+ "\n"
-                            + " length " +getSelectRowLength(getSelectRow()));
-            if(getSelectRowLength(getSelectRow()) < getSelectRowLength(getSelectRow()+1)){
-                editText.setSelection(getSelectRowLength(1, getSelectRow()+1)-1);
-            }
-            else {
-                editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow()));
-            }
-        }
-        else {
-            editText.setSelection(0);
-        }
-
+        moveCursorY(-1);
     }
     public void moveDown(){
-        if (editText.getSelectionStart() + getSelectRowLength(getSelectRow()) <= editText.length()){
-            editText.setSelection(editText.getSelectionStart() + getSelectRowLength(getSelectRow()));
-        }
-        else {
-            editText.setSelection(editText.length());
-        }
+        moveCursorY(1);
     }
 
     public void moveRight(int n){
@@ -92,6 +59,17 @@ public class EscapeSequence {
     }
 
     public void moveUp(int n){
+        /**
+         * //TODO 移動先がリストのサイズが超える場合の対応を実装
+         * １．目的の行のみの対応
+         * ２．もしサイズが小さければ addBlank
+         * ３．下に足りない場合は，addEmpty * (たりない分) -> add Blank
+         * ４．changeDisplay
+         * ５．move cursor
+         * ６．たぶん終了
+         */
+
+
         if(getSelectRow() - n < 0 || n <= 0){
             return;
         }
@@ -237,15 +215,13 @@ public class EscapeSequence {
     }
 
     private int rowNumToListId(int rowNum){
-        if (rowNum > 0) {
-            return getTop()-1 + rowNum;
+        if (rowNum >= 0) {
+            return rowNum + termDisplay.getTopRow();
         }
         return 0;
-
     }
 
     public void changeDisplay(){
-        int topRow = termDisplay.getTopRow();
         String output = "";
         //Log.d(TAG, "topRow/ " + topRow);
         editText.setText("");
@@ -273,6 +249,12 @@ public class EscapeSequence {
         }
         editText.setText(output);
         logger.dumpToLog();
+    }
+
+    private void addBlank(int n){
+        for (int i = 0; i < n; i++){
+            termDisplay.addTextItem(getSelectRowIndex()+termDisplay.getCursorY(), " ", 0);
+        }
     }
 
     public void setCursol(int x, int y){

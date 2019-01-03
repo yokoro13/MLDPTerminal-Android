@@ -87,7 +87,7 @@ public class TermDisplay {
     }
 
     public void insertRow(){
-        
+
     }
 
     public void addTextItemOverSize(int y, String text, int color){
