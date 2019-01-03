@@ -25,6 +25,7 @@ import android.text.Spannable;
 import android.text.Spanned;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.util.TimingLogger;
 import android.view.ActionMode;
 import android.view.Display;
 import android.view.Menu;
@@ -38,9 +39,6 @@ import android.widget.EditText;
 import java.nio.charset.StandardCharsets;
 
 /**
- * TODO 接続中，打ったもじはRNにおくるだけでandroid上には表示しない．
- * TODO 削除された文字への対応（今のままでは，画面上の情報とリストの中身が一致していない）
- * TODO カーソル情報を追加，およびカーソル操作
  * TODO 文字の色への対応
  * TODO エスケープシーケンスへの対応（変数を合わせただけなのでバグ多数）
  * TODO あらたなエスケープシーケンスの追加（行単位でやるよりらくになったはず）
@@ -104,6 +102,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean isBtn_esc = false;
 
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
+    private boolean displayingFlag = false;
 
 
     @SuppressLint("ClickableViewAccessibility")
@@ -141,10 +140,8 @@ public class MainActivity extends AppCompatActivity{
                        // }
                    // }
                 }
-
-                if(termDisplay.getTopRow()-1 >= 0){
-                    termDisplay.setTopRow(termDisplay.getTopRow()-1);
-                    changeDisplay();
+                if(false/* 画面一番上でだったら*/) {
+                    scrollUp();
                 }
             }
         });
@@ -166,10 +163,13 @@ public class MainActivity extends AppCompatActivity{
                     }**/
                 }
 
-                if(termDisplay.getTopRow()+1 <= termDisplay.getTotalColumns()){
-                    termDisplay.setTopRow(termDisplay.getTopRow()+1);
-                    changeDisplay();
+                //moveCursorY(-1);
+                moveToSavedCursor();
+
+                if(false/* 画面一番下でだったら*/) {
+                    scrollDown();
                 }
+
             }
         });
 
@@ -275,11 +275,7 @@ public class MainActivity extends AppCompatActivity{
                         if (oldY > event.getRawY()) {
                             Log.v(TAG, "scrollView up");
 
-                            if(termDisplay.getTopRow() -1 >= 0){
-                                moveCursorY(1);
-                                termDisplay.addTopRow(-1);
-                                changeDisplay();
-                            }
+                            scrollUp();
                         }
                         if (oldY < event.getRawY()){
                             Log.d(TAG, "scroll down");
@@ -287,12 +283,7 @@ public class MainActivity extends AppCompatActivity{
                             //これのときね
                             //if(termDisplay.getTopRow() + 1 == termDisplay.getTotalColumns() + termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
                             //TODO
-                            if(termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns() + termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
-                                moveCursorY(-1);
-                                termDisplay.addTopRow(1);
-
-                                changeDisplay();
-                            }
+                            scrollDown();
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -484,10 +475,10 @@ public class MainActivity extends AppCompatActivity{
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
             //currX = (currX + eCount)%maxRowLength;
             //Log.d(TAG, "currX : " + currX);
-            
+            TimingLogger logger = new TimingLogger("TAG_TEST", "textChanged");
             Log.d(TAG, "afterTextChange");
             if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
-                if (receivingFlag) {
+                if (!displayingFlag) {
                     if (enterPutFlag) { //無限ループ防止
                         if (eBefore > 0) {
                             if(termDisplay.getCursorX() > 0) {
@@ -499,13 +490,13 @@ public class MainActivity extends AppCompatActivity{
                         for (int i = 0; i < str.length(); i++) { // strの先頭から1文字ずつString型にして取り出す
                             String inputStr = String.valueOf(str.charAt(i));
                             termDisplay.setTextItem(inputStr, 0);
-                            moveCursorX(1);
                             //changeDisplay();
+                            moveCursorX(1);
 
                             Log.d(TAG, "ASCII code/ " + str);
                             if (inputStr.equals(LF)) {
-                                Log.d(TAG, "lineText is " + getSelectLineText());
-                                Log.d(TAG, "lineText length is " + getSelectLineText().length());
+                                //Log.d(TAG, "lineText is " + getSelectLineText());
+                                //Log.d(TAG, "lineText length is " + getSelectLineText().length());
                                 enterPutFlag = false;
                                 //inputEditText.setText(inputStrText);
                                 //l
@@ -522,20 +513,27 @@ public class MainActivity extends AppCompatActivity{
                                 }
                             }
 
+                            Log.d("termDisplay**", "row length "+Integer.toString(getSelectLineText().length()));
                             if (getSelectLineText().length() != 0 && getSelectLineText().length()%(termDisplay.getDisplayRowSize()-1) == 0) {
-                                Log.d(TAG, "append LF ");
+                                Log.d("termDisplay**", "row length in if "+Integer.toString(getSelectLineText().length()));
+                                Log.d("termDisplay**", "append LF ");
                                 enterPutFlag = false;
+                                displayingFlag = true;
                                 receivingFlag = false;
                                 inputEditText.append(LF);
+                                //termDisplay.setCursorX();
                                 enterPutFlag = true;
+                                displayingFlag = false;
                                 receivingFlag = true;
-                                //moveCursorX(1);
                                 if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
+
                                     moveCursorY(-1);
                                     termDisplay.addTopRow(1);
                                     changeDisplay();
+
                                 }
                             }
+
                         }
                     }
                 }
@@ -549,6 +547,7 @@ public class MainActivity extends AppCompatActivity{
             }
             moveToSavedCursor();
             inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+            logger.dumpToLog();
         }
     };
 
@@ -967,6 +966,10 @@ public class MainActivity extends AppCompatActivity{
 
     //選択中の行番号を返す
     private int getSelectRowIndex() {
+        Log.d("select row index", "enter");
+        if(escapeSequence.getSelectRow() + termDisplay.getTopRow() <= 0){
+            return 0;
+        }
         return escapeSequence.getSelectRow() + termDisplay.getTopRow();
     }
 
@@ -987,10 +990,12 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void changeDisplay(){
-        receivingFlag = false;
+        displayingFlag = true;
         enterPutFlag = false;
+        receivingFlag = false;
         escapeSequence.changeDisplay();
         enterPutFlag = true;
+        displayingFlag = false;
         receivingFlag = true;
         //showDisplay();
     }
@@ -1002,8 +1007,10 @@ public class MainActivity extends AppCompatActivity{
             for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
                 row = row  + termDisplay.getDisplay(x,y);
             }
+            Log.d("termDisplay**", row);
+            row = "";
         }
-        Log.d("termDisplay**", row);
+
     }
 
     private void showListContents(){
@@ -1020,6 +1027,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private String getSelectLineText(){
+        Log.d("select row index", "select line "+Integer.toString(getSelectRowIndex()));
         return termDisplay.getRowText(getSelectRowIndex());
     }
 
@@ -1043,7 +1051,7 @@ public class MainActivity extends AppCompatActivity{
             selectionMovingFlag = true;
             Log.d(TAG, "moveToSavedCursor()");
             int cursor = inputEditText.getOffsetForPosition(termDisplay.getCursorX() * getTextWidth(), termDisplay.getCursorY() * getTextHeight());
-            Log.d(TAG, "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
+            Log.d("termDisplay**", "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
             if (cursor >= 0) {
                 //Log.d(TAG, "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
                 inputEditText.setSelection(cursor);
@@ -1055,5 +1063,25 @@ public class MainActivity extends AppCompatActivity{
     private void setCursor(int x, int y){
         termDisplay.setCursorX(x);
         termDisplay.setCursorY(y);
+    }
+
+    private void scrollUp(){
+        if(termDisplay.getTopRow() -1 >= 0){
+            moveCursorY(1);
+            termDisplay.addTopRow(-1);
+            changeDisplay();
+        }
+    }
+
+    private void scrollDown(){
+        //FIXME カーソルがある行に１文字もないとき一番上にならない
+        //FIXME LFがない行にカーソルがある状態でスクロールすると次の行の最初にカーソルが移動する
+        TimingLogger logger = new TimingLogger("TAG_TEST", "scrollDown");
+        if(termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns() ){//+ termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
+            moveCursorY(-1);
+            termDisplay.addTopRow(1);
+            changeDisplay();
+        }
+        logger.dumpToLog();
     }
 }

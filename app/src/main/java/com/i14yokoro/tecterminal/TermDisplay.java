@@ -1,12 +1,13 @@
 package com.i14yokoro.tecterminal;
 
 import android.util.Log;
+import android.util.TimingLogger;
 
 import java.util.ArrayList;
 
-//TODO 改行コードを入れるようにdisplayの横幅を１つ増やす必要がありそう？？
 public class TermDisplay {
     private final String TAG = "termDisplay**";
+    private final String TIME = "timer**";
 
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
 
@@ -25,7 +26,7 @@ public class TermDisplay {
     private ArrayList<ArrayList<TextItem>> textList;
 
     public TermDisplay(int displayRowSize, int displayColumnSize){
-        this.displayRowSize = displayRowSize+1;
+        this.displayRowSize = displayRowSize;
         this.displayColumnSize = displayColumnSize;
         cursorX = 0;
         cursorY = 0;
@@ -35,16 +36,27 @@ public class TermDisplay {
     }
 
     public void setTextItem(String text, int color){
+
         TextItem textItem = new TextItem(text, color);
-        Log.d(TAG, "adding text: " + text);
-        if(getTotalColumns() <= 0 ||textList.get(getTotalColumns()-1).size() >= displayRowSize-1|| textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
+        //Log.d(TAG, "adding text: " + text);
+        if (getTotalColumns() <= 0 ||
+                (textList.get(getTotalColumns() - 1).size() - 1 >= 0 &&
+                        textList.get(getTotalColumns() - 1).get(textList.get(getTotalColumns() - 1).size() - 1).getText().equals(LF))) {
             ArrayList<TextItem> items = new ArrayList<>();
-            items.add(textItem);
+            items.add(textItem);Log.d(TAG, "Add new line1");
             textList.add(items);
+
+        } else {
+            Log.d(TAG, "Add new textItem");
+            textList.get(getTotalColumns() - 1).add(textItem);
         }
-        else {
-            textList.get(getTotalColumns()-1).add(textItem);
+        if(textList.get(getTotalColumns()-1).size() >= displayRowSize){
+            Log.d(TAG, "Add new line2");
+            ArrayList<TextItem> items1 = new ArrayList<>();
+            textList.add(items1);
         }
+
+        //if(false && textList.get(getTopRow() + getCursorY()).size() >= displayRowSize){
     }
 
     public void deleteTextItem(int x, int y){
@@ -78,11 +90,13 @@ public class TermDisplay {
     }
 
     public void setCursorX(int cursorX) {
-        if(cursorX > textList.get(getCursorY() + topRow).size()){
-            if(getCursorY()<displayColumnSize-1) {
+        Log.d(TAG, "cursorX: " + cursorX);
+        if(cursorX > textList.get(getCursorY() + topRow).size() || cursorX >= displayRowSize){
+            if(getCursorY() < displayColumnSize) {
                 setCursorY(getCursorY() + 1);
             }
             this.cursorX = cursorX % displayRowSize;
+            Log.d(TAG, Integer.toString(getCursorX()));
         } else {
             if(cursorX < 0){
                 if(0 < cursorY){
@@ -92,6 +106,7 @@ public class TermDisplay {
                     this.cursorX = 0;
                 }
             } else {
+                //if(cursorX >= dis)
                 this.cursorX = cursorX;
             }
         }
@@ -157,6 +172,9 @@ public class TermDisplay {
     }
 
     public void createDisplay(){
+        long start = System.currentTimeMillis();
+        TimingLogger logger = new TimingLogger("TAG_TEST", "create display");
+
         int displayY = 0;//displayの縦移動用
         displayContentsLength = 0;
         initialDisplay();
@@ -170,7 +188,7 @@ public class TermDisplay {
                 break;
             }
             for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
-                Log.d(TAG, "get y+topRow" + (y+topRow));
+                //Log.d(TAG, "get y+topRow" + (y+topRow));
                 setDisplay(x, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
                 displayContentsLength++; //ついでにサイズも保存しておく
             }
@@ -178,10 +196,15 @@ public class TermDisplay {
             if (y == getTotalColumns()){
                 break;
             }
+            //logger.addSplit("abeshi");
         }
         setDisplaySize(displayY);
         Log.d(TAG, "displaySize : " + displayY);
         setDisplayContentsLength(displayContentsLength);
+
+        logger.dumpToLog();
+        long end = System.currentTimeMillis();
+        Log.d(TIME, "measure: " + Long.toString(end - start));
     }
 
     public int getRowLength(int y){

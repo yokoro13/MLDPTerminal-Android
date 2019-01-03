@@ -2,6 +2,7 @@ package com.i14yokoro.tecterminal;
 
 import android.content.Context;
 import android.util.Log;
+import android.util.TimingLogger;
 import android.widget.EditText;
 
 public class EscapeSequence {
@@ -195,7 +196,7 @@ public class EscapeSequence {
     //rowは0から
     public int getSelectRow(){
         int start = editText.getSelectionStart();
-        int row = getTop()+1;
+        int row = termDisplay.getTopRow()+1;
         //int count = items.get(getTop()).getText().length();
         int count = termDisplay.getRowLength(getTop());
 
@@ -208,10 +209,11 @@ public class EscapeSequence {
             }
             else break;
 
-            Log.d(TAG, "count : " + count);
+            //Log.d(TAG, "count : " + count);
         }
-        Log.d(TAG, "number/ " + Integer.toString(row-1) + " contents/ " + termDisplay.getRowText(row-1));
-        return row-1;
+        //Log.d(TAG, "number/ " + Integer.toString(row-1) + " contents/ " + termDisplay.getRowText(row-1));
+        //Log.d(TAG, "row/: " + (row-1 - termDisplay.getTopRow()));
+        return row - termDisplay.getTopRow() - 1;
     }
 
     private int getSelectRowLength(int selectRow){
@@ -248,6 +250,7 @@ public class EscapeSequence {
         //Log.d(TAG, "topRow/ " + topRow);
         editText.setText("");
         termDisplay.createDisplay();
+        TimingLogger logger = new TimingLogger("TAG_TEST", "change display");
         for (int y = 0; y < termDisplay.getTotalColumns() && y < termDisplay.getDisplayColumnSize(); y++){
             for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
                 if(!termDisplay.getDisplay(x, y).equals("EOL")) {
@@ -259,21 +262,44 @@ public class EscapeSequence {
                     logger.dumpToLog();
                     return;
                 }
-                if(x == termDisplay.getDisplayRowSize()){
+                if(x == termDisplay.getDisplayRowSize()-1){
                     output = output + LF;
                     //editText.append(LF);
                 }
-                else return;
                 if(termDisplay.getDisplay(x, y).equals(LF)){
                     break;
                 }
             }
         }
+        editText.setText(output);
+        logger.dumpToLog();
     }
 
     public void setCursol(int x, int y){
         int move = getSelectRowLength(0, y) + x;
         editText.setSelection(move);
     }
+
+    private int getSelectRowIndex() {
+        return getSelectRow() + termDisplay.getTopRow();
+    }
+
+    private String getSelectLineText(){
+        return termDisplay.getRowText(getSelectRowIndex());
+    }
+
+    private void moveCursorX(int x){
+        termDisplay.setCursorX(termDisplay.getCursorX() + x);
+    }
+
+    private void moveCursorY(int y){
+        termDisplay.setCursorY(termDisplay.getCursorY() + y);
+    }
+
+    private void setCursor(int x, int y){
+        termDisplay.setCursorX(x);
+        termDisplay.setCursorY(y);
+    }
+
 
 }
