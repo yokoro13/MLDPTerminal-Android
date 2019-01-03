@@ -244,14 +244,24 @@ public class EscapeSequence {
 
     public void changeDisplay(){
         int topRow = termDisplay.getTopRow();
-        Log.d(TAG, "topRow/ " + topRow);
+        String output = "";
+        //Log.d(TAG, "topRow/ " + topRow);
         editText.setText("");
         termDisplay.createDisplay();
         for (int y = 0; y < termDisplay.getTotalColumns() && y < termDisplay.getDisplayColumnSize(); y++){
             for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
                 if(!termDisplay.getDisplay(x, y).equals("EOL")) {
-                    editText.append(termDisplay.getDisplay(x, y));
-                    Log.d("termDisplay**", "append " + termDisplay.getDisplay(x, y));
+                    //できれば，文字列を作ってからsetTextでいいかも
+                    output = output + termDisplay.getDisplay(x, y);
+
+                } else{
+                    editText.setText(output);
+                    logger.dumpToLog();
+                    return;
+                }
+                if(x == termDisplay.getDisplayRowSize()){
+                    output = output + LF;
+                    //editText.append(LF);
                 }
                 else return;
                 if(termDisplay.getDisplay(x, y).equals(LF)){
