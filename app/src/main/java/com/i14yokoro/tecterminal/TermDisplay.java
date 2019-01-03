@@ -86,6 +86,23 @@ public class TermDisplay {
         }
     }
 
+    public void insertRow(){
+        
+    }
+
+    public void addTextItemOverSize(int y, String text, int color){
+        TextItem textItem = new TextItem(text, color);
+        ArrayList<TextItem> items = new ArrayList<>();
+        items.add(textItem);
+        Log.d(TAG, "Add new line1");
+        textList.add(items);
+    }
+
+    public void addEmptyRow(){
+        ArrayList<TextItem> items1 = new ArrayList<>();
+        textList.add(items1);
+    }
+
     public void insertTextItem(int x, int y, String text, int color){
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
             TextItem textItem = new TextItem(text, color);
