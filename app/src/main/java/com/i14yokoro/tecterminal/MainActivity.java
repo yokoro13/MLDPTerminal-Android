@@ -275,7 +275,7 @@ public class MainActivity extends AppCompatActivity{
                         if (oldY > event.getRawY()) {
                             Log.v(TAG, "scrollView up");
 
-                            if(termDisplay.getTopRow() - 1 >= 0){
+                            if(termDisplay.getTopRow() -1 >= 0){
                                 moveCursorY(1);
                                 termDisplay.addTopRow(-1);
                                 changeDisplay();
@@ -283,9 +283,10 @@ public class MainActivity extends AppCompatActivity{
                         }
                         if (oldY < event.getRawY()){
                             Log.d(TAG, "scroll down");
-                            if(termDisplay.getTopRow() + 1 <= termDisplay.getTotalColumns() + termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
+                            if(termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns() + termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
                                 moveCursorY(-1);
                                 termDisplay.addTopRow(1);
+
                                 changeDisplay();
                             }
                         }
