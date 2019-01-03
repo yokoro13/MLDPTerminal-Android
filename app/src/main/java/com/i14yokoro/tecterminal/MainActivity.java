@@ -490,16 +490,11 @@ public class MainActivity extends AppCompatActivity{
                 if (receivingFlag) {
                     if (enterPutFlag) { //無限ループ防止
                         if (eBefore > 0) {
-                            /**
-                             * 文字が削除された時の流れ
-                             * １．カーソル位置のx，yをとってくる
-                             * ２．list.get(y).remove(x)をする
-                             * ３．changeDisplay
-                             * ４．しゅうりょう
-                             */
-                            termDisplay.deleteTextItem(termDisplay.getCursorX(), termDisplay.getCursorY());
-                            changeDisplay();
-                            moveCursorX(-1);
+                            if(termDisplay.getCursorX() > 0) {
+                                termDisplay.deleteTextItem(termDisplay.getCursorX() - 1, termDisplay.getCursorY() + termDisplay.getTopRow());
+                                changeDisplay();
+                                moveCursorX(-1);
+                            }
                         }
                         for (int i = 0; i < str.length(); i++) { // strの先頭から1文字ずつString型にして取り出す
                             String inputStr = String.valueOf(str.charAt(i));
