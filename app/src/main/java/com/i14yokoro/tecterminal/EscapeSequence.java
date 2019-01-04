@@ -65,16 +65,6 @@ public class EscapeSequence {
     }
 
     public void moveUp(int n){
-        /**
-         * //TODO 移動先がリストのサイズが超える場合の対応を実装
-         * 画面外になる場合はスクロールしない（一番下もしくは上で止まる）
-         * １．目的の行のみの対応
-         * ２．もしサイズが小さければ addBlank
-         * ３．下に足りない場合は，addEmpty * (たりない分) -> add Blank
-         * ４．changeDisplay
-         * ５．move cursor
-         * ６．たぶん終了
-         */
         if(termDisplay.getCursorY() - n < 0){
             termDisplay.setCursorY(0);
         } else {
@@ -126,11 +116,17 @@ public class EscapeSequence {
         moveRight(n);
     }
 
-    public void moveSelection(int n, int m){
+    public void moveSelection(int n, int m){ //n,mは1~
+        if(n < 1){
+            n = 1;
+        }
+        if(m < 1){
+            m = 1;
+        }
         termDisplay.setCursorX(0);
         termDisplay.setCursorY(0);
-        moveRight(n);
-        moveDown(m);
+        moveRight(n-1);
+        moveDown(m-1);
     }
 
     public void clearDisplay(){
@@ -138,33 +134,82 @@ public class EscapeSequence {
         //０から取得したカーソルまでの部分をedittextから切り取る
         //貼り付け
         //getSelection % maxChar番地 のリストからうしろをクリア
+        int x = termDisplay.getCursorX();
+        for(int y = termDisplay.getCursorY(); y < termDisplay.getDisplaySize(); y++){
+            for (; x < termDisplay.getRowLength(y); x++){
+                termDisplay.deleteTextItem(x, y);
+            }
+            x = 0;
+        }
     }
 
     public void clearDisplay(int n){
-        if(n == 0){
+        //一番下までスクロールして消去ぽい
+        if(n == 0){ //カーソルより後ろにある画面上の文字を消す
+            clearDisplay();
+        }
+
+        if(n == 1){ //カーソルより前にある画面上の文字を消す
+            for (int y = 0; y <= termDisplay.getCursorY(); y++){
+                for (int x = 0; x < termDisplay.getRowLength(y); x++){
+                    if(y == termDisplay.getCursorY()){
+                        termDisplay.deleteTextItem(x, y);
+                        if(x == termDisplay.getCursorX()){
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if(n == 2){ //全消去
+            for (int y = 0; y < termDisplay.getDisplaySize(); y++){
+                for (int x = 0; x < termDisplay.getRowLength(y); x++){
+                    termDisplay.deleteTextItem(x, y);
+                }
+            }
+        }
+
+    }
+
+    public void clearRow(){
+        for (int x = termDisplay.getCursorX(); x < termDisplay.getRowLength(termDisplay.getCursorY()); x++){
+            termDisplay.deleteTextItem(x, termDisplay.getCursorY());
+        }
+    }
+
+    public void clearRow(int n){
+        if(n == 0){ //カーソル以降にある文字を消す
+            clearRow();
+        }
+
+        if(n == 1){ //カーソル以前にある文字を消す
+            for (int x = 0; x <= termDisplay.getCursorX(); x++){
+                termDisplay.deleteTextItem(x, termDisplay.getCursorY());
+            }
+        }
+
+        if(n == 2){ //全消去
+            for (int x = 0; x < termDisplay.getRowLength(termDisplay.getCursorY()); x++){
+                termDisplay.deleteTextItem(x, termDisplay.getCursorY());
+            }
 
         }
     }
 
-    public void clearRow(){
-
-    }
-
-    public void clearRow(int n){
-
-    }
-
     public void scrollNext(int n){
-        if (getTop() + n > termDisplay.getTotalColumns()) return;
+        if (getTop() + n > termDisplay.getTotalColumns()) return; //一番したに空白追加？？
         setTop(getTop()+n);
-        changeDisplay();
     }
 
     public void scrollBack(int n){
-
+        //一番上に空白追加で一番した削除？？？(あくまで画面上でスクロールしていると見せかけている?)
         if(getTop() - n < 0) return;
         setTop(getTop()-n);
-        changeDisplay();
+    }
+
+    public void selectGraphicRendition(){ //色
+
     }
 
     //row行までの文字数をかえす

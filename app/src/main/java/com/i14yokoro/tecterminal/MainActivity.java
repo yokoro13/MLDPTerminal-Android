@@ -96,6 +96,8 @@ public class MainActivity extends AppCompatActivity{
     private boolean editingFlag = true;
     private boolean enterPutFlag = true;
 
+    private boolean Hflag = false;
+
     private boolean selectionMovingFlag = false;
 
     private boolean isBtn_ctl = false;
@@ -667,7 +669,7 @@ public class MainActivity extends AppCompatActivity{
                         default:
                             //2桁の入力を可能にする　できた
                             int h1 = 1;
-                            boolean Hflag = false;
+
                             if (squarePuttingFlag && data.matches("[0-9]")) {
                                 Log.d(TAG, "move flag is true");
                                 escapeMoveNum += data;
@@ -693,75 +695,81 @@ public class MainActivity extends AppCompatActivity{
                                 escPuttingFlag = false;
                                 break;
                             }
-                            if(squarePuttingFlag && data.matches("[A-HJKSTf]")){
-                                //escapeシーケンス用
-                                int move;
-                                int topRow = termDisplay.getTopRow();
-                                if(escapeMoveFlag) {
-                                    move = Integer.parseInt(escapeMoveNum);
-                                }else {
-                                    move = 1;
-                                }
-                                escapeMoveNum = "";
-
-                                Log.d(TAG, "moveFlag true && A-H");
-                                if(str.equals(KeyHexString.KEY_A)){
-                                    escapeSequence.moveUp(move);
-                                }
-                                if(str.equals(KeyHexString.KEY_B)){
-                                    escapeSequence.moveDown(move);
-                                }
-                                if(str.equals(KeyHexString.KEY_C)){
-                                    escapeSequence.moveRight(move);
-                                }
-                                if(str.equals(KeyHexString.KEY_D)){
-                                    escapeSequence.moveLeft(move);
-                                }
-                                if(str.equals(KeyHexString.KEY_E)){
-                                    escapeSequence.moveDownToRowLead(move);
-                                }
-                                if(str.equals(KeyHexString.KEY_F)){
-                                    escapeSequence.moveUpToRowLead(move);
-                                }
-                                if(str.equals(KeyHexString.KEY_G)){
-                                    escapeSequence.moveSelection(move);
-                                }
-                                if(str.equals(KeyHexString.KEY_H) || str.equals(KeyHexString.KEY_f)){
-                                    if(!Hflag){
-                                        h1 = 1;
+                            if (squarePuttingFlag) {
+                                if (data.matches("[A-HJKSTfm]")) {
+                                    //escapeシーケンス用
+                                    int move;
+                                    int topRow = termDisplay.getTopRow();
+                                    if (escapeMoveFlag) {
+                                        move = Integer.parseInt(escapeMoveNum);
+                                    } else {
                                         move = 1;
                                     }
-                                    escapeSequence.moveSelection(h1, move);
-                                    Hflag = false;
-                                }
-                                if(str.equals(KeyHexString.KEY_J)){
+                                    escapeMoveNum = "";
 
-                                }
-                                if (str.equals(KeyHexString.KEY_K)){
-
-                                }
-                                if (str.equals(KeyHexString.KEY_S)){
-                                    receivingFlag = false;
-                                    if (topRow + move <= termDisplay.getTotalColumns()) {
+                                    Log.d(TAG, "moveFlag true && A-H");
+                                    if (str.equals(KeyHexString.KEY_A)) {
+                                        escapeSequence.moveUp(move);
+                                        changeDisplay();
+                                    }
+                                    if (str.equals(KeyHexString.KEY_B)) {
+                                        escapeSequence.moveDown(move);
+                                        changeDisplay();
+                                    }
+                                    if (str.equals(KeyHexString.KEY_C)) {
+                                        escapeSequence.moveRight(move);
+                                        changeDisplay();
+                                    }
+                                    if (str.equals(KeyHexString.KEY_D)) {
+                                        escapeSequence.moveLeft(move);
+                                        changeDisplay();
+                                    }
+                                    if (str.equals(KeyHexString.KEY_E)) {
+                                        escapeSequence.moveDownToRowLead(move);
+                                        changeDisplay();
+                                    }
+                                    if (str.equals(KeyHexString.KEY_F)) {
+                                        escapeSequence.moveUpToRowLead(move);
+                                        changeDisplay();
+                                    }
+                                    if (str.equals(KeyHexString.KEY_G)) {
+                                        escapeSequence.moveSelection(move);
+                                        changeDisplay();
+                                    }
+                                    if (str.equals(KeyHexString.KEY_H) || str.equals(KeyHexString.KEY_f)) {
+                                        if (!Hflag) {
+                                            h1 = 1;
+                                            move = 1;
+                                        }
+                                        escapeSequence.moveSelection(h1, move);
+                                        changeDisplay();
+                                        Hflag = false;
+                                    }
+                                    if (str.equals(KeyHexString.KEY_J)) {
+                                        escapeSequence.clearDisplay(move);
+                                        changeDisplay();
+                                    }
+                                    if (str.equals(KeyHexString.KEY_K)) {
+                                        escapeSequence.clearRow(move);
+                                        changeDisplay();
+                                    }
+                                    if (str.equals(KeyHexString.KEY_S)) {
                                         escapeSequence.scrollNext(move);
-                                        topRow = topRow + move;
-                                        escapeSequence.setTop(topRow);
+                                        changeDisplay();
                                     }
-                                    receivingFlag = true;
-                                }
-                                if (str.equals(KeyHexString.KEY_T)){
-                                    receivingFlag = false;
-                                    if(topRow - move >= 0) {
+                                    if (str.equals(KeyHexString.KEY_T)) {
                                         escapeSequence.scrollBack(move);
-                                        topRow = topRow - move;
-                                        escapeSequence.setTop(topRow);
+                                        changeDisplay();
                                     }
-                                    receivingFlag = true;
+                                    if (str.equals(KeyHexString.KEY_m)){
+                                        escapeSequence.selectGraphicRendition();
+                                    }
+
+                                    escapeMoveFlag = false;
+                                    squarePuttingFlag = false;
+                                    escPuttingFlag = false;
+                                    break;
                                 }
-                                escapeMoveFlag = false;
-                                squarePuttingFlag = false;
-                                escPuttingFlag = false;
-                                break;
                             }
                             RNtext = RNtext + data;
 
