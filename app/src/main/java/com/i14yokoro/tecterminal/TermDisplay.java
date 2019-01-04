@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 public class TermDisplay {
     private final String TAG = "termDisplay**";
-    private final String TIME = "timer**";
 
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
 
@@ -40,18 +39,13 @@ public class TermDisplay {
     public void setTextItem(String text, int color){
 
         TextItem textItem = new TextItem(text, color);
+        int columnSize = getTotalColumns();
         //Log.d(TAG, "adding text: " + text);
-        if ((textList.get(getTotalColumns() - 1).size() - 1 >= 0 &&
-                        textList.get(getTotalColumns() - 1).get(textList.get(getTotalColumns() - 1).size() - 1).getText().equals(LF))) {
-            ArrayList<TextItem> items = new ArrayList<>();
-            items.add(textItem);Log.d(TAG, "Add new line1");
-            textList.add(items);
+        //TODO 途中に書き込むのに対応させる
 
-        } else {
-            Log.d(TAG, "Add new textItem");
-            textList.get(getTotalColumns() - 1).add(textItem);
-        }
-        if(textList.get(getTotalColumns()-1).size() >= displayRowSize){
+        Log.d(TAG, "Add new textItem");
+        textList.get(columnSize - 1).add(textItem);
+        if(text.equals(LF) || textList.get(getTotalColumns()-1).size() >= displayRowSize){
             Log.d(TAG, "Add new line2");
             ArrayList<TextItem> items1 = new ArrayList<>();
             textList.add(items1);
@@ -145,19 +139,15 @@ public class TermDisplay {
     public void setCursorX(int cursorX) {
         Log.d(TAG, "cursorX: " + cursorX);
         if(cursorX > textList.get(getCursorY() + topRow).size() || cursorX >= displayRowSize){
+            /**
             if(getCursorY() < displayColumnSize) {
                 setCursorY(getCursorY() + 1);
-            }
+            }**/
             this.cursorX = cursorX % displayRowSize;
             Log.d(TAG, Integer.toString(getCursorX()));
         } else {
             if(cursorX < 0){
-                if(0 < cursorY){
-                    this.cursorX = textList.get(getCursorY() + topRow).size()-1;
-                    setCursorY(getCursorY()-1);
-                } else {
-                    this.cursorX = 0;
-                }
+                this.cursorX = 0;
             } else {
                 //if(cursorX >= dis)
                 this.cursorX = cursorX;
@@ -225,30 +215,28 @@ public class TermDisplay {
     }
 
     public void createDisplay(){
-        long start = System.currentTimeMillis();
         TimingLogger logger = new TimingLogger("TAG_TEST", "create display");
 
         int displayY = 0;//displayの縦移動用
         displayContentsLength = 0;
         initialDisplay();
 
-        for(int y = 0; y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
+        for(int y = 0, totalColumns = getTotalColumns(); y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
+
             if(displayY >= getDisplayColumnSize()){ //displayの描画が終わったらおわり
                 break;
             }
-            if((y >= getTotalColumns() || y+topRow >= getTotalColumns())){ //yがリストよりでかくなったら
-                setDisplay(textList.get(getTotalColumns()-1).size(), displayY, "EOL"); //最後に "EOL" という目印をつける
+            if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
+                //FIXME 最後に空白入るのここらへんが原因
+                setDisplay(textList.get(totalColumns-1).size(), displayY, "EOL"); //最後に "EOL" という目印をつける
                 break;
             }
-            for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
+            for (int x = 0, n = textList.get(y+topRow).size(); x < n; x++){ //xはそのyのサイズまで
                 //Log.d(TAG, "get y+topRow" + (y+topRow));
                 setDisplay(x, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
                 displayContentsLength++; //ついでにサイズも保存しておく
             }
             displayY++;
-            if (y == getTotalColumns()){
-                break;
-            }
             //logger.addSplit("abeshi");
         }
         setDisplaySize(displayY);
@@ -256,8 +244,6 @@ public class TermDisplay {
         setDisplayContentsLength(displayContentsLength);
 
         logger.dumpToLog();
-        long end = System.currentTimeMillis();
-        Log.d(TIME, "measure: " + Long.toString(end - start));
     }
 
     public int getRowLength(int y){

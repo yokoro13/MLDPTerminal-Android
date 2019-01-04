@@ -40,7 +40,6 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * TODO 文字の色への対応
- * TODO エスケープシーケンスへの対応（変数を合わせただけなのでバグ多数）
  * TODO あらたなエスケープシーケンスの追加（行単位でやるよりらくになったはず）
  * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
  */
@@ -222,10 +221,12 @@ public class MainActivity extends AppCompatActivity{
                         }
                     }**/
                 }
+                TimingLogger logger = new TimingLogger("TAG_TEST", "move left");
                 if(termDisplay.getCursorX() > 0) {
                     escapeSequence.moveLeft();
                     moveToSavedCursor();
                 }
+                logger.dumpToLog();
                 /**
                 if(currX < 0){
                     //currX = 0;
@@ -251,8 +252,17 @@ public class MainActivity extends AppCompatActivity{
                 isBtn_ctl = true;
                 showListContents();
                 showDisplay();
-                setCursor(3,3);
+                TimingLogger logger = new TimingLogger("TAG_TEST", "move selection");
+                //changeDisplay();
+                escapeSequence.moveSelection(3,3);
+                changeDisplay();
+                moveToSavedCursor();
+
+                moveToSavedCursor();
+
+                Log.d("termDisplay**", Integer.toString(getSelectRowIndex()));
                // termDisplay.changeDisplay(getTopPositionRow());
+                logger.dumpToLog();
 
             }
         });
@@ -299,7 +309,6 @@ public class MainActivity extends AppCompatActivity{
                             //TODO リストの最終行にLFがないときにスクロールで画面外にすると，cursorYとtopRowの和がサイズを超えるのでなおす <- なおさなくてよさげ
                             //これのときね
                             //if(termDisplay.getTopRow() + 1 == termDisplay.getTotalColumns() + termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
-                            //TODO
                             scrollDown();
                         }
                         break;
@@ -502,6 +511,10 @@ public class MainActivity extends AppCompatActivity{
                                 termDisplay.deleteTextItem(termDisplay.getCursorX() - 1, termDisplay.getCursorY() + termDisplay.getTopRow());
                                 changeDisplay();
                                 moveCursorX(-1);
+                                //if(0 < cursorY){
+                                    //this.cursorX = textList.get(getCursorY() + topRow).size()-1;
+                                    //setCursorY(getCursorY()-1);
+                                //}
                             }
                         }
                         for (int i = 0; i < str.length(); i++) { // strの先頭から1文字ずつString型にして取り出す
@@ -512,14 +525,6 @@ public class MainActivity extends AppCompatActivity{
 
                             Log.d(TAG, "ASCII code/ " + str);
                             if (inputStr.equals(LF)) {
-                                //Log.d(TAG, "lineText is " + getSelectLineText());
-                                //Log.d(TAG, "lineText length is " + getSelectLineText().length());
-                                enterPutFlag = false;
-                                //inputEditText.setText(inputStrText);
-                                //l
-                                //inputEditText.setSelection(inputEditText.length());
-                                //inputEditText.append(LF);
-                                enterPutFlag = true;
                                 termDisplay.setCursorX(0);
                                 moveCursorY(1);
 
@@ -531,7 +536,8 @@ public class MainActivity extends AppCompatActivity{
                             }
 
                             Log.d("termDisplay**", "row length "+Integer.toString(getSelectLineText().length()));
-                            if (getSelectLineText().length() != 0 && getSelectLineText().length()%(termDisplay.getDisplayRowSize()-1) == 0) {
+                            //if (getSelectLineText().length() != 0 && getSelectLineText().length()%(termDisplay.getDisplayRowSize()) == 0) {
+                            if (getSelectLineText().length() >= termDisplay.getDisplayRowSize()){
                                 Log.d("termDisplay**", "row length in if "+Integer.toString(getSelectLineText().length()));
                                 Log.d("termDisplay**", "append LF ");
                                 enterPutFlag = false;
@@ -539,15 +545,15 @@ public class MainActivity extends AppCompatActivity{
                                 receivingFlag = false;
                                 inputEditText.append(LF);
                                 //termDisplay.setCursorX();
+                                termDisplay.setCursorX(0);
+                                moveCursorY(1);
                                 enterPutFlag = true;
                                 displayingFlag = false;
                                 receivingFlag = true;
                                 if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
-
                                     moveCursorY(-1);
                                     termDisplay.addTopRow(1);
                                     changeDisplay();
-
                                 }
                             }
 
@@ -993,7 +999,7 @@ public class MainActivity extends AppCompatActivity{
         if(escapeSequence.getSelectRow() + termDisplay.getTopRow() <= 0){
             return 0;
         }
-        return escapeSequence.getSelectRow() + termDisplay.getTopRow();
+        return termDisplay.getCursorY() + termDisplay.getTopRow();
     }
 
     private void showKeyboard() {
@@ -1093,17 +1099,17 @@ public class MainActivity extends AppCompatActivity{
             termDisplay.addTopRow(-1);
             changeDisplay();
         }
+        moveToSavedCursor();
     }
 
     private void scrollDown(){
-        //FIXME カーソルがある行に１文字もないとき一番上にならない
-        //FIXME LFがない行にカーソルがある状態でスクロールすると次の行の最初にカーソルが移動する
         TimingLogger logger = new TimingLogger("TAG_TEST", "scrollDown");
         if(termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns() ){//+ termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
             moveCursorY(-1);
             termDisplay.addTopRow(1);
             changeDisplay();
         }
+        moveToSavedCursor();
         logger.dumpToLog();
     }
 }
