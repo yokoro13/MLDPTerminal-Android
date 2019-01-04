@@ -41,26 +41,33 @@ public class EscapeSequence {
     }
 
     public void moveRight(int n){
-        if(editText.length() >= editText.getSelectionStart() + n){
-            editText.setSelection(editText.getSelectionStart() + n);
+        if(termDisplay.getCursorX() + n < termDisplay.getRowLength(getSelectRowIndex())) {
+            moveCursorX(n);
+        } else {
+            int move = n;
+            int add = 0;
+            if(termDisplay.getCursorX() + n >= termDisplay.getDisplayRowSize()){
+                add = termDisplay.getDisplayRowSize() - termDisplay.getRowLength(getSelectRowIndex());
+                move = termDisplay.getDisplayRowSize() - termDisplay.getCursorX();
+            } else {
+                add = termDisplay.getCursorX() + n - termDisplay.getRowLength(getSelectRowIndex());
+            }
+            addBlank(add);
+            moveCursorX(move);
         }
-        else {
-            editText.setSelection(editText.length());
-        }
+
     }
 
     public void moveLeft(int n){
-        if(editText.getSelectionStart() - n >= 0) {
-            editText.setSelection(editText.getSelectionStart() - n);
-        }
-        else {
-            editText.setSelection(0);
+        if(termDisplay.getCursorX() - n >= 0){
+            moveCursorX(-n);
         }
     }
 
     public void moveUp(int n){
         /**
          * //TODO 移動先がリストのサイズが超える場合の対応を実装
+         * 画面外になる場合はスクロールしない（一番下もしくは上で止まる）
          * １．目的の行のみの対応
          * ２．もしサイズが小さければ addBlank
          * ３．下に足りない場合は，addEmpty * (たりない分) -> add Blank
@@ -68,60 +75,62 @@ public class EscapeSequence {
          * ５．move cursor
          * ６．たぶん終了
          */
-
-
-        if(getSelectRow() - n < 0 || n <= 0){
-            return;
+        if(termDisplay.getCursorY() - n < 0){
+            termDisplay.setCursorY(0);
+        } else {
+            moveCursorY(-n);
         }
-        Log.d(TAG,
-                "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() - getSelectRowLength(getSelectRow() - n, getSelectRow())) + "\n"
-                        +" selectRow " + getSelectRow() + "\n" + " length " +getSelectRowLength(getSelectRow()));
-
-        if(editText.getSelectionStart() - getSelectRowLength(getSelectRow() - n, getSelectRow()) >= 0){
-            editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow() - n, getSelectRow()));
-        }
-        else {
-            editText.setSelection(0);
+        if(termDisplay.getRowLength(termDisplay.getTopRow() + termDisplay.getCursorY()) < termDisplay.getCursorX()){
+            int add = termDisplay.getCursorX() - termDisplay.getRowLength(termDisplay.getTopRow() + termDisplay.getCursorY());
+            addBlank(add);
         }
 
     }
     public void moveDown(int n){
-        Log.d(TAG,
-                "\n moveUP" + "\n" + " goto " + (editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n)) + "\n"
-                        +" selectRow " + getSelectRow() + "\n" + " length " + getSelectRowLength(getSelectRow(), getSelectRow() + n));
-
-        if (getSelectRow() + n > termDisplay.getTotalColumns() || n <= 0){
-            return;
+        if(termDisplay.getCursorY() + n >= termDisplay.getDisplayColumnSize()) { //移動先が一番下の行を超える場合
+            if(termDisplay.getCursorY() + n >= termDisplay.getDisplayColumnSize()){ //ディスプレイサイズを超える場合
+                termDisplay.setCursorY(termDisplay.getDisplayColumnSize() - 1);
+            } else {
+                moveCursorY(n);
+            }
+            int move = termDisplay.getCursorY() - termDisplay.getDisplayColumnSize();
+            for (int i = 0; i < move; i++){
+                termDisplay.addEmptyRow();
+            }
+        }else { //移動先が一番下の行を超えない
+            if (termDisplay.getCursorY() + n > termDisplay.getDisplaySize()) { //ディスプレイサイズを超える場合
+                termDisplay.setCursorY(termDisplay.getDisplayColumnSize() - 1);
+            } else {
+                moveCursorY(n);
+            }
         }
-        if (editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n) < editText.length()){
-            editText.setSelection(editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n));
-        }
-        else {
-            editText.setSelection(editText.length());
+        //移動先の文字数がcursorXより小さい
+        if(termDisplay.getRowLength(termDisplay.getTopRow() + termDisplay.getCursorY()) < termDisplay.getCursorX()){
+            int add = termDisplay.getCursorX() - termDisplay.getRowLength(termDisplay.getTopRow() + termDisplay.getCursorY());
+            addBlank(add);
         }
     }
 
-    public void moveRowUp(int n){
-        if(editText.getSelectionStart() - getSelectRowLength(getSelectRow() - n, getSelectRow()) * n > 0){
-            editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow()) - getSelectRowLength(getSelectRow() - n, getSelectRow()));
-        }
-        else {
-
-        }
+    public void moveUpToRowLead(int n){
+        termDisplay.setCursorX(0);
+        moveUp(n);
     }
 
-    public void moveRowDown(int n){
-        if (editText.getSelectionStart() + getSelectRowLength(getSelectRow(), getSelectRow() + n) < editText.length()){
-            editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow()) + getSelectRowLength(getSelectRow(), getSelectRow() + n));
-        }
+    public void moveDownToRowLead(int n){
+        termDisplay.setCursorX(0);
+        moveDown(n);
     }
 
     public void moveSelection(int n){
-        editText.setSelection(editText.getSelectionStart() - getSelectRowLength(getSelectRow()) + n);
+        termDisplay.setCursorX(0);
+        moveRight(n);
     }
 
     public void moveSelection(int n, int m){
-        editText.setSelection(getSelectRowLength(0, n) + m);
+        termDisplay.setCursorX(0);
+        termDisplay.setCursorY(0);
+        moveRight(n);
+        moveDown(m);
     }
 
     public void clearDisplay(){
@@ -168,7 +177,6 @@ public class EscapeSequence {
         }
         return length;
     }
-
 
     //ディスプレイ上で選択中の行番号を返す
     //rowは0から

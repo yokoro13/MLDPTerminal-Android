@@ -718,10 +718,10 @@ public class MainActivity extends AppCompatActivity{
                                     escapeSequence.moveLeft(move);
                                 }
                                 if(str.equals(KeyHexString.KEY_E)){
-                                    escapeSequence.moveRowDown(move);
+                                    escapeSequence.moveDownToRowLead(move);
                                 }
                                 if(str.equals(KeyHexString.KEY_F)){
-                                    escapeSequence.moveRowUp(move);
+                                    escapeSequence.moveUpToRowLead(move);
                                 }
                                 if(str.equals(KeyHexString.KEY_G)){
                                     escapeSequence.moveSelection(move);
