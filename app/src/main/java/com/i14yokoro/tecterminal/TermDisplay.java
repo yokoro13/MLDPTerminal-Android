@@ -102,8 +102,13 @@ public class TermDisplay {
     }
 
     public void insertTextItem(int x, int y, String text, int color){
+        int checkLF = x - 1;
+        if(checkLF < 0){
+            checkLF = 0;
+        }
         if(y < this.textList.size() && x <= this.textList.get(y).size()) {
-            if(textList.get(y).size() < displayRowSize) {
+            if(textList.get(y).size() < displayRowSize && !getText(checkLF, y).equals(LF)) {
+                //if(getRowText(getCursorY()).lastIndexOf(LF) == )
                 TextItem textItem = new TextItem(text, color);
                 this.textList.get(y).add(x, textItem);
             }
@@ -144,19 +149,19 @@ public class TermDisplay {
 
     public void setCursorX(int cursorX) {
         Log.d(TAG, "cursorX: " + cursorX);
-        if(cursorX > textList.get(getCursorY() + topRow).size() || cursorX >= displayRowSize){
-            /**
-            if(getCursorY() < displayColumnSize) {
-                setCursorY(getCursorY() + 1);
-            }**/
-            this.cursorX = cursorX % displayRowSize;
-            Log.d(TAG, Integer.toString(getCursorX()));
-        } else {
-            if(cursorX < 0){
-                this.cursorX = 0;
+        if(cursorX >= displayRowSize){
+            this.cursorX = displayRowSize - 1;
+        }else {
+            if (cursorX >= textList.get(getCursorY() + topRow).size()) {
+                this.cursorX = cursorX % displayRowSize;
+                Log.d(TAG, Integer.toString(getCursorX()));
             } else {
-                //if(cursorX >= dis)
-                this.cursorX = cursorX;
+                if (cursorX < 0) {
+                    this.cursorX = 0;
+                } else {
+                    //if(cursorX >= dis)
+                    this.cursorX = cursorX;
+                }
             }
         }
     }

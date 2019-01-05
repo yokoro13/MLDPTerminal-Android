@@ -244,11 +244,11 @@ public class MainActivity extends AppCompatActivity{
 
                 //escapeSequence.moveSelection(3,5);
                 //escapeSequence.moveUp(3);
-                //termDisplay.insertTextItem(termDisplay.getCursorX(), getSelectRowIndex(), "d", 0);
+                termDisplay.insertTextItem(termDisplay.getCursorX(), getSelectRowIndex(), "d", 0);
                 //escapeSequence.moveDownToRowLead(3);
                 //escapeSequence.moveSelection(5);
                 //escapeSequence.clearDisplay(1);
-                escapeSequence.clearRow(2);
+                //escapeSequence.clearRow(2);
 
                 changeDisplay();
                 isBtn_esc = true;
@@ -781,7 +781,8 @@ public class MainActivity extends AppCompatActivity{
                                         escapeSequence.scrollBack(move);
                                     }
                                     if (str.equals(KeyHexString.KEY_m)){
-                                        escapeSequence.selectGraphicRendition();
+                                        //TODO 引数かえる
+                                        escapeSequence.selectGraphicRendition(move);
                                     }
                                     changeDisplay();
                                     escapeMoveFlag = false;
@@ -1059,7 +1060,11 @@ public class MainActivity extends AppCompatActivity{
         String row = "";
         for (int y = 0; y <= termDisplay.getDisplaySize(); y++){
             for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
-                row = row  + termDisplay.getDisplay(x,y);
+                if (termDisplay.getDisplay(x,y).equals("")){
+                    row = row + "_";
+                } else {
+                    row = row + termDisplay.getDisplay(x, y);
+                }
             }
             row = row + LF;
             System.out.println("termDisplay**" + y + row);

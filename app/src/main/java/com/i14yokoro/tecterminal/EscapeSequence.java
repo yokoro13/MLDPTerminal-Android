@@ -1,6 +1,7 @@
 package com.i14yokoro.tecterminal;
 
 import android.content.Context;
+import android.text.Html;
 import android.util.Log;
 import android.util.TimingLogger;
 import android.widget.EditText;
@@ -88,6 +89,7 @@ public class EscapeSequence {
          * だうんのとこでひとつつける必要ありそ？
          */
         //FIXME ２つ以上したにいくとカーソルが移動してくれないfk
+        //たぶんgetOffsetForPosition関係　（もしかしたらバグかも）
         if(termDisplay.getCursorY() + n >= termDisplay.getDisplaySize()) { //移動先が一番下の行を超える場合
             if(termDisplay.getCursorY() + n >= termDisplay.getDisplayColumnSize()){ //ディスプレイサイズを超える場合
                 termDisplay.setCursorY(termDisplay.getDisplayColumnSize() - 1);
@@ -135,7 +137,7 @@ public class EscapeSequence {
     }
 
     public void moveDownToRowLead(int n){
-        //downがなおらないとうまくいかない
+        //FIXME downがなおらないとうまくいかない
         termDisplay.setCursorX(0);
         moveDown(n);
     }
@@ -146,6 +148,7 @@ public class EscapeSequence {
     }
 
     public void moveSelection(int n, int m){ //n,mは1~
+        //FIXME downがなおらないとうまくいかない
         if(n < 1){
             n = 1;
         }
@@ -190,7 +193,6 @@ public class EscapeSequence {
         }
 
         //FIXME 入力中の行がきえない
-
         if(n == 2){ //全消去
             for (int y = 0; y < termDisplay.getDisplaySize(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
@@ -223,11 +225,7 @@ public class EscapeSequence {
         if(n == 2){ //全消去
             int del = termDisplay.getRowLength(termDisplay.getCursorY());
             for (int x = 0; x < del; x++){
-                if(x < termDisplay.getCursorX()){
-                    termDisplay.changeText(x, termDisplay.getCursorY(), " ");
-                } else {
-                    termDisplay.deleteTextItem(termDisplay.getCursorX(), termDisplay.getCursorY());
-                }
+                termDisplay.changeText(x, termDisplay.getCursorY(), " ");
             }
 
         }
@@ -244,8 +242,55 @@ public class EscapeSequence {
         setTop(getTop()-n);
     }
 
-    public void selectGraphicRendition(){ //色
+    public void selectGraphicRendition(int n){ //色
+        /**色付け手順
+         * １．エスケープシーケンスを受信
+         * ２．標準を色を指定の色に変える setDefaultColor(color)
+         * ３．これが黒以外なら    textItem = new TextItem("<font color=#" + getcolor + ">" + str + "</font>");
+         * ２．\1b[0mを受信すると黒にリセット
+         */
+        //output = "<font color=#000000>TextView</font>" ;
+        String output;
+        switch (n){
+            case 0:
 
+                break;
+            case 30:
+                output = "<font color=#000000>TextView</font>" ;
+                editText.append(Html.fromHtml(output));
+                break;
+            case 31:
+                output = "<font color=#FF0000>TextView</font>" ;
+                editText.append(Html.fromHtml(output));
+                break;
+            case 32:
+                output = "<font color=#008000>TextView</font>" ;
+                editText.append(Html.fromHtml(output));
+                break;
+            case 33:
+                output = "<font color=#FFFF00>TextView</font>" ;
+                editText.append(Html.fromHtml(output));
+                break;
+            case 34:
+                output = "<font color=#0000FF>TextView</font>" ;
+                editText.append(Html.fromHtml(output));
+                break;
+            case 35:
+                output = "<font color=#FF00FF>TextView</font>" ;
+                editText.setText(Html.fromHtml(output));
+                break;
+            case 36:
+                output = "<font color=#00FFFF>TextView</font>" ;
+                editText.append(Html.fromHtml(output));
+                break;
+            case 37:
+                output = "<font color=#FFFFFF>TextView</font>" ;
+                editText.append(Html.fromHtml(output));
+                break;
+            default:
+                output = "<font color=#000000>TextView</font>" ;
+                editText.append(Html.fromHtml(output));
+        }
     }
 
     public void changeDisplay(){
@@ -273,7 +318,7 @@ public class EscapeSequence {
                     output = output + termDisplay.getDisplay(x, y);
                 } else{
                     Log.d("termDisplay**", "here is EOL");
-                    editText.setText(output);
+                    editText.setText(Html.fromHtml(output));
                     logger.dumpToLog();
                     return;
                 }
@@ -288,7 +333,7 @@ public class EscapeSequence {
                 }
             }
         }
-        editText.setText(output);
+        editText.setText(Html.fromHtml(output));
         logger.dumpToLog();
     }
 
