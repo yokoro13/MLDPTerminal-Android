@@ -1,10 +1,10 @@
 package com.i14yokoro.tecterminal;
 
 import android.util.Log;
+import android.util.TimingLogger;
 
 import java.util.ArrayList;
 
-//TODO 改行コードを入れるようにdisplayの横幅を１つ増やす必要がありそう？？
 public class TermDisplay {
     private final String TAG = "termDisplay**";
 
@@ -24,27 +24,37 @@ public class TermDisplay {
 
     private ArrayList<ArrayList<TextItem>> textList;
 
+    private String defaultColor = "000000";
+
     public TermDisplay(int displayRowSize, int displayColumnSize){
-        this.displayRowSize = displayRowSize+1;
+        this.displayRowSize = displayRowSize;
         this.displayColumnSize = displayColumnSize;
         cursorX = 0;
         cursorY = 0;
         topRow = 0;
         display = new String[displayColumnSize][displayRowSize+1];
+        ArrayList<TextItem> items = new ArrayList<>();
         textList = new ArrayList<>();
+        textList.add(items);
+        createDisplay();
     }
 
-    public void setTextItem(String text, int color){
+    public void setTextItem(String text, String color){
+
         TextItem textItem = new TextItem(text, color);
-        Log.d(TAG, "adding text: " + text);
-        if(getTotalColumns() <= 0 ||textList.get(getTotalColumns()-1).size() >= displayRowSize-1|| textList.get(getTotalColumns()-1).get(textList.get(getTotalColumns()-1).size()-1).getText().equals("\n")){
-            ArrayList<TextItem> items = new ArrayList<>();
-            items.add(textItem);
-            textList.add(items);
+        int columnSize = getTotalColumns();
+        //Log.d(TAG, "adding text: " + text);
+        //TODO 途中に書き込むのに対応させる
+
+        Log.d(TAG, "Add new textItem");
+        textList.get(columnSize - 1).add(textItem);
+        if(text.equals(LF) || textList.get(getTotalColumns()-1).size() >= displayRowSize){
+            Log.d(TAG, "Add new line2");
+            ArrayList<TextItem> items1 = new ArrayList<>();
+            textList.add(items1);
         }
-        else {
-            textList.get(getTotalColumns()-1).add(textItem);
-        }
+
+        //if(false && textList.get(getTopRow() + getCursorY()).size() >= displayRowSize){
     }
 
     public void deleteTextItem(int x, int y){
@@ -56,6 +66,54 @@ public class TermDisplay {
             return textList.get(y).get(x);
         } else {
             return null;
+        }
+    }
+
+    public void changeTextItem(int x, int y, String text, String color){
+        if(y < this.textList.size() && x < this.textList.get(y).size()) {
+            TextItem textItem = new TextItem(text, color);
+            this.textList.get(y).set(x, textItem);
+        }
+    }
+
+    public void addTextItem(int y, String text, String color){
+        if(y < this.textList.size()) {
+            TextItem textItem = new TextItem(text, color);
+            this.textList.get(y).add(textItem);
+        }
+    }
+
+    public void insertRow(){
+
+    }
+
+    public void addTextItemOverSize(int y, String text, String color){
+        TextItem textItem = new TextItem(text, color);
+        ArrayList<TextItem> items = new ArrayList<>();
+        items.add(textItem);
+        Log.d(TAG, "Add new line1");
+        textList.add(items);
+    }
+
+    public void addEmptyRow(){
+        TextItem textItem = new TextItem("", getDefaultColor());
+        ArrayList<TextItem> items1 = new ArrayList<>();
+        //items1.add(textItem);
+        textList.add(items1);
+        Log.d(TAG, "Add new line1");
+    }
+
+    public void insertTextItem(int x, int y, String text, String color){
+        int checkLF = x - 1;
+        if(checkLF < 0){
+            checkLF = 0;
+        }
+        if(y < this.textList.size() && x <= this.textList.get(y).size()) {
+            if(textList.get(y).size() < displayRowSize && !getText(checkLF, y).equals(LF)) {
+                //if(getRowText(getCursorY()).lastIndexOf(LF) == )
+                TextItem textItem = new TextItem(text, color);
+                this.textList.get(y).add(x, textItem);
+            }
         }
     }
 
@@ -73,26 +131,39 @@ public class TermDisplay {
         }
     }
 
+    public void changeColor(int x, int y, String color){
+        if(y < this.textList.size() && x < this.textList.get(y).size()) {
+            this.textList.get(y).get(x).setColor(color);
+        }
+    }
+
+    public String getColor(int x, int y){
+        if(y < this.textList.size() && x < this.textList.get(y).size()) {
+            return this.textList.get(y).get(x).getColor();
+        } else {
+            return null;
+        }
+    }
+
     public int getCursorX() {
         return cursorX;
     }
 
     public void setCursorX(int cursorX) {
-        if(cursorX > textList.get(getCursorY() + topRow).size()){
-            if(getCursorY()<displayColumnSize-1) {
-                setCursorY(getCursorY() + 1);
-            }
-            this.cursorX = cursorX % displayRowSize;
-        } else {
-            if(cursorX < 0){
-                if(0 < cursorY){
-                    this.cursorX = textList.get(getCursorY() + topRow).size()-1;
-                    setCursorY(getCursorY()-1);
-                } else {
-                    this.cursorX = 0;
-                }
+        Log.d(TAG, "cursorX: " + cursorX);
+        if(cursorX >= displayRowSize){
+            this.cursorX = displayRowSize - 1;
+        }else {
+            if (cursorX >= textList.get(getCursorY() + topRow).size()) {
+                this.cursorX = cursorX % displayRowSize;
+                Log.d(TAG, Integer.toString(getCursorX()));
             } else {
-                this.cursorX = cursorX;
+                if (cursorX < 0) {
+                    this.cursorX = 0;
+                } else {
+                    //if(cursorX >= dis)
+                    this.cursorX = cursorX;
+                }
             }
         }
     }
@@ -102,7 +173,7 @@ public class TermDisplay {
     }
 
     public void setCursorY(int cursorY) {
-        Log.d(TAG, "setCursorY");
+        Log.d(TAG, "setCursorY: " + cursorY);
 
         if(cursorY >= displayColumnSize){
             //setTopRow(topRow+1);
@@ -157,31 +228,35 @@ public class TermDisplay {
     }
 
     public void createDisplay(){
+        TimingLogger logger = new TimingLogger("TAG_TEST", "create display");
+
         int displayY = 0;//displayの縦移動用
         displayContentsLength = 0;
         initialDisplay();
 
-        for(int y = 0; y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
+        for(int y = 0, totalColumns = getTotalColumns(); y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
+
             if(displayY >= getDisplayColumnSize()){ //displayの描画が終わったらおわり
                 break;
             }
-            if((y >= getTotalColumns() || y+topRow >= getTotalColumns())){ //yがリストよりでかくなったら
-                setDisplay(textList.get(getTotalColumns()-1).size(), displayY, "EOL"); //最後に "EOL" という目印をつける
+            if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
+                //FIXME 最後に空白入るのここらへんが原因
+                setDisplay(textList.get(totalColumns-1).size(), displayY, "EOL"); //最後に "EOL" という目印をつける
                 break;
             }
-            for (int x = 0; x < textList.get(y+topRow).size(); x++){ //xはそのyのサイズまで
-                Log.d(TAG, "get y+topRow" + (y+topRow));
+            for (int x = 0, n = textList.get(y+topRow).size(); x < n; x++){ //xはそのyのサイズまで
+                //Log.d(TAG, "get y+topRow" + (y+topRow));
                 setDisplay(x, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
                 displayContentsLength++; //ついでにサイズも保存しておく
             }
             displayY++;
-            if (y == getTotalColumns()){
-                break;
-            }
+            //logger.addSplit("abeshi");
         }
         setDisplaySize(displayY);
         Log.d(TAG, "displaySize : " + displayY);
         setDisplayContentsLength(displayContentsLength);
+
+        logger.dumpToLog();
     }
 
     public int getRowLength(int y){
@@ -224,5 +299,14 @@ public class TermDisplay {
 
     public void setDisplaySize(int displaySize) {
         this.displaySize = displaySize;
+    }
+
+
+    public String getDefaultColor() {
+        return defaultColor;
+    }
+
+    public void setDefaultColor(String defaultColor) {
+        this.defaultColor = defaultColor;
     }
 }

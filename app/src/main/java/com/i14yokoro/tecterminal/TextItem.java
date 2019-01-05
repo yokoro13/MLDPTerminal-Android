@@ -2,9 +2,9 @@ package com.i14yokoro.tecterminal;
 
 public class TextItem {
     private String text;
-    private int color;
+    private String color;
 
-    TextItem(String text, int color){
+    TextItem(String text, String color){
         this.text = text;
         this.color = color;
     }
@@ -17,11 +17,11 @@ public class TextItem {
         return text;
     }
 
-    public void setColor(int color) {
+    public void setColor(String color) {
         this.color = color;
     }
 
-    public int getColor() {
+    public String getColor() {
         return color;
     }
 

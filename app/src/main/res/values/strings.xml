@@ -48,6 +48,4 @@
     <!-- Menu items for MldpBluetoothScanActivity -->
     <string name="menu_scan">Scan</string>
 
-    <string name="keyboard_name">TeCKeyboard</string>
-
 </resources>
