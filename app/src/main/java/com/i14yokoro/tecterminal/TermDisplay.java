@@ -34,6 +34,7 @@ public class TermDisplay {
         ArrayList<TextItem> items = new ArrayList<>();
         textList = new ArrayList<>();
         textList.add(items);
+        createDisplay();
     }
 
     public void setTextItem(String text, int color){
@@ -93,14 +94,19 @@ public class TermDisplay {
     }
 
     public void addEmptyRow(){
+        TextItem textItem = new TextItem("", 0);
         ArrayList<TextItem> items1 = new ArrayList<>();
+        //items1.add(textItem);
         textList.add(items1);
+        Log.d(TAG, "Add new line1");
     }
 
     public void insertTextItem(int x, int y, String text, int color){
-        if(y < this.textList.size() && x < this.textList.get(y).size()) {
-            TextItem textItem = new TextItem(text, color);
-            this.textList.get(y).add(x, textItem);
+        if(y < this.textList.size() && x <= this.textList.get(y).size()) {
+            if(textList.get(y).size() < displayRowSize) {
+                TextItem textItem = new TextItem(text, color);
+                this.textList.get(y).add(x, textItem);
+            }
         }
     }
 
@@ -160,7 +166,7 @@ public class TermDisplay {
     }
 
     public void setCursorY(int cursorY) {
-        Log.d(TAG, "setCursorY");
+        Log.d(TAG, "setCursorY: " + cursorY);
 
         if(cursorY >= displayColumnSize){
             //setTopRow(topRow+1);

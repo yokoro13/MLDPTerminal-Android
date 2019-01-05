@@ -42,7 +42,7 @@ public class EscapeSequence {
 
     public void moveRight(int n){
         //012|3456 (n = 2, x = 3)-> 01234|56 (n = 2, x = 5) -> 0123456| (x = 7)
-        if(termDisplay.getCursorX() + n <= termDisplay.getRowLength(termDisplay.getCursorY())) {
+        if(termDisplay.getCursorX() + n <= termDisplay.getRowLength(getSelectRowIndex())) {
             moveCursorX(n);
         } else {
             int move = n;
@@ -66,18 +66,28 @@ public class EscapeSequence {
     }
 
     public void moveUp(int n){
-        if(termDisplay.getCursorY() - n < 0){
+        //FIXME 追加できない，カーソル合わない，バグる
+        //たまにうまくいく
+        if(termDisplay.getCursorY() - n < 0){ //画面外にでる
             termDisplay.setCursorY(0);
         } else {
             moveCursorY(-n);
+            Log.d("termDisplay***","moveUp to y: " + Integer.toString(termDisplay.getCursorY()));
         }
-        if(termDisplay.getRowLength(termDisplay.getTopRow() + termDisplay.getCursorY()) < termDisplay.getCursorX()){
-            int add = termDisplay.getCursorX() - termDisplay.getRowLength(termDisplay.getTopRow() + termDisplay.getCursorY());
+        if(termDisplay.getRowLength(getSelectRowIndex()) < termDisplay.getCursorX()){
+            int add = termDisplay.getCursorX() - termDisplay.getRowLength(getSelectRowIndex());
+            Log.d("termDisplay***","sub curX " + Integer.toString(add));
             addBlank(add);
         }
 
     }
     public void moveDown(int n){
+        /**
+         * よころのあたまのなか
+         * からのやつつけるーしたいくーないーいっこしたでがまんーつけるーおわり
+         * だうんのとこでひとつつける必要ありそ？
+         */
+        //FIXME ２つ以上したにいくとカーソルが移動してくれないfk
         if(termDisplay.getCursorY() + n >= termDisplay.getDisplaySize()) { //移動先が一番下の行を超える場合
             if(termDisplay.getCursorY() + n >= termDisplay.getDisplayColumnSize()){ //ディスプレイサイズを超える場合
                 termDisplay.setCursorY(termDisplay.getDisplayColumnSize() - 1);
@@ -85,10 +95,13 @@ public class EscapeSequence {
                 moveCursorY(n);
             }
             int move = termDisplay.getCursorY() - termDisplay.getDisplaySize();//2,1のばあい
-            for (int i = 0; i < move; i++){
+            //termDisplay.addTextItem(termDisplay.getTotalColumns()-1,LF, 0);
+            for (int i = 0; i <= move; i++){
                 Log.d("termDisplay**", "add empty" + Integer.toString(i));
                 termDisplay.addEmptyRow();
             }
+            //
+            // termDisplay.setTextItem(" ", 0);
         }else { //移動先が一番下の行を超えない
             if (termDisplay.getCursorY() + n > termDisplay.getDisplaySize()) { //ディスプレイサイズを超える場合
                 termDisplay.setCursorY(termDisplay.getDisplayColumnSize() - 1);
@@ -97,9 +110,22 @@ public class EscapeSequence {
             }
         }
         //移動先の文字数がcursorXより小さい
-        if(termDisplay.getRowLength(termDisplay.getTopRow() + termDisplay.getCursorY()) < termDisplay.getCursorX()){
-            int add = termDisplay.getCursorX() - termDisplay.getRowLength(termDisplay.getTopRow() + termDisplay.getCursorY());
+        if(termDisplay.getRowLength(getSelectRowIndex()) < termDisplay.getCursorX()){
+            int add = termDisplay.getCursorX() - termDisplay.getRowLength(getSelectRowIndex());
             addBlank(add);
+        }
+    }
+
+    private void addBlank(int n){
+        //Log.d("termDisplay**", "add Blank"+);
+        int x = termDisplay.getRowLength(getSelectRowIndex())-1;
+        if(x < 0){
+            x = 0;
+        }
+        for (int i = 0; i <= n; i++){
+            Log.d("termDisplay**", "add Blank"+Integer.toString(i));
+            termDisplay.insertTextItem(x, getSelectRowIndex(),"p", 0);
+            //termDisplay.addTextItem(termDisplay.getTopRow()+termDisplay.getCursorY(), "d", 0);
         }
     }
 
@@ -109,6 +135,7 @@ public class EscapeSequence {
     }
 
     public void moveDownToRowLead(int n){
+        //downがなおらないとうまくいかない
         termDisplay.setCursorX(0);
         moveDown(n);
     }
@@ -127,15 +154,11 @@ public class EscapeSequence {
         }
         termDisplay.setCursorY(0);
         termDisplay.setCursorX(0);
-        moveDown(m-1);
-        moveRight(n-1);
+        moveDown(n-1);
+        moveRight(m-1);
     }
 
     public void clearDisplay(){
-        //カーソルをしゅとく
-        //０から取得したカーソルまでの部分をedittextから切り取る
-        //貼り付け
-        //getSelection % maxChar番地 のリストからうしろをクリア
         int x = termDisplay.getCursorX();
         for(int y = termDisplay.getCursorY(); y < termDisplay.getDisplaySize(); y++){
             for (; x < termDisplay.getRowLength(y); x++){
@@ -146,16 +169,18 @@ public class EscapeSequence {
     }
 
     public void clearDisplay(int n){
+        //FIXME きえかたがおかしい
         //一番下までスクロールして消去ぽい
         if(n == 0){ //カーソルより後ろにある画面上の文字を消す
             clearDisplay();
         }
 
+        //FIXME 入力中の行がきえない
         if(n == 1){ //カーソルより前にある画面上の文字を消す
             for (int y = 0; y <= termDisplay.getCursorY(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
+                    termDisplay.changeText(x, y, " ");
                     if(y == termDisplay.getCursorY()){
-                        termDisplay.deleteTextItem(x, y);
                         if(x == termDisplay.getCursorX()){
                             break;
                         }
@@ -164,10 +189,12 @@ public class EscapeSequence {
             }
         }
 
+        //FIXME 入力中の行がきえない
+
         if(n == 2){ //全消去
             for (int y = 0; y < termDisplay.getDisplaySize(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
-                    termDisplay.deleteTextItem(x, y);
+                    termDisplay.changeTextItem(x, y, " ", 0);
                 }
             }
         }
@@ -175,8 +202,9 @@ public class EscapeSequence {
     }
 
     public void clearRow(){
-        for (int x = termDisplay.getCursorX(); x < termDisplay.getRowLength(termDisplay.getCursorY()); x++){
-            termDisplay.deleteTextItem(x, termDisplay.getCursorY());
+        int del = termDisplay.getRowLength(termDisplay.getCursorY()) - termDisplay.getCursorX();
+        for (int x = 0; x < del; x++){
+            termDisplay.deleteTextItem(termDisplay.getCursorX(), termDisplay.getCursorY());
         }
     }
 
@@ -187,13 +215,19 @@ public class EscapeSequence {
 
         if(n == 1){ //カーソル以前にある文字を消す
             for (int x = 0; x <= termDisplay.getCursorX(); x++){
-                termDisplay.deleteTextItem(x, termDisplay.getCursorY());
+                termDisplay.changeText(x, termDisplay.getCursorY(), " ");
+                //termDisplay.deleteTextItem(x, termDisplay.getCursorY());
             }
         }
 
         if(n == 2){ //全消去
-            for (int x = 0; x < termDisplay.getRowLength(termDisplay.getCursorY()); x++){
-                termDisplay.deleteTextItem(x, termDisplay.getCursorY());
+            int del = termDisplay.getRowLength(termDisplay.getCursorY());
+            for (int x = 0; x < del; x++){
+                if(x < termDisplay.getCursorX()){
+                    termDisplay.changeText(x, termDisplay.getCursorY(), " ");
+                } else {
+                    termDisplay.deleteTextItem(termDisplay.getCursorX(), termDisplay.getCursorY());
+                }
             }
 
         }
@@ -214,68 +248,6 @@ public class EscapeSequence {
 
     }
 
-    //row行までの文字数をかえす
-    private int getLength(int row){
-        int length = 0;
-        int rowId = rowNumToListId(row);
-        for(int i = 0; i < rowId; i++){
-            length += termDisplay.getRowLength(i);
-            Log.d(TAG, "getLength" + Integer.toString(termDisplay.getRowLength(i)));
-        }
-        return length;
-    }
-
-    //ディスプレイ上で選択中の行番号を返す
-    //rowは0から
-    public int getSelectRow(){
-        int start = editText.getSelectionStart();
-        int row = termDisplay.getTopRow()+1;
-        //int count = items.get(getTop()).getText().length();
-        int count = termDisplay.getRowLength(getTop());
-
-        if(row < 1){
-            return 0;
-        }
-        for (; count < start; row++){
-            if(row < termDisplay.getTotalColumns()){
-                count += termDisplay.getRowLength(row);
-            }
-            else break;
-
-            //Log.d(TAG, "count : " + count);
-        }
-        //Log.d(TAG, "number/ " + Integer.toString(row-1) + " contents/ " + termDisplay.getRowText(row-1));
-        //Log.d(TAG, "row/: " + (row-1 - termDisplay.getTopRow()));
-        return row - termDisplay.getTopRow() - 1;
-    }
-
-    private int getSelectRowLength(int selectRow){
-        Log.d(TAG, "getSelectionRowIndex : " + (rowNumToListId(selectRow)));
-        return termDisplay.getRowLength(rowNumToListId(selectRow));
-    }
-
-    //start行からrow行までの文字数を返す
-    //FIXME 上下移動のエズケープシーケンスの移動量算出をなおす
-    private int getSelectRowLength(int start, int end){
-        int length = 0;
-        int startId = rowNumToListId(start);
-        int endId = rowNumToListId(end);
-        if(endId > termDisplay.getTotalColumns()){
-            endId = termDisplay.getTotalColumns();
-        }
-        for(int i = startId; i < endId; i++){
-            length += termDisplay.getRowLength(i);
-        }
-        return length;
-    }
-
-    private int rowNumToListId(int rowNum){
-        if (rowNum >= 0) {
-            return rowNum + termDisplay.getTopRow();
-        }
-        return 0;
-    }
-
     public void changeDisplay(){
         String output = "";
         //Log.d(TAG, "topRow/ " + topRow);
@@ -288,18 +260,14 @@ public class EscapeSequence {
 
         for (int y = 0; y < totalColumns && y < displayColumnsSize; y++){
             for (int x = 0; x < displayRowSize; x++){
-                Log.d("termDisplay", Integer.toString(y));
-                /**
-                if(termDisplay.getDisplay(x,y).equals("")){
-                    if(y + getTop() != totalColumns) {
-                        output = output + "_" + LF;
-                    }
-                    break;
-                }else
-                 **/
+                Log.d("termDisplay", "y "+Integer.toString(y));
                 if(!termDisplay.getDisplay(x, y).equals("EOL")) {
                     //できれば，文字列を作ってからsetTextでいいかも
                     if (termDisplay.getDisplay(x, y).equals("")){
+                        Log.d("termDisplay**", "empty");
+                        if (y < termDisplay.getDisplaySize()-1){
+                            output = output + LF;
+                        }
                         break;
                     }
                     output = output + termDisplay.getDisplay(x, y);
@@ -310,10 +278,12 @@ public class EscapeSequence {
                     return;
                 }
                 if(x == displayRowSize-1){
+                    Log.d("termDisplay**", "max size");
                     output = output + LF;
                     //editText.append(LF);
                 }
                 if(termDisplay.getDisplay(x, y).equals(LF)){
+                    Log.d("termDisplay**", "this is LF");
                     break;
                 }
             }
@@ -322,20 +292,9 @@ public class EscapeSequence {
         logger.dumpToLog();
     }
 
-    private void addBlank(int n){
-        for (int i = 0; i < n; i++){
-            Log.d("termDisplay**", "add Blank"+Integer.toString(i));
-            termDisplay.addTextItem(termDisplay.getTopRow()+termDisplay.getCursorY(), " ", 0);
-        }
-    }
-
-    public void setCursol(int x, int y){
-        int move = getSelectRowLength(0, y) + x;
-        editText.setSelection(move);
-    }
 
     private int getSelectRowIndex() {
-        return getSelectRow() + termDisplay.getTopRow();
+        return termDisplay.getCursorY() + termDisplay.getTopRow();
     }
 
     private String getSelectLineText(){

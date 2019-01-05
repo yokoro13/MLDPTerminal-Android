@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
  * TODO 文字の色への対応
  * TODO あらたなエスケープシーケンスの追加（行単位でやるよりらくになったはず）
  * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
+ *
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -240,9 +241,19 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                test();
+
+                //escapeSequence.moveSelection(3,5);
+                //escapeSequence.moveUp(3);
+                //termDisplay.insertTextItem(termDisplay.getCursorX(), getSelectRowIndex(), "d", 0);
+                //escapeSequence.moveDownToRowLead(3);
+                //escapeSequence.moveSelection(5);
+                //escapeSequence.clearDisplay(1);
+                escapeSequence.clearRow(2);
+
+                changeDisplay();
                 isBtn_esc = true;
                 Log.d(TAG, "max column: " + maxColumnLength);
+
             }
         });
 
@@ -254,14 +265,28 @@ public class MainActivity extends AppCompatActivity{
                 showDisplay();
                 TimingLogger logger = new TimingLogger("TAG_TEST", "move selection");
                 //changeDisplay();
-                escapeSequence.moveSelection(3,3);
+                //FIXME うまくうごかないのでなおす 2回うごかせばうまくいく←？？？？？
+
+                Log.d("termDisplay**","start: " + inputEditText.getText().toString());
+                //escapeSequence.moveSelection(3,5);
+                //escapeSequence.moveUpToRowLead(3);
+                //escapeSequence.clearDisplay(2);
+                escapeSequence.clearRow(1);
+                changeDisplay();
+                Log.d("termDisplay**","end: " +  inputEditText.getText().toString());
+                //Log.d("termDisplay**", "getSelectionStart"+Integer.toString(inputEditText.getSelectionStart()));
+                //changeDisplay();
+                //moveToSavedCursor();
+                //inputEditText.setSelection(inputEditText.length());
+
+                /**
+                 * これでだめ←？？？？？
+                escapeSequence.moveSelection(5,5);
                 changeDisplay();
                 moveToSavedCursor();
-
-                moveToSavedCursor();
+                 **/
 
                 Log.d("termDisplay**", Integer.toString(getSelectRowIndex()));
-               // termDisplay.changeDisplay(getTopPositionRow());
                 logger.dumpToLog();
 
             }
@@ -716,31 +741,24 @@ public class MainActivity extends AppCompatActivity{
                                     Log.d(TAG, "moveFlag true && A-H");
                                     if (str.equals(KeyHexString.KEY_A)) {
                                         escapeSequence.moveUp(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_B)) {
                                         escapeSequence.moveDown(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_C)) {
                                         escapeSequence.moveRight(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_D)) {
                                         escapeSequence.moveLeft(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_E)) {
                                         escapeSequence.moveDownToRowLead(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_F)) {
                                         escapeSequence.moveUpToRowLead(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_G)) {
                                         escapeSequence.moveSelection(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_H) || str.equals(KeyHexString.KEY_f)) {
                                         if (!Hflag) {
@@ -748,29 +766,24 @@ public class MainActivity extends AppCompatActivity{
                                             move = 1;
                                         }
                                         escapeSequence.moveSelection(h1, move);
-                                        changeDisplay();
                                         Hflag = false;
                                     }
                                     if (str.equals(KeyHexString.KEY_J)) {
                                         escapeSequence.clearDisplay(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_K)) {
                                         escapeSequence.clearRow(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_S)) {
                                         escapeSequence.scrollNext(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_T)) {
                                         escapeSequence.scrollBack(move);
-                                        changeDisplay();
                                     }
                                     if (str.equals(KeyHexString.KEY_m)){
                                         escapeSequence.selectGraphicRendition();
                                     }
-
+                                    changeDisplay();
                                     escapeMoveFlag = false;
                                     squarePuttingFlag = false;
                                     escPuttingFlag = false;
@@ -930,6 +943,9 @@ public class MainActivity extends AppCompatActivity{
             termDisplay.setTextItem(Character.toString(newText.charAt(i)), 0);
         }
         termDisplay.setTextItem(LF, 0);
+        termDisplay.setCursorX(0);
+        moveCursorY(1);
+        changeDisplay();
         enterPutFlag = true;
         receivingFlag = true;
     }
@@ -996,7 +1012,7 @@ public class MainActivity extends AppCompatActivity{
     //選択中の行番号を返す
     private int getSelectRowIndex() {
         Log.d("select row index", "enter");
-        if(escapeSequence.getSelectRow() + termDisplay.getTopRow() <= 0){
+        if(termDisplay.getCursorY() + termDisplay.getTopRow() <= 0){
             return 0;
         }
         return termDisplay.getCursorY() + termDisplay.getTopRow();
@@ -1008,6 +1024,15 @@ public class MainActivity extends AppCompatActivity{
         if (v != null)
             if (imm != null) {
                 imm.showSoftInput(v, 0);
+            }
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        View v = getCurrentFocus();
+        if (v != null)
+            if (imm != null) {
+                ;
             }
     }
 
@@ -1032,11 +1057,12 @@ public class MainActivity extends AppCompatActivity{
     private void showDisplay(){
         Log.d("termDisplay**", "******showDisplay******");
         String row = "";
-        for (int y = 0; y < termDisplay.getDisplayColumnSize(); y++){
+        for (int y = 0; y <= termDisplay.getDisplaySize(); y++){
             for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
                 row = row  + termDisplay.getDisplay(x,y);
             }
-            Log.d("termDisplay**", row);
+            row = row + LF;
+            System.out.println("termDisplay**" + y + row);
             row = "";
         }
 
@@ -1048,8 +1074,13 @@ public class MainActivity extends AppCompatActivity{
         for (int y = 0; y < termDisplay.getTotalColumns(); y++){
             for (int x = 0; x < termDisplay.getRowLength(y); x++){
                 row = row + termDisplay.getText(x, y);
+                if(termDisplay.getText(x, y).equals("")){
+                    //row = row + LF;
+                }
+
             }
-            Log.d("termDisplay**", row);
+            row = row + LF;
+            System.out.println("termDisplay**" + y + row);
             row = "";
         }
     }
@@ -1078,11 +1109,22 @@ public class MainActivity extends AppCompatActivity{
         if(!selectionMovingFlag) {
             selectionMovingFlag = true;
             Log.d(TAG, "moveToSavedCursor()");
+            Log.d("termDisplay**", "list size: " + termDisplay.getTotalColumns() +
+                    " /row size: " + termDisplay.getRowLength(getSelectRowIndex()));
+            String str = termDisplay.getRowText(getSelectRowIndex());
+            //str.replace(LF, "_");
+            Log.d("termDisplay**", "row contents: " + str);
+            Log.d("termDisplay***", "length" + Integer.toString(inputEditText.length()));
+
             int cursor = inputEditText.getOffsetForPosition(termDisplay.getCursorX() * getTextWidth(), termDisplay.getCursorY() * getTextHeight());
-            Log.d("termDisplay**", "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
+            Log.d("termDisplay***", "text size  " + getTextWidth() + ", " + getTextHeight());
+            Log.d("termDisplay***", "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
+            //FIXME 文字数が７あるのにcursorが１になる．(エスケープBとHのとき)　移動前の行がmaxだったらうまくいく模様
             if (cursor >= 0) {
                 //Log.d(TAG, "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
                 inputEditText.setSelection(cursor);
+                //inputEditText.setSelection(inputEditText.length());
+                Log.d("termDisplay***", "cursor" + cursor);
             }
             selectionMovingFlag = false;
         }
