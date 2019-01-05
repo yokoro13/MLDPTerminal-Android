@@ -13,6 +13,7 @@ public class EscapeSequence {
 
     private EditText editText;
     private TermDisplay termDisplay;
+    private boolean colorChange = false;
 
     EscapeSequence(Context context, TermDisplay termDisplay){
         this.editText = (EditText) ((MainActivity)context).findViewById(R.id.main_display);
@@ -251,6 +252,7 @@ public class EscapeSequence {
          * ２．\1b[0mを受信すると黒にリセット
          */
         //output = "<font color=#000000>TextView</font>" ;
+        colorChange = true;
         String output;
         switch (n){
             case 0:
@@ -313,13 +315,21 @@ public class EscapeSequence {
                         }
                         break;
                     }
-                    output = output + "<font color=#" + termDisplay.getColor(x, getTop() + y) +
-                            ">" + termDisplay.getDisplay(x, y) + "</font>";
+                    if(!colorChange){
+                        output = output + termDisplay.getDisplay(x, y);
+                    } else {
+                        output = output + "<font color=#" + termDisplay.getColor(x, getTop() + y) +
+                                ">" + termDisplay.getDisplay(x, y) + "</font>";
+                    }
                 } else{
                     Log.d("termDisplay**", "here is EOL");
-                    spannable = new SpannableString(output);
-                    result = HtmlParser.toHtml(spannable);
-                    editText.setText(Html.fromHtml(result));
+                    if (!colorChange){
+                        editText.setText(output);
+                    }else {
+                        spannable = new SpannableString(output);
+                        result = HtmlParser.toHtml(spannable);
+                        editText.setText(Html.fromHtml(result));
+                    }
                     logger.dumpToLog();
                     return;
                 }
@@ -335,9 +345,13 @@ public class EscapeSequence {
             }
         }
         //editText.setText(Html.fromHtml(output));
-        spannable = new SpannableString(output);
-        result = HtmlParser.toHtml(spannable);
-        editText.setText(Html.fromHtml(result));
+        if (!colorChange){
+            editText.setText(output);
+        }else {
+            spannable = new SpannableString(output);
+            result = HtmlParser.toHtml(spannable);
+            editText.setText(Html.fromHtml(result));
+        }
         logger.dumpToLog();
     }
 
