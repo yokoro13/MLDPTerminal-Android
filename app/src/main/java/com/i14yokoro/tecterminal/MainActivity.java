@@ -40,8 +40,12 @@ import android.widget.EditText;
 import java.nio.charset.StandardCharsets;
 
 /**
- * TODO あらたなエスケープシーケンスの追加（行単位でやるよりらくになったはず）
  * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
+ * これからやること
+ * //TODO バグ潰し（バグしかない）
+ * //TODO escBとHのカーソル移動がうまくいかないので力づくでやる（原因不明）
+ * //TODO RNからきたエスケープシーケンス受信部の作成
+ * //TODO 基本文字は上書きにする
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -787,7 +791,6 @@ public class MainActivity extends AppCompatActivity{
                                         escapeSequence.scrollBack(move);
                                     }
                                     if (str.equals(KeyHexString.KEY_m)){
-                                        //TODO 引数かえる
                                         escapeSequence.selectGraphicRendition(move);
                                     }
                                     changeDisplay();

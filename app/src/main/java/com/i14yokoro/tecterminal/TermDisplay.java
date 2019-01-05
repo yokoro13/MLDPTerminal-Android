@@ -240,7 +240,6 @@ public class TermDisplay {
                 break;
             }
             if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
-                //FIXME 最後に空白入るのここらへんが原因
                 setDisplay(textList.get(totalColumns-1).size(), displayY, "EOL"); //最後に "EOL" という目印をつける
                 break;
             }
