@@ -245,15 +245,7 @@ public class EscapeSequence {
     }
 
     public void selectGraphicRendition(int n){ //色
-        /**色付け手順
-         * １．エスケープシーケンスを受信
-         * ２．標準を色を指定の色に変える setDefaultColor(color)
-         * ３．これが黒以外なら    textItem = new TextItem("<font color=#" + getcolor + ">" + str + "</font>");
-         * ２．\1b[0mを受信すると黒にリセット
-         */
-        //output = "<font color=#000000>TextView</font>" ;
         colorChange = true;
-        String output;
         switch (n){
             case 0:
                 termDisplay.setDefaultColor("000000");
@@ -295,7 +287,6 @@ public class EscapeSequence {
         String result = "";
         SpannableString spannable;
 
-        //Log.d(TAG, "topRow/ " + topRow);
         editText.setText("");
         termDisplay.createDisplay();
         TimingLogger logger = new TimingLogger("TAG_TEST", "change display");
@@ -307,7 +298,6 @@ public class EscapeSequence {
             for (int x = 0; x < displayRowSize; x++){
                 Log.d("termDisplay", "y "+Integer.toString(y));
                 if(!termDisplay.getDisplay(x, y).equals("EOL")) {
-                    //できれば，文字列を作ってからsetTextでいいかも
                     if (termDisplay.getDisplay(x, y).equals("")){
                         Log.d("termDisplay**", "empty");
                         if (y < termDisplay.getDisplaySize()-1){
@@ -344,7 +334,6 @@ public class EscapeSequence {
                 }
             }
         }
-        //editText.setText(Html.fromHtml(output));
         if (!colorChange){
             editText.setText(output);
         }else {
@@ -371,11 +360,5 @@ public class EscapeSequence {
     private void moveCursorY(int y){
         termDisplay.setCursorY(termDisplay.getCursorY() + y);
     }
-
-    private void setCursor(int x, int y){
-        termDisplay.setCursorX(x);
-        termDisplay.setCursorY(y);
-    }
-
 
 }
