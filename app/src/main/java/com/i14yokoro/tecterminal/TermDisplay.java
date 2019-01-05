@@ -24,6 +24,8 @@ public class TermDisplay {
 
     private ArrayList<ArrayList<TextItem>> textList;
 
+    private String defaultColor = "000000";
+
     public TermDisplay(int displayRowSize, int displayColumnSize){
         this.displayRowSize = displayRowSize;
         this.displayColumnSize = displayColumnSize;
@@ -37,7 +39,7 @@ public class TermDisplay {
         createDisplay();
     }
 
-    public void setTextItem(String text, int color){
+    public void setTextItem(String text, String color){
 
         TextItem textItem = new TextItem(text, color);
         int columnSize = getTotalColumns();
@@ -67,14 +69,14 @@ public class TermDisplay {
         }
     }
 
-    public void changeTextItem(int x, int y, String text, int color){
+    public void changeTextItem(int x, int y, String text, String color){
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
             TextItem textItem = new TextItem(text, color);
             this.textList.get(y).set(x, textItem);
         }
     }
 
-    public void addTextItem(int y, String text, int color){
+    public void addTextItem(int y, String text, String color){
         if(y < this.textList.size()) {
             TextItem textItem = new TextItem(text, color);
             this.textList.get(y).add(textItem);
@@ -85,7 +87,7 @@ public class TermDisplay {
 
     }
 
-    public void addTextItemOverSize(int y, String text, int color){
+    public void addTextItemOverSize(int y, String text, String color){
         TextItem textItem = new TextItem(text, color);
         ArrayList<TextItem> items = new ArrayList<>();
         items.add(textItem);
@@ -94,14 +96,14 @@ public class TermDisplay {
     }
 
     public void addEmptyRow(){
-        TextItem textItem = new TextItem("", 0);
+        TextItem textItem = new TextItem("", getDefaultColor());
         ArrayList<TextItem> items1 = new ArrayList<>();
         //items1.add(textItem);
         textList.add(items1);
         Log.d(TAG, "Add new line1");
     }
 
-    public void insertTextItem(int x, int y, String text, int color){
+    public void insertTextItem(int x, int y, String text, String color){
         int checkLF = x - 1;
         if(checkLF < 0){
             checkLF = 0;
@@ -129,17 +131,17 @@ public class TermDisplay {
         }
     }
 
-    public void changeColor(int x, int y, int color){
+    public void changeColor(int x, int y, String color){
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
             this.textList.get(y).get(x).setColor(color);
         }
     }
 
-    public int getColor(int x, int y){
+    public String getColor(int x, int y){
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
             return this.textList.get(y).get(x).getColor();
         } else {
-            return 0;
+            return null;
         }
     }
 
@@ -297,5 +299,14 @@ public class TermDisplay {
 
     public void setDisplaySize(int displaySize) {
         this.displaySize = displaySize;
+    }
+
+
+    public String getDefaultColor() {
+        return defaultColor;
+    }
+
+    public void setDefaultColor(String defaultColor) {
+        this.defaultColor = defaultColor;
     }
 }

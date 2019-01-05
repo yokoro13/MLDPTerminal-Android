@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -244,11 +245,13 @@ public class MainActivity extends AppCompatActivity{
 
                 //escapeSequence.moveSelection(3,5);
                 //escapeSequence.moveUp(3);
-                termDisplay.insertTextItem(termDisplay.getCursorX(), getSelectRowIndex(), "d", 0);
+                //termDisplay.insertTextItem(termDisplay.getCursorX(), getSelectRowIndex(), "d", termDisplay.getDefaultColor());
                 //escapeSequence.moveDownToRowLead(3);
                 //escapeSequence.moveSelection(5);
                 //escapeSequence.clearDisplay(1);
                 //escapeSequence.clearRow(2);
+
+                termDisplay.setDefaultColor("FF0000");
 
                 changeDisplay();
                 isBtn_esc = true;
@@ -271,7 +274,8 @@ public class MainActivity extends AppCompatActivity{
                 //escapeSequence.moveSelection(3,5);
                 //escapeSequence.moveUpToRowLead(3);
                 //escapeSequence.clearDisplay(2);
-                escapeSequence.clearRow(1);
+                //escapeSequence.clearRow(1);
+                termDisplay.setDefaultColor("008000");
                 changeDisplay();
                 Log.d("termDisplay**","end: " +  inputEditText.getText().toString());
                 //Log.d("termDisplay**", "getSelectionStart"+Integer.toString(inputEditText.getSelectionStart()));
@@ -518,6 +522,8 @@ public class MainActivity extends AppCompatActivity{
             eStart = start;//文字列のスタート位置
             eCount = count;//追加される文字
             eBefore = before;//削除すう
+            inputEditText.setTextColor(Color.parseColor("#"+termDisplay.getDefaultColor()));
+            //inputEditText.setBackgroundColor(Color.parseColor("#00FF00"));
         }
 
         @Override
@@ -544,7 +550,7 @@ public class MainActivity extends AppCompatActivity{
                         }
                         for (int i = 0; i < str.length(); i++) { // strの先頭から1文字ずつString型にして取り出す
                             String inputStr = String.valueOf(str.charAt(i));
-                            termDisplay.setTextItem(inputStr, 0);
+                            termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
                             //changeDisplay();
                             moveCursorX(1);
 
@@ -580,7 +586,9 @@ public class MainActivity extends AppCompatActivity{
                                     termDisplay.addTopRow(1);
                                     changeDisplay();
                                 }
+
                             }
+                            //changeDisplay();
 
                         }
                     }
@@ -941,9 +949,9 @@ public class MainActivity extends AppCompatActivity{
         receivingFlag = false;
         enterPutFlag = false;
         for(int i = 0; i < newText.length(); i++){
-            termDisplay.setTextItem(Character.toString(newText.charAt(i)), 0);
+            termDisplay.setTextItem(Character.toString(newText.charAt(i)), termDisplay.getDefaultColor());
         }
-        termDisplay.setTextItem(LF, 0);
+        termDisplay.setTextItem(LF, termDisplay.getDefaultColor());
         termDisplay.setCursorX(0);
         moveCursorY(1);
         changeDisplay();
@@ -1058,7 +1066,7 @@ public class MainActivity extends AppCompatActivity{
     private void showDisplay(){
         Log.d("termDisplay**", "******showDisplay******");
         String row = "";
-        for (int y = 0; y <= termDisplay.getDisplaySize(); y++){
+        for (int y = 0; y < termDisplay.getDisplaySize(); y++){
             for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
                 if (termDisplay.getDisplay(x,y).equals("")){
                     row = row + "_";

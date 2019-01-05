@@ -2,6 +2,7 @@ package com.i14yokoro.tecterminal;
 
 import android.content.Context;
 import android.text.Html;
+import android.text.SpannableString;
 import android.util.Log;
 import android.util.TimingLogger;
 import android.widget.EditText;
@@ -126,7 +127,7 @@ public class EscapeSequence {
         }
         for (int i = 0; i <= n; i++){
             Log.d("termDisplay**", "add Blank"+Integer.toString(i));
-            termDisplay.insertTextItem(x, getSelectRowIndex(),"p", 0);
+            termDisplay.insertTextItem(x, getSelectRowIndex(),"p", termDisplay.getDefaultColor());
             //termDisplay.addTextItem(termDisplay.getTopRow()+termDisplay.getCursorY(), "d", 0);
         }
     }
@@ -196,7 +197,7 @@ public class EscapeSequence {
         if(n == 2){ //全消去
             for (int y = 0; y < termDisplay.getDisplaySize(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
-                    termDisplay.changeTextItem(x, y, " ", 0);
+                    termDisplay.changeTextItem(x, y, " ", termDisplay.getDefaultColor());
                 }
             }
         }
@@ -253,48 +254,42 @@ public class EscapeSequence {
         String output;
         switch (n){
             case 0:
-
+                termDisplay.setDefaultColor("000000");
                 break;
             case 30:
-                output = "<font color=#000000>TextView</font>" ;
-                editText.append(Html.fromHtml(output));
+                termDisplay.setDefaultColor("000000");
                 break;
             case 31:
-                output = "<font color=#FF0000>TextView</font>" ;
-                editText.append(Html.fromHtml(output));
+                termDisplay.setDefaultColor("FF0000");
                 break;
             case 32:
-                output = "<font color=#008000>TextView</font>" ;
-                editText.append(Html.fromHtml(output));
+                termDisplay.setDefaultColor("008000");
                 break;
             case 33:
-                output = "<font color=#FFFF00>TextView</font>" ;
-                editText.append(Html.fromHtml(output));
+                termDisplay.setDefaultColor("FFFF00");
                 break;
             case 34:
-                output = "<font color=#0000FF>TextView</font>" ;
-                editText.append(Html.fromHtml(output));
+                termDisplay.setDefaultColor("0000FF");
                 break;
             case 35:
-                output = "<font color=#FF00FF>TextView</font>" ;
-                editText.setText(Html.fromHtml(output));
+                termDisplay.setDefaultColor("FF00FF");
                 break;
             case 36:
-                output = "<font color=#00FFFF>TextView</font>" ;
-                editText.append(Html.fromHtml(output));
+                termDisplay.setDefaultColor("00FFFF");
                 break;
             case 37:
-                output = "<font color=#FFFFFF>TextView</font>" ;
-                editText.append(Html.fromHtml(output));
+                termDisplay.setDefaultColor("FFFFFF");
                 break;
             default:
-                output = "<font color=#000000>TextView</font>" ;
-                editText.append(Html.fromHtml(output));
+                termDisplay.setDefaultColor("000000");
         }
     }
 
     public void changeDisplay(){
         String output = "";
+        String result = "";
+        SpannableString spannable;
+
         //Log.d(TAG, "topRow/ " + topRow);
         editText.setText("");
         termDisplay.createDisplay();
@@ -315,10 +310,13 @@ public class EscapeSequence {
                         }
                         break;
                     }
-                    output = output + termDisplay.getDisplay(x, y);
+                    output = output + "<font color=#" + termDisplay.getColor(x, getTop() + y) +
+                            ">" + termDisplay.getDisplay(x, y) + "</font>";
                 } else{
                     Log.d("termDisplay**", "here is EOL");
-                    editText.setText(Html.fromHtml(output));
+                    spannable = new SpannableString(output);
+                    result = HtmlParser.toHtml(spannable);
+                    editText.setText(Html.fromHtml(result));
                     logger.dumpToLog();
                     return;
                 }
@@ -333,7 +331,10 @@ public class EscapeSequence {
                 }
             }
         }
-        editText.setText(Html.fromHtml(output));
+        //editText.setText(Html.fromHtml(output));
+        spannable = new SpannableString(output);
+        result = HtmlParser.toHtml(spannable);
+        editText.setText(Html.fromHtml(result));
         logger.dumpToLog();
     }
 
