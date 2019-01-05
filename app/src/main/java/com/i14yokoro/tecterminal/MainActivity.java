@@ -40,10 +40,8 @@ import android.widget.EditText;
 import java.nio.charset.StandardCharsets;
 
 /**
- * TODO 文字の色への対応
  * TODO あらたなエスケープシーケンスの追加（行単位でやるよりらくになったはず）
  * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
- *
  */
 public class MainActivity extends AppCompatActivity{
 
