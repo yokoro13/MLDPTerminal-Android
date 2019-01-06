@@ -33,8 +33,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewTreeObserver;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -113,16 +111,6 @@ public class MainActivity extends AppCompatActivity{
     private boolean displayingFlag = false;
 
     private int h1;
-    private boolean isHFlag = false;
-    private boolean isfFlag = false;
-    private boolean isBFlag = false;
-
-    private Window mRootWindow;
-
-    private int diffHeight = 0;
-    private int beforeHeight = 0;
-    private boolean isShowingKeyBoard = false;
-
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -259,18 +247,6 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
 
-                //escapeSequence.moveSelection(3,5);
-                escapeSequence.moveDown(3);
-                //isHFlag = true;
-                //escapeSequence.moveUp(3);
-                //termDisplay.insertTextItem(termDisplay.getCursorX(), getSelectRowIndex(), "d", termDisplay.getDefaultColor());
-                //escapeSequence.moveDownToRowLead(3);
-                //escapeSequence.moveSelection(5);
-                //escapeSequence.clearDisplay(1);
-                //escapeSequence.clearRow(2);
-
-                //termDisplay.setDefaultColor("FF0000");
-
                 changeDisplay();
                 isBtn_esc = true;
                 Log.d(TAG, "max column: " + maxColumnLength);
@@ -284,33 +260,7 @@ public class MainActivity extends AppCompatActivity{
                 isBtn_ctl = true;
                 showListContents();
                 showDisplay();
-                TimingLogger logger = new TimingLogger("TAG_TEST", "move selection");
-                //changeDisplay();
-                //Log.d("termDisplay**","start: " + inputEditText.getText().toString());
-                //escapeSequence.moveSelection(3,5);
-                //escapeSequence.moveUpToRowLead(3);
-                //escapeSequence.clearDisplay(2);
-                //escapeSequence.clearRow(1);
-                //termDisplay.setDefaultColor("008000");
-                //changeDisplay();
-                //Log.d("termDisplay**","end: " +  inputEditText.getText().toString());
-                //Log.d("termDisplay**", "getSelectionStart"+Integer.toString(inputEditText.getSelectionStart()));
-                //changeDisplay();
-                //moveToSavedCursor();
-                //inputEditText.setSelection(inputEditText.length());
-
-
-                Log.d("termDisplay***", "view height is "+ diffHeight + ", " + inputEditText.getHeight());
-                /**
-                 * これでだめ←？？？？？
-                escapeSequence.moveSelection(5,5);
-                changeDisplay();
-                moveToSavedCursor();
-                 **/
-
                 Log.d("termDisplay**", Integer.toString(getSelectRowIndex()));
-                logger.dumpToLog();
-
             }
         });
 
@@ -379,23 +329,6 @@ public class MainActivity extends AppCompatActivity{
                 return false;
             }
         });
-
-        //レイアウトの大きさがかわると通知
-        inputEditText.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            public void onGlobalLayout(){
-                // r.left, r.top, r.right, r.bottom
-                diffHeight = inputEditText.getHeight() - beforeHeight;
-                beforeHeight = inputEditText.getHeight();
-                if (diffHeight < - 150){
-                    isShowingKeyBoard = true;
-                } else {
-                    isShowingKeyBoard = false;
-                }
-
-            }
-        });
-
-
     }
 
     @Override
@@ -789,7 +722,6 @@ public class MainActivity extends AppCompatActivity{
                                     }
                                     if (str.equals(KeyHexString.KEY_B)) {
                                         escapeSequence.moveDown(move);
-                                        isBFlag = true;
                                     }
                                     if (str.equals(KeyHexString.KEY_C)) {
                                         escapeSequence.moveRight(move);
@@ -812,7 +744,6 @@ public class MainActivity extends AppCompatActivity{
                                             move = 1;
                                         }
                                         escapeSequence.moveSelection(h1, move);
-                                        isHFlag = true;
                                         Hflag = false;
                                     }
                                     if (str.equals(KeyHexString.KEY_J)) {
