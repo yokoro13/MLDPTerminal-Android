@@ -80,6 +80,8 @@ public class MainActivity extends AppCompatActivity{
     private State state = State.STARTING;
 
     private String escapeMoveNum = ""; //escapeシーケンスできたString型の数字を保存
+    private String clear = "";
+    private int h1;
 
     private Editable editable;
     private EscapeSequence escapeSequence;
@@ -109,8 +111,6 @@ public class MainActivity extends AppCompatActivity{
 
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
     private boolean displayingFlag = false;
-
-    private int h1;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -152,10 +152,6 @@ public class MainActivity extends AppCompatActivity{
                     escapeSequence.moveUp();
                     moveToSavedCursor();
                 }
-                /**
-                if(false/* 画面一番上でだったら) {
-                    scrollUp();
-                }**/
             }
         });
 
@@ -180,10 +176,6 @@ public class MainActivity extends AppCompatActivity{
                     escapeSequence.moveDown();
                     moveToSavedCursor();
                 }
-                /**
-                if(false/* 画面一番下でだったら) {
-                    scrollDown();
-                }**/
             }
         });
 
@@ -233,22 +225,18 @@ public class MainActivity extends AppCompatActivity{
                     moveToSavedCursor();
                 }
                 logger.dumpToLog();
-                /**
-                if(currX < 0){
-                    //currX = 0;
-                    if(currY > 0){
-                        //currY--;
-                    }
-                }***/
             }
         });
 
         findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 changeDisplay();
                 isBtn_esc = true;
+
+                //escapeSequence.moveUp(3);
+                escapeSequence.clearDisplay(0);
+                changeDisplay();
                 Log.d(TAG, "max column: " + maxColumnLength);
 
             }
@@ -260,6 +248,9 @@ public class MainActivity extends AppCompatActivity{
                 isBtn_ctl = true;
                 showListContents();
                 showDisplay();
+
+                escapeSequence.clearDisplay(2);
+                changeDisplay();
                 Log.d("termDisplay**", Integer.toString(getSelectRowIndex()));
             }
         });
@@ -682,6 +673,7 @@ public class MainActivity extends AppCompatActivity{
                             if (squarePuttingFlag && data.matches("[0-9]")) {
                                 Log.d(TAG, "move flag is true");
                                 escapeMoveNum += data;
+                                clear += data;
                                 escapeMoveFlag = true;
                                 //squarePuttingFlag = false;
                                 break;
@@ -708,11 +700,13 @@ public class MainActivity extends AppCompatActivity{
                                 if (data.matches("[A-HJKSTfm]")) {
                                     //escapeシーケンス用
                                     int move;
-                                    int topRow = termDisplay.getTopRow();
+                                    int clearNum;
                                     if (escapeMoveFlag) {
                                         move = Integer.parseInt(escapeMoveNum);
+                                        clearNum = Integer.parseInt(clear);
                                     } else {
                                         move = 1;
+                                        clearNum = 0;
                                     }
                                     escapeMoveNum = "";
 
@@ -747,10 +741,10 @@ public class MainActivity extends AppCompatActivity{
                                         Hflag = false;
                                     }
                                     if (str.equals(KeyHexString.KEY_J)) {
-                                        escapeSequence.clearDisplay(move);
+                                        escapeSequence.clearDisplay(clearNum);
                                     }
                                     if (str.equals(KeyHexString.KEY_K)) {
-                                        escapeSequence.clearRow(move);
+                                        escapeSequence.clearRow(clearNum);
                                     }
                                     if (str.equals(KeyHexString.KEY_S)) {
                                         escapeSequence.scrollNext(move);

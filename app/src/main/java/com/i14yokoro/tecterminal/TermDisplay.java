@@ -116,8 +116,15 @@ public class TermDisplay {
             if(textList.get(y).size() < displayRowSize && !getText(checkLF, y).equals(LF)) {
                 //if(getRowText(getCursorY()).lastIndexOf(LF) == )
                 TextItem textItem = new TextItem(text, color);
-                this.textList.get(y).add(x, textItem);
-
+                textList.get(y).add(x, textItem);
+            } else {
+                if(getText(checkLF, y).equals(LF)){
+                    deleteTextItem(checkLF, y);
+                    TextItem textItem = new TextItem(text, color);
+                    textList.get(y).add(checkLF, textItem);
+                    textItem = new TextItem(LF, color);
+                    textList.get(y).add(textItem);
+                }
             }
         }
     }
