@@ -109,10 +109,22 @@ public class TermDisplay {
             checkLF = 0;
         }
         if(y < this.textList.size() && x <= this.textList.get(y).size()) {
+            if (getRowLength(y) >= displayRowSize && getText(displayRowSize-1, y).equals(LF)){
+                deleteTextItem(displayRowSize-1, y);
+            }
+            Log.d(TAG, "insert to :" + x + ", " + y);
             if(textList.get(y).size() < displayRowSize && !getText(checkLF, y).equals(LF)) {
                 //if(getRowText(getCursorY()).lastIndexOf(LF) == )
                 TextItem textItem = new TextItem(text, color);
-                this.textList.get(y).add(x, textItem);
+                textList.get(y).add(x, textItem);
+            } else {
+                if(getText(checkLF, y).equals(LF)){
+                    deleteTextItem(checkLF, y);
+                    TextItem textItem = new TextItem(text, color);
+                    textList.get(y).add(checkLF, textItem);
+                    textItem = new TextItem(LF, color);
+                    textList.get(y).add(textItem);
+                }
             }
         }
     }
@@ -127,7 +139,7 @@ public class TermDisplay {
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
             return this.textList.get(y).get(x).getText();
         } else {
-            return null;
+            return "";
         }
     }
 
@@ -240,7 +252,6 @@ public class TermDisplay {
                 break;
             }
             if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
-                //FIXME 最後に空白入るのここらへんが原因
                 setDisplay(textList.get(totalColumns-1).size(), displayY, "EOL"); //最後に "EOL" という目印をつける
                 break;
             }
