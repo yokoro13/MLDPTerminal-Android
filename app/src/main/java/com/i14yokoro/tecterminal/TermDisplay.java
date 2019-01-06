@@ -109,10 +109,15 @@ public class TermDisplay {
             checkLF = 0;
         }
         if(y < this.textList.size() && x <= this.textList.get(y).size()) {
+            if (getRowLength(y) >= displayRowSize && getText(displayRowSize-1, y).equals(LF)){
+                deleteTextItem(displayRowSize-1, y);
+            }
+            Log.d(TAG, "insert to :" + x + ", " + y);
             if(textList.get(y).size() < displayRowSize && !getText(checkLF, y).equals(LF)) {
                 //if(getRowText(getCursorY()).lastIndexOf(LF) == )
                 TextItem textItem = new TextItem(text, color);
                 this.textList.get(y).add(x, textItem);
+
             }
         }
     }
@@ -127,7 +132,7 @@ public class TermDisplay {
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
             return this.textList.get(y).get(x).getText();
         } else {
-            return null;
+            return "";
         }
     }
 
