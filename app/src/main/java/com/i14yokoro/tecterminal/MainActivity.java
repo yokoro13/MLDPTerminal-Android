@@ -1112,41 +1112,65 @@ public class MainActivity extends AppCompatActivity{
         termDisplay.setCursorY(termDisplay.getCursorY() + y);
     }
 
-    private void moveCursor(int x, int y){
-        int cursor = inputEditText.getOffsetForPosition(x * getTextWidth()+2, y * getTextHeight()+2);
-        if(cursor > 0){
-            inputEditText.setSelection(cursor);
-        }
-    }
-
     private void moveToSavedCursor(){
         if(!selectionMovingFlag) {
             selectionMovingFlag = true;
             Log.d(TAG, "moveToSavedCursor()");
-            Log.d("termDisplay**", "list size: " + termDisplay.getTotalColumns() +
-                    " /row size: " + termDisplay.getRowLength(getSelectRowIndex()));
+            //Log.d("termDisplay**", "list size: " + termDisplay.getTotalColumns() +
+              //      " /row size: " + termDisplay.getRowLength(getSelectRowIndex()));
             String str = termDisplay.getRowText(getSelectRowIndex());
             //str.replace(LF, "_");
             Log.d("termDisplay**", "row contents: " + str);
-            Log.d("termDisplay***", "length" + Integer.toString(inputEditText.length()));
+            //Log.d("termDisplay***", "length" + Integer.toString(inputEditText.length()));
+            int cursor;
+            cursor = getRowLength(termDisplay.getCursorX(), termDisplay.getCursorY());
 
-            int cursor = inputEditText.getOffsetForPosition(termDisplay.getCursorX() * getTextWidth(), termDisplay.getCursorY() * getTextHeight());
-            Log.d("termDisplay***", "text size  " + getTextWidth() + ", " + getTextHeight());
+            //Log.d("termDisplay***", "text size  " + getTextWidth() + ", " + getTextHeight());
             Log.d("termDisplay***", "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
-            //FIXME 文字数が７あるのにcursorが１になる．(エスケープBとHのとき)　移動前の行がmaxだったらうまくいく模様
             if (cursor >= 0) {
-                //Log.d(TAG, "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
                 inputEditText.setSelection(cursor);
-                //inputEditText.setSelection(inputEditText.length());
                 Log.d("termDisplay***", "cursor" + cursor);
             }
             selectionMovingFlag = false;
         }
     }
 
-    private void setCursor(int x, int y){
-        termDisplay.setCursorX(x);
-        termDisplay.setCursorY(y);
+    private int getRowLength(int x, int y){
+        int length = 0;
+        for (int i = 0; i < y; i++){
+            length = length + termDisplay.getRowLength(termDisplay.getTopRow() + i);
+            Log.d("termDisplay***", "text length  " + termDisplay.getRowLength(termDisplay.getTopRow() + i));
+            if (termDisplay.getRowLength(termDisplay.getTopRow() + i) == 0){
+                length++;
+            }
+            if (termDisplay.getRowText(termDisplay.getTopRow() + i).lastIndexOf(LF) == -1){
+                length++;
+            }
+        }
+
+        int rowLength = termDisplay.getRowLength(termDisplay.getTopRow() + y);
+
+        //空
+        if(rowLength == 0) length++;
+        Log.d("termDisplay***", "X: " + x + " y length  " + termDisplay.getRowLength(y));
+        //移動先の文字数がカーソルXよりも短い
+        if (x > rowLength ){//&& termDisplay.getRowText(getSelectRowIndex()).lastIndexOf(LF) != -1){
+            x = rowLength - 1;
+        }
+        //カーソルXが移動先の文字数と等しくて，改行コードが存在する
+        if(x == rowLength && termDisplay.getRowText(termDisplay.getTopRow() + y).lastIndexOf(LF) != -1){
+            x = rowLength-1;
+        }
+        //if (rowLength == termDisplay.getDisplayRowSize()){
+          //  if (termDisplay.getRowText(termDisplay.getTopRow() + y).lastIndexOf(LF) == -1){
+            //    x = rowLength-1;
+            //}
+        //}
+        length = length + x;
+        if (length > inputEditText.length()){
+            length = inputEditText.length();
+        }
+        return length;
     }
 
     private void scrollUp(){
