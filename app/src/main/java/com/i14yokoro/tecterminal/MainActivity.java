@@ -1142,19 +1142,22 @@ public class MainActivity extends AppCompatActivity{
             Log.d("termDisplay***", "text length  " + termDisplay.getRowLength(termDisplay.getTopRow() + i));
             if (termDisplay.getRowLength(termDisplay.getTopRow() + i) == 0){
                 length++;
-            }
-            if (termDisplay.getRowText(termDisplay.getTopRow() + i).lastIndexOf(LF) == -1){
-                length++;
+            } else {
+                if (!termDisplay.getRowText(termDisplay.getTopRow() + i).contains(LF)) {
+                    length++;
+                }
             }
         }
+
+        Log.d("termDisplay***", "after fot length : " + length);
 
         int rowLength = termDisplay.getRowLength(termDisplay.getTopRow() + y);
 
         //空
-        if(rowLength == 0) length++;
+        if(rowLength == 0) x = 0;
         Log.d("termDisplay***", "X: " + x + " y length  " + termDisplay.getRowLength(y));
         //移動先の文字数がカーソルXよりも短い
-        if (x > rowLength ){//&& termDisplay.getRowText(getSelectRowIndex()).lastIndexOf(LF) != -1){
+        if (x > rowLength && rowLength != 0){//&& termDisplay.getRowText(getSelectRowIndex()).lastIndexOf(LF) != -1){
             x = rowLength - 1;
         }
         //カーソルXが移動先の文字数と等しくて，改行コードが存在する
