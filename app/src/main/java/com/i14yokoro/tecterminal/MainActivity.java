@@ -516,7 +516,9 @@ public class MainActivity extends AppCompatActivity{
                             Log.d(TAG, "ASCII code/ " + str);
                             if (inputStr.equals(LF)) {
                                 termDisplay.setCursorX(0);
-                                moveCursorY(1);
+                                if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
+                                    moveCursorY(1);
+                                }
                                 changeDisplay();
 
                                 if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
@@ -537,7 +539,9 @@ public class MainActivity extends AppCompatActivity{
                                 inputEditText.append(LF);
                                 //termDisplay.setCursorX();
                                 termDisplay.setCursorX(0);
-                                moveCursorY(1);
+                                if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
+                                    moveCursorY(1);
+                                }
                                 enterPutFlag = true;
                                 displayingFlag = false;
                                 receivingFlag = true;
@@ -603,6 +607,8 @@ public class MainActivity extends AppCompatActivity{
         return intentFilter;
     }
 
+
+    //FIXME 一番下の行での入力が表示されない
     private final BroadcastReceiver bleServiceReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -629,7 +635,7 @@ public class MainActivity extends AppCompatActivity{
                     for (byte b : utf){
                         str = Integer.toHexString(b & 0xff);
                         Log.d(TAG, "coming HEX : " + str);
-                        bleService.writeMLDP(str + " ");
+                        //bleService.writeMLDP(str + " ");
                     }
 
                     int startSel = inputEditText.getSelectionStart();
@@ -668,12 +674,15 @@ public class MainActivity extends AppCompatActivity{
                             escapeMoveFlag = false;
                         default:
                             //2桁の入力を可能にする　できた
-                            h1 = 1;
 
                             if (squarePuttingFlag && data.matches("[0-9]")) {
                                 Log.d(TAG, "move flag is true");
                                 escapeMoveNum += data;
                                 clear += data;
+                                if (Integer.parseInt(escapeMoveNum) > 1000 || Integer.parseInt(clear) > 1000){
+                                    escapeMoveNum = "1000";
+                                    clear = "1000";
+                                }
                                 escapeMoveFlag = true;
                                 //squarePuttingFlag = false;
                                 break;
@@ -712,48 +721,83 @@ public class MainActivity extends AppCompatActivity{
 
                                     Log.d(TAG, "moveFlag true && A-H");
                                     if (str.equals(KeyHexString.KEY_A)) {
+                                        if (move >= termDisplay.getDisplayColumnSize()) move = termDisplay.getDisplayColumnSize()-1;
                                         escapeSequence.moveUp(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_B)) {
+                                        if (move >= termDisplay.getDisplayColumnSize()) move = termDisplay.getDisplayColumnSize()-1;
                                         escapeSequence.moveDown(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_C)) {
+                                        if (move >= termDisplay.getDisplayRowSize()) move = termDisplay.getDisplayRowSize()-1;
                                         escapeSequence.moveRight(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_D)) {
+                                        if (move >= termDisplay.getDisplayRowSize()) move = termDisplay.getDisplayRowSize()-1;
                                         escapeSequence.moveLeft(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_E)) {
+                                        if (move >= termDisplay.getDisplayColumnSize()) move = termDisplay.getDisplayColumnSize()-1;
                                         escapeSequence.moveDownToRowLead(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_F)) {
+                                        if (move >= termDisplay.getDisplayColumnSize()) move = termDisplay.getDisplayColumnSize()-1;
                                         escapeSequence.moveUpToRowLead(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_G)) {
+                                        if (move >= termDisplay.getDisplayRowSize()) move = termDisplay.getDisplayRowSize()-1;
                                         escapeSequence.moveSelection(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_H) || str.equals(KeyHexString.KEY_f)) {
                                         if (!Hflag) {
                                             h1 = 1;
                                             move = 1;
                                         }
+                                        if (h1 >= termDisplay.getDisplayColumnSize()) h1 = termDisplay.getDisplayColumnSize()-1;
+                                        if (move >= termDisplay.getDisplayRowSize()) move = termDisplay.getDisplayRowSize()-1;
                                         escapeSequence.moveSelection(h1, move);
                                         Hflag = false;
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_J)) {
                                         escapeSequence.clearDisplay(clearNum);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_K)) {
                                         escapeSequence.clearRow(clearNum);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_S)) {
                                         escapeSequence.scrollNext(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_T)) {
                                         escapeSequence.scrollBack(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     if (str.equals(KeyHexString.KEY_m)){
                                         escapeSequence.selectGraphicRendition(move);
+                                        escapeMoveNum = "";
+                                        clear = "";
                                     }
                                     changeDisplay();
                                     escapeMoveFlag = false;
@@ -768,8 +812,10 @@ public class MainActivity extends AppCompatActivity{
                             escPuttingFlag = false;
                             squarePuttingFlag = false;
                             receivingFlag = false;
-                            editable.replace(Math.min(startSel, endSel), Math.max(startSel, endSel), data);
+                            editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), data);
+                            //termDisplay.setTextItem(data, termDisplay.getDefaultColor());
                             //input.append(str);
+                            changeDisplay();
                             receivingFlag = true;
                             escapeMoveFlag = false;
 
@@ -1138,7 +1184,9 @@ public class MainActivity extends AppCompatActivity{
 
     private void scrollUp(){
         if(termDisplay.getTopRow() -1 >= 0){
-            moveCursorY(1);
+            if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
+                moveCursorY(1);
+            }
             termDisplay.addTopRow(-1);
             changeDisplay();
         }
