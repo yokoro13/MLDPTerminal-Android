@@ -76,6 +76,8 @@ public class MainActivity extends AppCompatActivity{
     private SharedPreferences prefs;
 
     private enum State {STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING} //state
+    private enum EscapeState {NONE, ESCAPE, SQUARE, MOVE, H, f, m}
+    private EscapeState escapeState = EscapeState.NONE;
 
     private State state = State.STARTING;
 
@@ -580,12 +582,16 @@ public class MainActivity extends AppCompatActivity{
                 Log.d(TAG, "Received intent ACTION_BLE_DATA_RECEIVED");
                 String data = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA);
 
+                //FIXME １文字以上の入力がくると死ぬ
+                Log.d("RNreceive", data);
+
                 if (data != null) {
                     String str="";
                     byte[] utf = data.getBytes(StandardCharsets.UTF_8);
-                    for (byte b : utf){
+                    for (byte b : utf) {
                         str = Integer.toHexString(b & 0xff);
-                        Log.d(TAG, "coming HEX : " + str);
+                        Log.d("RNreceive", "coming HEX : " + str);
+                        //FIXME できればここでエスケープシーケンスの処理をしたい
                         //bleService.writeMLDP(str + " ");
                     }
 
@@ -596,7 +602,7 @@ public class MainActivity extends AppCompatActivity{
                             if(startSel >= 1) {
                                 inputEditText.getText().delete(startSel - 1, endSel);
                             }
-                            escPuttingFlag = false;
+                            escapeState = EscapeState.NONE;
                             escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_ENTER:
@@ -605,28 +611,26 @@ public class MainActivity extends AppCompatActivity{
                             inputEditText.append(LF);
                             changeDisplay();
                             RNtext = "";
-                            escPuttingFlag = false;
-                            squarePuttingFlag = false;
+                            escapeState = EscapeState.NONE;
                             escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_ESC:
                             Log.d(TAG, "receive esc");
-                            escPuttingFlag = true;
-                            squarePuttingFlag = false;
+                            escapeState = EscapeState.ESCAPE;
                             escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_SQUARE_LEFT:
                             Log.d(TAG, "receive square");
-                            if(escPuttingFlag) {
-                                squarePuttingFlag = true;
+                            if (escapeState == EscapeState.ESCAPE){
+                                escapeState = EscapeState.SQUARE;
                                 break;
+                            } else {
+                                escapeState = EscapeState.NONE;
                             }
-                            escPuttingFlag = false;
                             escapeMoveFlag = false;
                         default:
-                            //2桁の入力を可能にする　できた
 
-                            if (squarePuttingFlag && data.matches("[0-9]")) {
+                            if (escapeState == EscapeState.SQUARE && data.matches("[0-9]")) {
                                 Log.d(TAG, "move flag is true");
                                 escapeMoveNum += data;
                                 clear += data;
@@ -635,10 +639,9 @@ public class MainActivity extends AppCompatActivity{
                                     clear = "1000";
                                 }
                                 escapeMoveFlag = true;
-                                //squarePuttingFlag = false;
                                 break;
                             }
-                            if(squarePuttingFlag && data.equals(";")){
+                            if(escapeState == EscapeState.SQUARE && data.equals(";")){
                                 if(escapeMoveFlag) {
                                     h1 = Integer.parseInt(escapeMoveNum);
                                 }else {
@@ -651,12 +654,10 @@ public class MainActivity extends AppCompatActivity{
                             }
                             if(Hflag && !data.matches("[Hf]")){
                                 escapeMoveNum = "";
-                                escapeMoveFlag = false;
-                                squarePuttingFlag = false;
-                                escPuttingFlag = false;
+                                escapeState = EscapeState.NONE;
                                 break;
                             }
-                            if (squarePuttingFlag) {
+                            if (escapeState == EscapeState.SQUARE) {
                                 if (data.matches("[A-HJKSTfm]")) {
                                     //escapeシーケンス用
                                     int move;
@@ -752,19 +753,28 @@ public class MainActivity extends AppCompatActivity{
                                     }
                                     changeDisplay();
                                     escapeMoveFlag = false;
-                                    squarePuttingFlag = false;
-                                    escPuttingFlag = false;
+                                    escapeState = EscapeState.NONE;
                                     break;
                                 }
                             }
                             RNtext = RNtext + data;
 
                             editable = inputEditText.getText();
-                            escPuttingFlag = false;
-                            squarePuttingFlag = false;
+                            escapeState = EscapeState.NONE;
                             receivingFlag = false;
-                            editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), data);
-                            //termDisplay.setTextItem(data, termDisplay.getDefaultColor());
+                            //editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), data);
+                            //if(data.length() > 1) {
+                            //FIXME よくわからん細いのがあるのでなおす
+                            //FIXME 最後の部分がこない
+                            String string;
+                            for (int i = 0; i < data.length(); i++) {
+                                string = Character.toString(data.charAt(i));//.replace('\u0020', '\u00A0');
+                                if (string.equals("\u0020")){
+                                    string = " ";
+                                }
+                                termDisplay.setTextItem(string, termDisplay.getDefaultColor());
+                            }
+                            //}
                             //input.append(str);
                             changeDisplay();
                             receivingFlag = true;
