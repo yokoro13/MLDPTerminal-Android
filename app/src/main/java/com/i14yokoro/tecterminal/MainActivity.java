@@ -139,14 +139,6 @@ public class MainActivity extends AppCompatActivity{
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b" + "[1A");
                 }
-                else {
-                    //if (items.get(getSelectRow()).isWritable()){
-                        //escapeSequence.moveUp();
-                        //if(!items.get(getSelectRow()).isWritable()){
-                        //    inputEditText.setSelection(currCursor);
-                       // }
-                   // }
-                }
 
                 if(termDisplay.getCursorY() > 0){
                     escapeSequence.moveUp();
@@ -162,15 +154,6 @@ public class MainActivity extends AppCompatActivity{
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b" + "[1B");
                 }
-                else {
-                    /**
-                    if (items.get(getSelectRowIndex()).isWritable()){
-                        escapeSequence.moveDown();
-                        if(!items.get(getSelectRowIndex()).isWritable()){
-                            inputEditText.setSelection(currCursor);
-                        }
-                    }**/
-                }
 
                 if(termDisplay.getCursorY() < inputEditText.getLineCount()-1) {
                     escapeSequence.moveDown();
@@ -185,23 +168,11 @@ public class MainActivity extends AppCompatActivity{
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b" + "[1C");
                 }
-                else {
-                    /**
-                    if (items.get(getSelectRowIndex()).isWritable()){
-                        escapeSequence.moveRight();
-                        if(!items.get(getSelectRowIndex()).isWritable()){
-                            inputEditText.setSelection(currCursor);
-                        }
-                    }**/
-                }
+
                 if(termDisplay.getCursorX() < termDisplay.getRowLength(getSelectRowIndex())) {
                     escapeSequence.moveRight();
                     moveToSavedCursor();
                 }
-                //if(termDisplay.getDisplay(currX, currY).equals(LF) || currX > maxRowLength){
-                    //currX = 0;
-                    //currY++;
-                //}
             }
         });
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
@@ -210,33 +181,18 @@ public class MainActivity extends AppCompatActivity{
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b" + "[1D");
                 }
-                else {
-                    /**
-                    if (items.get(getSelectRowIndex()).isWritable()){
-                        escapeSequence.moveLeft();
-                        if(!items.get(getSelectRowIndex()).isWritable()){
-                            inputEditText.setSelection(currCursor);
-                        }
-                    }**/
-                }
-                TimingLogger logger = new TimingLogger("TAG_TEST", "move left");
+
                 if(termDisplay.getCursorX() > 0) {
                     escapeSequence.moveLeft();
                     moveToSavedCursor();
                 }
-                logger.dumpToLog();
             }
         });
 
         findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                changeDisplay();
                 isBtn_esc = true;
-
-                //escapeSequence.moveUp(3);
-                escapeSequence.clearDisplay(0);
-                changeDisplay();
                 Log.d(TAG, "max column: " + maxColumnLength);
 
             }
@@ -246,11 +202,6 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 isBtn_ctl = true;
-                showListContents();
-                showDisplay();
-
-                escapeSequence.clearDisplay(2);
-                changeDisplay();
                 Log.d("termDisplay**", Integer.toString(getSelectRowIndex()));
             }
         });
