@@ -33,6 +33,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -43,9 +45,10 @@ import java.nio.charset.StandardCharsets;
  * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
  * これからやること
  * //TODO バグ潰し（バグしかない）
- * //TODO escBとHのカーソル移動がうまくいかないので力づくでやる（原因不明）
  * //TODO RNからきたエスケープシーケンス受信部の作成
  * //TODO 基本文字は上書きにする
+ *
+ * TODO 一番下の行でしかカーソル移動できないようにする（入力行を保存しておく？？？）
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -108,6 +111,17 @@ public class MainActivity extends AppCompatActivity{
 
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
     private boolean displayingFlag = false;
+
+    private int h1;
+    private boolean isHFlag = false;
+    private boolean isfFlag = false;
+    private boolean isBFlag = false;
+
+    private Window mRootWindow;
+
+    private int diffHeight = 0;
+    private int beforeHeight = 0;
+    private boolean isShowingKeyBoard = false;
 
 
     @SuppressLint("ClickableViewAccessibility")
@@ -246,6 +260,8 @@ public class MainActivity extends AppCompatActivity{
             public void onClick(View v) {
 
                 //escapeSequence.moveSelection(3,5);
+                escapeSequence.moveDown(3);
+                //isHFlag = true;
                 //escapeSequence.moveUp(3);
                 //termDisplay.insertTextItem(termDisplay.getCursorX(), getSelectRowIndex(), "d", termDisplay.getDefaultColor());
                 //escapeSequence.moveDownToRowLead(3);
@@ -253,7 +269,7 @@ public class MainActivity extends AppCompatActivity{
                 //escapeSequence.clearDisplay(1);
                 //escapeSequence.clearRow(2);
 
-                termDisplay.setDefaultColor("FF0000");
+                //termDisplay.setDefaultColor("FF0000");
 
                 changeDisplay();
                 isBtn_esc = true;
@@ -270,21 +286,21 @@ public class MainActivity extends AppCompatActivity{
                 showDisplay();
                 TimingLogger logger = new TimingLogger("TAG_TEST", "move selection");
                 //changeDisplay();
-                //FIXME うまくうごかないのでなおす 2回うごかせばうまくいく←？？？？？
-
-                Log.d("termDisplay**","start: " + inputEditText.getText().toString());
+                //Log.d("termDisplay**","start: " + inputEditText.getText().toString());
                 //escapeSequence.moveSelection(3,5);
                 //escapeSequence.moveUpToRowLead(3);
                 //escapeSequence.clearDisplay(2);
                 //escapeSequence.clearRow(1);
-                termDisplay.setDefaultColor("008000");
-                changeDisplay();
-                Log.d("termDisplay**","end: " +  inputEditText.getText().toString());
+                //termDisplay.setDefaultColor("008000");
+                //changeDisplay();
+                //Log.d("termDisplay**","end: " +  inputEditText.getText().toString());
                 //Log.d("termDisplay**", "getSelectionStart"+Integer.toString(inputEditText.getSelectionStart()));
                 //changeDisplay();
                 //moveToSavedCursor();
                 //inputEditText.setSelection(inputEditText.length());
 
+
+                Log.d("termDisplay***", "view height is "+ diffHeight + ", " + inputEditText.getHeight());
                 /**
                  * これでだめ←？？？？？
                 escapeSequence.moveSelection(5,5);
@@ -363,6 +379,23 @@ public class MainActivity extends AppCompatActivity{
                 return false;
             }
         });
+
+        //レイアウトの大きさがかわると通知
+        inputEditText.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            public void onGlobalLayout(){
+                // r.left, r.top, r.right, r.bottom
+                diffHeight = inputEditText.getHeight() - beforeHeight;
+                beforeHeight = inputEditText.getHeight();
+                if (diffHeight < - 150){
+                    isShowingKeyBoard = true;
+                } else {
+                    isShowingKeyBoard = false;
+                }
+
+            }
+        });
+
+
     }
 
     @Override
@@ -560,6 +593,7 @@ public class MainActivity extends AppCompatActivity{
                             if (inputStr.equals(LF)) {
                                 termDisplay.setCursorX(0);
                                 moveCursorY(1);
+                                changeDisplay();
 
                                 if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
                                     moveCursorY(-1);
@@ -584,6 +618,7 @@ public class MainActivity extends AppCompatActivity{
                                 displayingFlag = false;
                                 receivingFlag = true;
                                 if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
+                                    //FIXME ここたぶん表示ばぐってる
                                     moveCursorY(-1);
                                     termDisplay.addTopRow(1);
                                     changeDisplay();
@@ -709,7 +744,7 @@ public class MainActivity extends AppCompatActivity{
                             escapeMoveFlag = false;
                         default:
                             //2桁の入力を可能にする　できた
-                            int h1 = 1;
+                            h1 = 1;
 
                             if (squarePuttingFlag && data.matches("[0-9]")) {
                                 Log.d(TAG, "move flag is true");
@@ -754,6 +789,7 @@ public class MainActivity extends AppCompatActivity{
                                     }
                                     if (str.equals(KeyHexString.KEY_B)) {
                                         escapeSequence.moveDown(move);
+                                        isBFlag = true;
                                     }
                                     if (str.equals(KeyHexString.KEY_C)) {
                                         escapeSequence.moveRight(move);
@@ -776,6 +812,7 @@ public class MainActivity extends AppCompatActivity{
                                             move = 1;
                                         }
                                         escapeSequence.moveSelection(h1, move);
+                                        isHFlag = true;
                                         Hflag = false;
                                     }
                                     if (str.equals(KeyHexString.KEY_J)) {
@@ -988,6 +1025,8 @@ public class MainActivity extends AppCompatActivity{
             dispHeight = disp.getHeight();
         }
 
+        Log.d(TAG, "display height is " + dispHeight);
+
         int height = dispHeight - 100;
         int text = (int)getTextHeight();
         Log.d(TAG, Float.toString(height/text));
@@ -1120,7 +1159,7 @@ public class MainActivity extends AppCompatActivity{
               //      " /row size: " + termDisplay.getRowLength(getSelectRowIndex()));
             String str = termDisplay.getRowText(getSelectRowIndex());
             //str.replace(LF, "_");
-            Log.d("termDisplay**", "row contents: " + str);
+            //Log.d("termDisplay**", "row contents: " + str);
             //Log.d("termDisplay***", "length" + Integer.toString(inputEditText.length()));
             int cursor;
             cursor = getRowLength(termDisplay.getCursorX(), termDisplay.getCursorY());
@@ -1139,7 +1178,7 @@ public class MainActivity extends AppCompatActivity{
         int length = 0;
         for (int i = 0; i < y; i++){
             length = length + termDisplay.getRowLength(termDisplay.getTopRow() + i);
-            Log.d("termDisplay***", "text length  " + termDisplay.getRowLength(termDisplay.getTopRow() + i));
+            //Log.d("termDisplay***", "text length  " + termDisplay.getRowLength(termDisplay.getTopRow() + i));
             if (termDisplay.getRowLength(termDisplay.getTopRow() + i) == 0){
                 length++;
             } else {
@@ -1149,26 +1188,22 @@ public class MainActivity extends AppCompatActivity{
             }
         }
 
-        Log.d("termDisplay***", "after fot length : " + length);
+        //Log.d("termDisplay***", "after fot length : " + length);
 
         int rowLength = termDisplay.getRowLength(termDisplay.getTopRow() + y);
 
         //空
         if(rowLength == 0) x = 0;
-        Log.d("termDisplay***", "X: " + x + " y length  " + termDisplay.getRowLength(y));
+        //Log.d("termDisplay***", "X: " + x + " y length  " + termDisplay.getRowLength(y));
         //移動先の文字数がカーソルXよりも短い
-        if (x > rowLength && rowLength != 0){//&& termDisplay.getRowText(getSelectRowIndex()).lastIndexOf(LF) != -1){
+        if (x > rowLength && rowLength != 0){
             x = rowLength - 1;
         }
         //カーソルXが移動先の文字数と等しくて，改行コードが存在する
         if(x == rowLength && termDisplay.getRowText(termDisplay.getTopRow() + y).lastIndexOf(LF) != -1){
             x = rowLength-1;
         }
-        //if (rowLength == termDisplay.getDisplayRowSize()){
-          //  if (termDisplay.getRowText(termDisplay.getTopRow() + y).lastIndexOf(LF) == -1){
-            //    x = rowLength-1;
-            //}
-        //}
+
         length = length + x;
         if (length > inputEditText.length()){
             length = inputEditText.length();
