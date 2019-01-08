@@ -306,18 +306,18 @@ public class TermDisplay {
                     }
                     break;
                 }
-                if(y < displayColumnSize) {
-                    if (!colorChange) {
-                        output = output + text;
-                    } else {
-                        output = output + "<font color=#" + getColor(x, getTopRow() + y) +
-                                ">" + text + "</font>";
-                    }
+
+                if (!colorChange) {
+                    output = output + text;
+                } else {
+                    output = output + "<font color=#" + getColor(x, getTopRow() + y) + ">" + text + "</font>";
                 }
 
+                displayContentsLength++; //ついでにサイズも保存しておく
                 if((x == displayRowSize-1) && !text.equals(LF)){
                     Log.d("termDisplay**", "max size");
                     output = output + LF;
+                    break;
                     //editText.append(LF);
                 }
 
@@ -326,8 +326,10 @@ public class TermDisplay {
                     break;
                 }
 
-                //output = output + textList.get(y+topRow).get(x).getText();
-                displayContentsLength++; //ついでにサイズも保存しておく
+            }
+
+            if (!getRowText(y + getTopRow()).contains(LF)){
+                output = output + LF;
             }
             displayY++;
         }
