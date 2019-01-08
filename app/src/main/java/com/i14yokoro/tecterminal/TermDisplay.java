@@ -282,9 +282,9 @@ public class TermDisplay {
         displayContentsLength = 0;
         initialDisplay();
         String output = "";
+        String text;
 
         int totalColumns = getTotalColumns();
-        //int displaySize = getDisplaySize();
         int displayRowSize = getDisplayRowSize();
         int displayColumnSize = getDisplayColumnSize();
 
@@ -297,53 +297,43 @@ public class TermDisplay {
                 return output;
             }
             for (int x = 0, n = textList.get(y+topRow).size(); x < n; x++){ //xはそのyのサイズまで
-                output = output + textList.get(y+topRow).get(x).getText();
-                displayContentsLength++; //ついでにサイズも保存しておく
-            }
-            displayY++;
-            //logger.addSplit("abeshi");
-        }
-        setDisplaySize(displayY);
-        Log.d(TAG, "displaySize : " + displayY);
-        setDisplayContentsLength(displayContentsLength);
-
-        logger.dumpToLog();
-
-        for (int y = 0; y < totalColumns && y < displaySize; y++){
-            for (int x = 0; x < displayRowSize; x++){
+                text = textList.get(y+topRow).get(x).getText();
                 Log.d("termDisplay", "y "+Integer.toString(y));
-                if(!getDisplay(x, y).equals("EOL")) {
-                    if (getDisplay(x, y).equals("")){
-                        Log.d("termDisplay**", "empty");
-                        if (y < displaySize-1){
-                            output = output + LF;
-                        }
-                        break;
+                if (text.equals("")){
+                    Log.d("termDisplay**", "empty");
+                    if (y < displaySize-1){
+                        output = output + LF;
                     }
-                    if(y < displayColumnSize-1) {
-                        if (!colorChange) {
-                            output = output + getDisplay(x, y);
-                        } else {
-                            output = output + "<font color=#" + getColor(x, getTopRow() + y) +
-                                    ">" + getDisplay(x, y) + "</font>";
-                        }
-                    }
-                } else{
-                    Log.d("termDisplay**", "here is EOL");
-                    logger.dumpToLog();
-                    return output;
+                    break;
                 }
-                if((x == displayRowSize-1) && !getDisplay(x, y).equals(LF)){
+                if(y < displayColumnSize) {
+                    if (!colorChange) {
+                        output = output + text;
+                    } else {
+                        output = output + "<font color=#" + getColor(x, getTopRow() + y) +
+                                ">" + text + "</font>";
+                    }
+                }
+
+                if((x == displayRowSize-1) && !text.equals(LF)){
                     Log.d("termDisplay**", "max size");
                     output = output + LF;
                     //editText.append(LF);
                 }
-                if(getDisplay(x, y).equals(LF)){
+
+                if(text.equals(LF)){
                     Log.d("termDisplay**", "this is LF");
                     break;
                 }
+
+                //output = output + textList.get(y+topRow).get(x).getText();
+                displayContentsLength++; //ついでにサイズも保存しておく
             }
+            displayY++;
         }
+        setDisplaySize(displayY);
+        Log.d(TAG, "displaySize : " + displayY);
+        setDisplayContentsLength(displayContentsLength);
 
         logger.dumpToLog();
         return output;
