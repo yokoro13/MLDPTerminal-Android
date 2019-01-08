@@ -198,7 +198,6 @@ public class EscapeSequence {
             }
         }
 
-        //FIXME 入力中の行がきえない
         if(n == 2){ //全消去
             for (int y = getTop(); y < termDisplay.getDisplaySize() + getTop(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
@@ -299,14 +298,13 @@ public class EscapeSequence {
         int displayRowSize = termDisplay.getDisplayRowSize();
         int dispayColumnSize = termDisplay.getDisplayColumnSize();
 
-
         for (int y = 0; y < totalColumns && y < displaySize; y++){
             for (int x = 0; x < displayRowSize; x++){
                 Log.d("termDisplay", "y "+Integer.toString(y));
                 if(!termDisplay.getDisplay(x, y).equals("EOL")) {
                     if (termDisplay.getDisplay(x, y).equals("")){
                         Log.d("termDisplay**", "empty");
-                        if (y < termDisplay.getDisplaySize()-1){
+                        if (y < displaySize-1){
                             output = output + LF;
                         }
                         break;

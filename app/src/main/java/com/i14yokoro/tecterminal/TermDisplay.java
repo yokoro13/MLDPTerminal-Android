@@ -44,7 +44,6 @@ public class TermDisplay {
         TextItem textItem = new TextItem(text, color);
         int columnSize = getTotalColumns();
         //Log.d(TAG, "adding text: " + text);
-        //TODO 途中に書き込むのに対応させる
 
         Log.d(TAG, "Add new textItem");
         textList.get(columnSize - 1).add(textItem);
@@ -59,6 +58,10 @@ public class TermDisplay {
 
     public void deleteTextItem(int x, int y){
         textList.get(y).remove(x);
+    }
+
+    public void deleteTextRow(int y){
+        textList.remove(y);
     }
 
     public TextItem getTextItem(int x, int y){

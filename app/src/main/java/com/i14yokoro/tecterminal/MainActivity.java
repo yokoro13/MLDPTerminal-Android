@@ -40,13 +40,10 @@ import android.widget.EditText;
 import java.nio.charset.StandardCharsets;
 
 /**
+ * TODO RN側に送る文字はandroid側に表示しない
  * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
- * これからやること
- * //TODO バグ潰し（バグしかない）
- * //TODO RNからきたエスケープシーケンス受信部の作成
- * //TODO 基本文字は上書きにする
- *
- * TODO 一番下の行でしかカーソル移動できないようにする（入力行を保存しておく？？？）
+ * TODO RNからきたエスケープシーケンス受信部の作成
+ * TODO RN側からきた文字の処理の仕方を考える
  */
 public class MainActivity extends AppCompatActivity{
 
@@ -91,7 +88,6 @@ public class MainActivity extends AppCompatActivity{
 
     float r;
 
-    private String RNtext = "";
     private int maxRowLength, maxColumnLength;
     private int position;
     private int eStart, eCount, eBefore;
@@ -113,6 +109,8 @@ public class MainActivity extends AppCompatActivity{
 
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
     private boolean displayingFlag = false;
+
+    private boolean isReceivingFlag = false;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -140,11 +138,10 @@ public class MainActivity extends AppCompatActivity{
 
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b" + "[1A");
-                }
-
-                if(termDisplay.getCursorY() > 0){
-                    escapeSequence.moveUp();
-                    moveToSavedCursor();
+                    if(termDisplay.getCursorY() > 0){
+                        escapeSequence.moveUp();
+                        moveToSavedCursor();
+                    }
                 }
             }
         });
@@ -155,11 +152,10 @@ public class MainActivity extends AppCompatActivity{
 
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b" + "[1B");
-                }
-
-                if(termDisplay.getCursorY() < inputEditText.getLineCount()-1) {
-                    escapeSequence.moveDown();
-                    moveToSavedCursor();
+                    if(termDisplay.getCursorY() < inputEditText.getLineCount()-1) {
+                        escapeSequence.moveDown();
+                        moveToSavedCursor();
+                    }
                 }
             }
         });
@@ -170,10 +166,11 @@ public class MainActivity extends AppCompatActivity{
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b" + "[1C");
                 }
-
-                if(termDisplay.getCursorX() < termDisplay.getRowLength(getSelectRowIndex())) {
-                    escapeSequence.moveRight();
-                    moveToSavedCursor();
+                if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
+                    if (termDisplay.getCursorX() < termDisplay.getRowLength(getSelectRowIndex())) {
+                        escapeSequence.moveRight();
+                        moveToSavedCursor();
+                    }
                 }
             }
         });
@@ -183,10 +180,11 @@ public class MainActivity extends AppCompatActivity{
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b" + "[1D");
                 }
-
-                if(termDisplay.getCursorX() > 0) {
-                    escapeSequence.moveLeft();
-                    moveToSavedCursor();
+                if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
+                    if (termDisplay.getCursorX() > 0) {
+                        escapeSequence.moveLeft();
+                        moveToSavedCursor();
+                    }
                 }
             }
         });
@@ -194,6 +192,10 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(state == State.CONNECTED) {
+                    bleService.writeMLDP("\u001b");
+                }
+
                 isBtn_esc = true;
                 Log.d(TAG, "max column: " + maxColumnLength);
 
@@ -398,12 +400,14 @@ public class MainActivity extends AppCompatActivity{
         }
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
             //before_str = inputEditText.getText().toString();
-            if(count > before) {
-                if(receivingFlag)
+
+                if (count > before) {
+                    if (receivingFlag) {
+                    Log.d("RNsend", cs.subSequence(start + before, start + count).toString());
                     bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
                     //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
-                //else editFlag = true;
-
+                    //else editFlag = true;
+                }
             }
         }
 
@@ -434,7 +438,6 @@ public class MainActivity extends AppCompatActivity{
             eStart = start;//文字列のスタート位置
             eCount = count;//追加される文字
             eBefore = before;//削除すう
-            inputEditText.setTextColor(Color.parseColor("#"+termDisplay.getDefaultColor()));
             //inputEditText.setBackgroundColor(Color.parseColor("#00FF00"));
         }
 
@@ -449,21 +452,40 @@ public class MainActivity extends AppCompatActivity{
             if (str.matches("[\\p{ASCII}]*") /*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!displayingFlag) {
                     if (enterPutFlag) { //無限ループ防止
+                        if(termDisplay.getCursorX() > getSelectLineText().length()){
+                            termDisplay.setCursorX(getSelectLineText().length());
+                        }
                         if (eBefore > 0) {
+
+
                             if(termDisplay.getCursorX() > 0) {
-                                termDisplay.deleteTextItem(termDisplay.getCursorX() - 1, termDisplay.getCursorY() + termDisplay.getTopRow());
-                                changeDisplay();
                                 moveCursorX(-1);
-                                //if(0 < cursorY){
-                                    //this.cursorX = textList.get(getCursorY() + topRow).size()-1;
-                                    //setCursorY(getCursorY()-1);
-                                //}
+
+                                /**
+                                termDisplay.deleteTextItem(termDisplay.getCursorX() - 1, getSelectRowIndex());
+                                if (termDisplay.getTotalColumns() > 1 ) {
+                                    if (termDisplay.getRowLength(getSelectRowIndex()) == 0 && !termDisplay.getRowText(getSelectRowIndex()-1).contains(LF)) {
+                                        termDisplay.deleteTextRow(getSelectRowIndex());
+                                        moveCursorY(-1);
+                                        termDisplay.setCursorX(10);
+                                    } else {
+                                        moveCursorX(-1);
+                                    }
+                                }
+                                 **/
                             }
+                            changeDisplay();
                         }
                         for (int i = 0; i < str.length(); i++) { // strの先頭から1文字ずつString型にして取り出す
                             String inputStr = String.valueOf(str.charAt(i));
-                            termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
-                            //changeDisplay();
+
+                            if (getSelectRowIndex() == termDisplay.getTotalColumns()-1 && termDisplay.getCursorX() == termDisplay.getRowLength(termDisplay.getTotalColumns()-1) ){
+                                termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                            } else {
+                                termDisplay.changeTextItem(termDisplay.getCursorX(), termDisplay.getCursorY(), inputStr, termDisplay.getDefaultColor());
+                                //termDisplay.insertTextItem(termDisplay.getCursorX(), termDisplay.getCursorY(), inputStr, termDisplay.getDefaultColor());
+                                changeDisplay();
+                            }
                             moveCursorX(1);
 
                             Log.d(TAG, "ASCII code/ " + str);
@@ -515,7 +537,9 @@ public class MainActivity extends AppCompatActivity{
             else { //ASCIIじゃなければ入力前の状態にもどす
                 if(editingFlag) {
                     editingFlag = false;
+                    receivingFlag = false;
                     inputEditText.setText(inputStrText);
+                    receivingFlag = true;
                     editingFlag = true;
                 }
             }
@@ -585,32 +609,34 @@ public class MainActivity extends AppCompatActivity{
                 //FIXME １文字以上の入力がくると死ぬ
                 Log.d("RNreceive", data);
 
+                /**
+                receivingFlag = false;
+                inputEditText.append(data);
+                receivingFlag = true;**/
+                if (!isReceivingFlag){
+                    isReceivingFlag = true;
                 if (data != null) {
                     String str="";
                     byte[] utf = data.getBytes(StandardCharsets.UTF_8);
                     for (byte b : utf) {
                         str = Integer.toHexString(b & 0xff);
-                        Log.d("RNreceive", "coming HEX : " + str);
+                        //Log.d("RNreceive", "coming HEX : " + str);
                         //FIXME できればここでエスケープシーケンスの処理をしたい
                         //bleService.writeMLDP(str + " ");
                     }
 
-                    int startSel = inputEditText.getSelectionStart();
-                    int endSel = inputEditText.getSelectionEnd();
+
                     switch (str) {
                         case KeyHexString.KEY_DEL:
-                            if(startSel >= 1) {
-                                inputEditText.getText().delete(startSel - 1, endSel);
-                            }
+
                             escapeState = EscapeState.NONE;
                             escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_ENTER:
                             //editingFlag = false;
                             //addList(RNtext);
-                            inputEditText.append(LF);
+                            //inputEditText.append(LF);
                             changeDisplay();
-                            RNtext = "";
                             escapeState = EscapeState.NONE;
                             escapeMoveFlag = false;
                             break;
@@ -748,6 +774,7 @@ public class MainActivity extends AppCompatActivity{
                                     }
                                     if (str.equals(KeyHexString.KEY_m)){
                                         escapeSequence.selectGraphicRendition(move);
+                                        inputEditText.setTextColor(Color.parseColor("#"+termDisplay.getDefaultColor()));
                                         escapeMoveNum = "";
                                         clear = "";
                                     }
@@ -757,8 +784,6 @@ public class MainActivity extends AppCompatActivity{
                                     break;
                                 }
                             }
-                            RNtext = RNtext + data;
-
                             editable = inputEditText.getText();
                             escapeState = EscapeState.NONE;
                             receivingFlag = false;
@@ -766,23 +791,43 @@ public class MainActivity extends AppCompatActivity{
                             //if(data.length() > 1) {
                             //FIXME よくわからん細いのがあるのでなおす
                             //FIXME 最後の部分がこない
+
+                            /**/
                             String string;
                             for (int i = 0; i < data.length(); i++) {
                                 string = Character.toString(data.charAt(i));//.replace('\u0020', '\u00A0');
                                 if (string.equals("\u0020")){
                                     string = " ";
                                 }
-                                termDisplay.setTextItem(string, termDisplay.getDefaultColor());
-                            }
+
+                                receivingFlag = false;
+                                editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), string);
+                                receivingFlag = true;
+
+/**
+                                if (getSelectRowIndex() == termDisplay.getTotalColumns()-1 && termDisplay.getCursorX() == termDisplay.getRowLength(termDisplay.getTotalColumns()-1) ){
+                                    termDisplay.setTextItem(string, termDisplay.getDefaultColor());
+                                } else {
+                                    termDisplay.changeTextItem(termDisplay.getCursorX(), termDisplay.getCursorY(), string, termDisplay.getDefaultColor());
+                                    //termDisplay.insertTextItem(termDisplay.getCursorX(), termDisplay.getCursorY(), inputStr, termDisplay.getDefaultColor());
+                                    changeDisplay();
+                                }**/
+                            }/**/
+                            changeDisplay();
                             //}
                             //input.append(str);
-                            changeDisplay();
+                            //changeDisplay();
                             receivingFlag = true;
                             escapeMoveFlag = false;
 
                             break;
                     }
+                    isReceivingFlag = false;
+
                 }
+
+                }
+
             }
         }
     };
@@ -831,21 +876,27 @@ public class MainActivity extends AppCompatActivity{
                     case SCANNING:
                     case DISCONNECTED:
                         setProgressBarIndeterminateVisibility(false);
+                        inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
                         break;
                     case CONNECTING:
                         setProgressBarIndeterminateVisibility(true);
                         inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
                         //inputEditText.removeTextChangedListener(mInputTextWatcher);
+
                         inputEditText.addTextChangedListener(mOutgoingTextWatcher);
                         break;
                     case CONNECTED:
+                        //addNewLine("connected to " + bleDeviceName);
+                        receivingFlag = false;
                         addNewLine("connected to " + bleDeviceName);
                         setProgressBarIndeterminateVisibility(false);
                         break;
                     case DISCONNECTING:
                         setProgressBarIndeterminateVisibility(false);
-                        addNewLine("disconnected from " + bleDeviceName);
+                        //addNewLine("disconnected from " + bleDeviceName);
+                        receivingFlag = false;
                         inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
+                        addNewLine("disconnected from " + bleDeviceName);
                         //inputEditText.addTextChangedListener(mInputTextWatcher);
                         break;
                     default:
@@ -916,7 +967,6 @@ public class MainActivity extends AppCompatActivity{
     };
 
     private void addNewLine(String newText){
-        receivingFlag = false;
         enterPutFlag = false;
         for(int i = 0; i < newText.length(); i++){
             termDisplay.setTextItem(Character.toString(newText.charAt(i)), termDisplay.getDefaultColor());
@@ -1128,7 +1178,7 @@ public class MainActivity extends AppCompatActivity{
         if(rowLength == 0) x = 0;
         //Log.d("termDisplay***", "X: " + x + " y length  " + termDisplay.getRowLength(y));
         //移動先の文字数がカーソルXよりも短い
-        if (x > rowLength && rowLength != 0){
+        if (x > rowLength && termDisplay.getRowText(termDisplay.getTopRow() + y).contains(LF)){
             x = rowLength - 1;
         }
         //カーソルXが移動先の文字数と等しくて，改行コードが存在する
