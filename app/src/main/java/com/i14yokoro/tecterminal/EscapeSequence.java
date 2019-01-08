@@ -13,7 +13,6 @@ public class EscapeSequence {
 
     private EditText editText;
     private TermDisplay termDisplay;
-    private boolean colorChange = false;
 
     EscapeSequence(Context context, TermDisplay termDisplay){
         this.editText = (EditText) ((MainActivity)context).findViewById(R.id.main_display);
@@ -248,7 +247,7 @@ public class EscapeSequence {
     }
 
     public void selectGraphicRendition(int n){ //色
-        colorChange = true;
+        termDisplay.setColorChange(true);
         switch (n){
             case 0:
                 termDisplay.setDefaultColor("000000");
@@ -297,6 +296,7 @@ public class EscapeSequence {
         int displaySize = termDisplay.getDisplaySize();
         int displayRowSize = termDisplay.getDisplayRowSize();
         int dispayColumnSize = termDisplay.getDisplayColumnSize();
+        boolean colorChange = termDisplay.isColorChange();
 
         for (int y = 0; y < totalColumns && y < displaySize; y++){
             for (int x = 0; x < displayRowSize; x++){

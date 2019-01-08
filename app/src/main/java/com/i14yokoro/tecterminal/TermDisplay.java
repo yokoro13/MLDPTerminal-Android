@@ -26,6 +26,8 @@ public class TermDisplay {
 
     private String defaultColor = "000000";
 
+    private boolean colorChange = false;
+
     public TermDisplay(int displayRowSize, int displayColumnSize){
         this.displayRowSize = displayRowSize;
         this.displayColumnSize = displayColumnSize;
@@ -273,6 +275,80 @@ public class TermDisplay {
         logger.dumpToLog();
     }
 
+    public String createDisplay_(){
+        TimingLogger logger = new TimingLogger("TAG_TEST", "create display");
+
+        int displayY = 0;//displayの縦移動用
+        displayContentsLength = 0;
+        initialDisplay();
+        String output = "";
+
+        int totalColumns = getTotalColumns();
+        //int displaySize = getDisplaySize();
+        int displayRowSize = getDisplayRowSize();
+        int displayColumnSize = getDisplayColumnSize();
+
+        for(int y = 0; y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
+
+            if(displayY >= displayColumnSize){ //displayの描画が終わったらおわり
+                break;
+            }
+            if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
+                return output;
+            }
+            for (int x = 0, n = textList.get(y+topRow).size(); x < n; x++){ //xはそのyのサイズまで
+                output = output + textList.get(y+topRow).get(x).getText();
+                displayContentsLength++; //ついでにサイズも保存しておく
+            }
+            displayY++;
+            //logger.addSplit("abeshi");
+        }
+        setDisplaySize(displayY);
+        Log.d(TAG, "displaySize : " + displayY);
+        setDisplayContentsLength(displayContentsLength);
+
+        logger.dumpToLog();
+
+        for (int y = 0; y < totalColumns && y < displaySize; y++){
+            for (int x = 0; x < displayRowSize; x++){
+                Log.d("termDisplay", "y "+Integer.toString(y));
+                if(!getDisplay(x, y).equals("EOL")) {
+                    if (getDisplay(x, y).equals("")){
+                        Log.d("termDisplay**", "empty");
+                        if (y < displaySize-1){
+                            output = output + LF;
+                        }
+                        break;
+                    }
+                    if(y < displayColumnSize-1) {
+                        if (!colorChange) {
+                            output = output + getDisplay(x, y);
+                        } else {
+                            output = output + "<font color=#" + getColor(x, getTopRow() + y) +
+                                    ">" + getDisplay(x, y) + "</font>";
+                        }
+                    }
+                } else{
+                    Log.d("termDisplay**", "here is EOL");
+                    logger.dumpToLog();
+                    return output;
+                }
+                if((x == displayRowSize-1) && !getDisplay(x, y).equals(LF)){
+                    Log.d("termDisplay**", "max size");
+                    output = output + LF;
+                    //editText.append(LF);
+                }
+                if(getDisplay(x, y).equals(LF)){
+                    Log.d("termDisplay**", "this is LF");
+                    break;
+                }
+            }
+        }
+
+        logger.dumpToLog();
+        return output;
+    }
+
     public int getRowLength(int y){
         if(y >= getTotalColumns()){
             return 0;
@@ -315,12 +391,19 @@ public class TermDisplay {
         this.displaySize = displaySize;
     }
 
-
     public String getDefaultColor() {
         return defaultColor;
     }
 
     public void setDefaultColor(String defaultColor) {
         this.defaultColor = defaultColor;
+    }
+
+    public void setColorChange(boolean colorChange){
+        this.colorChange = colorChange;
+    }
+
+    public boolean isColorChange(){
+        return this.colorChange;
     }
 }

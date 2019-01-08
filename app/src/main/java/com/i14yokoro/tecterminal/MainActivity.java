@@ -20,9 +20,11 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
+import android.text.Html;
 import android.text.Selection;
 import android.text.SpanWatcher;
 import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -111,6 +113,10 @@ public class MainActivity extends AppCompatActivity{
     private boolean displayingFlag = false;
 
     private boolean isReceivingFlag = false;
+
+    private String output = "";
+    private String result = "";
+    private SpannableString spannable;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -698,85 +704,111 @@ public class MainActivity extends AppCompatActivity{
                                     escapeMoveNum = "";
 
                                     Log.d(TAG, "moveFlag true && A-H");
-                                    if (str.equals(KeyHexString.KEY_A)) {
-                                        if (move >= termDisplay.getDisplayColumnSize()) move = termDisplay.getDisplayColumnSize()-1;
-                                        escapeSequence.moveUp(move);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_B)) {
-                                        if (move >= termDisplay.getDisplayColumnSize()) move = termDisplay.getDisplayColumnSize()-1;
-                                        escapeSequence.moveDown(move);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_C)) {
-                                        if (move >= termDisplay.getDisplayRowSize()) move = termDisplay.getDisplayRowSize()-1;
-                                        escapeSequence.moveRight(move);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_D)) {
-                                        if (move >= termDisplay.getDisplayRowSize()) move = termDisplay.getDisplayRowSize()-1;
-                                        escapeSequence.moveLeft(move);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_E)) {
-                                        if (move >= termDisplay.getDisplayColumnSize()) move = termDisplay.getDisplayColumnSize()-1;
-                                        escapeSequence.moveDownToRowLead(move);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_F)) {
-                                        if (move >= termDisplay.getDisplayColumnSize()) move = termDisplay.getDisplayColumnSize()-1;
-                                        escapeSequence.moveUpToRowLead(move);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_G)) {
-                                        if (move >= termDisplay.getDisplayRowSize()) move = termDisplay.getDisplayRowSize()-1;
-                                        escapeSequence.moveSelection(move);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_H) || str.equals(KeyHexString.KEY_f)) {
-                                        if (!Hflag) {
-                                            h1 = 1;
-                                            move = 1;
-                                        }
-                                        if (h1 >= termDisplay.getDisplayColumnSize()) h1 = termDisplay.getDisplayColumnSize()-1;
-                                        if (move >= termDisplay.getDisplayRowSize()) move = termDisplay.getDisplayRowSize()-1;
-                                        escapeSequence.moveSelection(h1, move);
-                                        Hflag = false;
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_J)) {
-                                        escapeSequence.clearDisplay(clearNum);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_K)) {
-                                        escapeSequence.clearRow(clearNum);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_S)) {
-                                        escapeSequence.scrollNext(move);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_T)) {
-                                        escapeSequence.scrollBack(move);
-                                        escapeMoveNum = "";
-                                        clear = "";
-                                    }
-                                    if (str.equals(KeyHexString.KEY_m)){
-                                        escapeSequence.selectGraphicRendition(move);
-                                        inputEditText.setTextColor(Color.parseColor("#"+termDisplay.getDefaultColor()));
-                                        escapeMoveNum = "";
-                                        clear = "";
+                                    switch (str) {
+                                        case KeyHexString.KEY_A:
+                                            if (move >= termDisplay.getDisplayColumnSize())
+                                                move = termDisplay.getDisplayColumnSize() - 1;
+                                            escapeSequence.moveUp(move);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_B:
+                                            if (move >= termDisplay.getDisplayColumnSize())
+                                                move = termDisplay.getDisplayColumnSize() - 1;
+                                            escapeSequence.moveDown(move);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_C:
+                                            if (move >= termDisplay.getDisplayRowSize())
+                                                move = termDisplay.getDisplayRowSize() - 1;
+                                            escapeSequence.moveRight(move);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_D:
+                                            if (move >= termDisplay.getDisplayRowSize())
+                                                move = termDisplay.getDisplayRowSize() - 1;
+                                            escapeSequence.moveLeft(move);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_E:
+                                            if (move >= termDisplay.getDisplayColumnSize())
+                                                move = termDisplay.getDisplayColumnSize() - 1;
+                                            escapeSequence.moveDownToRowLead(move);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_F:
+                                            if (move >= termDisplay.getDisplayColumnSize())
+                                                move = termDisplay.getDisplayColumnSize() - 1;
+                                            escapeSequence.moveUpToRowLead(move);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_G:
+                                            if (move >= termDisplay.getDisplayRowSize())
+                                                move = termDisplay.getDisplayRowSize() - 1;
+                                            escapeSequence.moveSelection(move);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_H:
+                                            if (!Hflag) {
+                                                h1 = 1;
+                                                move = 1;
+                                            }
+                                            if (h1 >= termDisplay.getDisplayColumnSize())
+                                                h1 = termDisplay.getDisplayColumnSize() - 1;
+                                            if (move >= termDisplay.getDisplayRowSize())
+                                                move = termDisplay.getDisplayRowSize() - 1;
+                                            escapeSequence.moveSelection(h1, move);
+                                            Hflag = false;
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_J:
+                                            escapeSequence.clearDisplay(clearNum);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_K:
+                                            escapeSequence.clearRow(clearNum);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_S:
+                                            escapeSequence.scrollNext(move);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_T:
+                                            escapeSequence.scrollBack(move);
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_f:
+                                            if (!Hflag) {
+                                                h1 = 1;
+                                                move = 1;
+                                            }
+                                            if (h1 >= termDisplay.getDisplayColumnSize())
+                                                h1 = termDisplay.getDisplayColumnSize() - 1;
+                                            if (move >= termDisplay.getDisplayRowSize())
+                                                move = termDisplay.getDisplayRowSize() - 1;
+                                            escapeSequence.moveSelection(h1, move);
+                                            Hflag = false;
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        case KeyHexString.KEY_m:
+                                            escapeSequence.selectGraphicRendition(move);
+                                            inputEditText.setTextColor(Color.parseColor("#" + termDisplay.getDefaultColor()));
+                                            escapeMoveNum = "";
+                                            clear = "";
+                                            break;
+                                        default:
                                     }
                                     changeDisplay();
                                     escapeMoveFlag = false;
@@ -823,8 +855,11 @@ public class MainActivity extends AppCompatActivity{
                             break;
                     }
                     isReceivingFlag = false;
-
                 }
+
+
+
+                } else {
 
                 }
 
@@ -1075,10 +1110,15 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void changeDisplay(){
+        String output;
         displayingFlag = true;
         enterPutFlag = false;
         receivingFlag = false;
         escapeSequence.changeDisplay();
+        output = termDisplay.createDisplay_();
+        spannable = new SpannableString(output);
+        result = HtmlParser.toHtml(spannable);
+        inputEditText.setText(Html.fromHtml(result));
         enterPutFlag = true;
         displayingFlag = false;
         receivingFlag = true;
