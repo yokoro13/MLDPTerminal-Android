@@ -243,11 +243,13 @@ public class MainActivity extends AppCompatActivity{
                         oldY = (int)event.getRawY();
                         Log.d(TAG, "old Y: " + oldY);
                         Log.d(TAG, "action down");
+                        showKeyboard();
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         // 指を動かした時に、現在のscrollY座標とoldYを比較して、違いがあるならスクロール状態とみなす
                         Log.d(TAG, "action move");
                         Log.d(TAG, "getScrollY" + v.getScrollY());
+                        hideKeyboard();
                         if (oldY > event.getRawY()) {
                             Log.v(TAG, "scrollView up");
 
@@ -1098,7 +1100,7 @@ public class MainActivity extends AppCompatActivity{
         View v = getCurrentFocus();
         if (v != null)
             if (imm != null) {
-                ;
+                imm.hideSoftInputFromWindow(v.getWindowToken(),0);
             }
     }
 
