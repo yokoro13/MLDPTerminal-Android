@@ -592,7 +592,7 @@ public class MainActivity extends AppCompatActivity{
                 receivingFlag = true;**/
                 int cnt = 0;
                 if (!isReceivingFlag){
-                    isReceivingFlag = true;
+                    //isReceivingFlag = true;
                     if (data != null) {
                         String str="";
                         byte[] utf = data.getBytes(StandardCharsets.UTF_8);
