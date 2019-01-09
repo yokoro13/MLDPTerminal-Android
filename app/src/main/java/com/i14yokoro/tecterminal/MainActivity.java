@@ -1165,6 +1165,8 @@ public class MainActivity extends AppCompatActivity{
         int length = 0;
         for (int i = 0; i < y; i++){
             length = length + termDisplay.getRowLength(termDisplay.getTopRow() + i);
+            Log.d("coordinate**", "contents: " + termDisplay.getRowText(termDisplay.getTopRow() + i) +
+                                            "length: " + termDisplay.getRowLength(termDisplay.getTopRow() + i));
             if (termDisplay.getRowLength(termDisplay.getTopRow() + i) == 0){
                 length++;
             } else {
@@ -1175,15 +1177,20 @@ public class MainActivity extends AppCompatActivity{
         }
 
         int rowLength = termDisplay.getRowLength(termDisplay.getTopRow() + y);
+        String rowText = termDisplay.getRowText(termDisplay.getTopRow() + y);
 
         //空
         if(rowLength == 0) x = 0;
         //移動先の文字数がカーソルXよりも短い
-        if (x > rowLength && termDisplay.getRowText(termDisplay.getTopRow() + y).contains(LF)){
-            x = rowLength - 1;
+        if (x > rowLength){
+            if (rowText.contains(LF)) {
+                x = rowLength - 1;
+            } else {
+                x = rowLength;
+            }
         }
         //カーソルXが移動先の文字数と等しくて，改行コードが存在する
-        if(x == rowLength && termDisplay.getRowText(termDisplay.getTopRow() + y).lastIndexOf(LF) != -1){
+        if(x == rowLength && rowText.lastIndexOf(LF) != -1){
             x = rowLength-1;
         }
 
