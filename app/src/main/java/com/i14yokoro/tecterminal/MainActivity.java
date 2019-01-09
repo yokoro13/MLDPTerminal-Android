@@ -88,7 +88,6 @@ public class MainActivity extends AppCompatActivity{
 
     float r;
 
-    private int position;
     private int eStart, eCount, eBefore;
 
     private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
@@ -108,11 +107,9 @@ public class MainActivity extends AppCompatActivity{
     private boolean isReceivingFlag = false;
     private boolean isWritring = false;
 
-    private String output = "";
     private String result = "";
     private SpannableString spannable;
 
-    private String stack = "";
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -418,12 +415,6 @@ public class MainActivity extends AppCompatActivity{
                     currCursor = inputEditText.getSelectionStart();
                 }**/
                 inputStrText = s.toString(); //おされた瞬間のテキストを保持
-
-                position = start;
-
-                if (position == 0 && 0 < count && 0 < after) {
-                    position = count;
-                }
             }
         }
 
@@ -459,10 +450,18 @@ public class MainActivity extends AppCompatActivity{
                             String inputStr = String.valueOf(str.charAt(i));
 
                             if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && termDisplay.getCursorX() == termDisplay.getRowLength(termDisplay.getTotalColumns() - 1)) {
+                                Log.d("termDisplay****", "set");
                                 termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
                             } else {
-                                termDisplay.changeTextItem(termDisplay.getCursorX(), termDisplay.getCursorY(), inputStr, termDisplay.getDefaultColor());
-                                //termDisplay.insertTextItem(termDisplay.getCursorX(), termDisplay.getCursorY(), inputStr, termDisplay.getDefaultColor());
+                                Log.d("termDisplay****", "insert");
+                                if(!inputStr.equals(LF)) {
+                                    termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                                    //termDisplay.insertTextItem(termDisplay.getCursorX(), termDisplay.getCursorY(), inputStr, termDisplay.getDefaultColor());
+                                } else {
+                                    if(getSelectRowIndex() < termDisplay.getRowLength(getSelectRowIndex())){
+                                        termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                                    }
+                                }
                                 changeDisplay();
                             }
                             moveCursorX(1);
@@ -609,6 +608,7 @@ public class MainActivity extends AppCompatActivity{
                                 case KeyHexString.KEY_ENTER:
                                     //editingFlag = false;
                                     //addList(RNtext);
+                                    editable = inputEditText.getText();
                                     receivingFlag = false;
                                     editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), LF);
                                     receivingFlag = true;
@@ -1152,10 +1152,10 @@ public class MainActivity extends AppCompatActivity{
             int cursor;
             cursor = getRowLength(termDisplay.getCursorX(), termDisplay.getCursorY());
 
-            Log.d("termDisplay***", "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
+            Log.d("coordinate**", "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
             if (cursor >= 0) {
                 inputEditText.setSelection(cursor);
-                Log.d("termDisplay***", "cursor" + cursor);
+                Log.d("coordinate**", "cursor" + cursor);
             }
             selectionMovingFlag = false;
         }

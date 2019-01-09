@@ -328,7 +328,7 @@ public class TermDisplay {
 
             }
 
-            if (!getRowText(y + getTopRow()).contains(LF)){
+            if (!getRowText(y + getTopRow()).contains(LF) && textList.get(y+topRow).size() < getDisplayRowSize()){
                 output = output + LF;
             }
             displayY++;
