@@ -104,8 +104,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
     private boolean displayingFlag = false;
 
-    private boolean isReceivingFlag = false;
-    private boolean isWritring = false;
+    private boolean isWriting = false;
 
     private String result = "";
     private SpannableString spannable;
@@ -123,9 +122,10 @@ public class MainActivity extends AppCompatActivity{
 
         termDisplay = new TermDisplay(getMaxRowLength(), getMaxColumnLength());
 
-        escapeSequence = new EscapeSequence(this, termDisplay); //今のContentを渡す
+        Log.d(TAG, "maxRow "+Integer.toString(getMaxRowLength()) +"maxColumn" + Integer.toString(getMaxColumnLength()));
 
-        //inputEditText.setTransformationMethod(WordBreakTransformationMethod.getInstance());
+
+        escapeSequence = new EscapeSequence(this, termDisplay); //今のContentを渡す
 
         state = State.STARTING;
         inputStrText = inputEditText.getText().toString();
@@ -142,6 +142,8 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
+                //escapeSequence.moveUp();
+                moveToSavedCursor();
             }
         });
 
@@ -156,6 +158,8 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
+                //escapeSequence.moveDown();
+                moveToSavedCursor();
             }
         });
 
@@ -194,6 +198,7 @@ public class MainActivity extends AppCompatActivity{
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b");
                 }
+                Log.d("termDisplay**", "display size" + termDisplay.getDisplaySize());
                 isBtn_esc = true;
             }
         });
@@ -201,6 +206,8 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //escapeSequence.moveSelection(100,100);
+                changeDisplay();
                 isBtn_ctl = true;
             }
         });
@@ -245,22 +252,10 @@ public class MainActivity extends AppCompatActivity{
                         }
                         break;
                     case MotionEvent.ACTION_UP:
-
                         break;
                     default:
                         break;
                 }
-
-                //Log.d(TAG, "selectRow : " + Long.toString(items.get(getSelectRow()).getId()) + "wtitable :" + items.get(getSelectRow()).isWritable() );
-                /**
-                    if (!items.get(getSelectRowIndex()).isWritable()) {
-                        //inputEditText.setSelection(currCursor);
-                        return true;
-                    }
-                    else{
-                        currCursor = inputEditText.getSelectionStart();
-                        return false;
-                    }**/
                 return false;
             }
         });
@@ -393,7 +388,7 @@ public class MainActivity extends AppCompatActivity{
             if (count > before) {
                 if (receivingFlag) {
                     Log.d("RNsend", cs.subSequence(start + before, start + count).toString());
-                    isWritring = true;
+                    isWriting = true;
                     bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
                     //isWritring = false;
                     //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
@@ -410,10 +405,6 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             if (editingFlag && enterPutFlag) {
-                /**
-                if(items.get(getSelectRowIndex()).isWritable()) {
-                    currCursor = inputEditText.getSelectionStart();
-                }**/
                 inputStrText = s.toString(); //おされた瞬間のテキストを保持
             }
         }
@@ -434,7 +425,7 @@ public class MainActivity extends AppCompatActivity{
             //Log.d(TAG, "currX : " + currX);
             TimingLogger logger = new TimingLogger("TAG_TEST", "textChanged");
             Log.d(TAG, "afterTextChange");
-            if (str.matches("[\\p{ASCII}]*" ) && !isWritring/*&& items.get(getSelectRow()).isWritable()*/ ) {
+            if (str.matches("[\\p{ASCII}]*" ) && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!displayingFlag) {
                     if (enterPutFlag) { //無限ループ防止
                         if (termDisplay.getCursorX() > getSelectLineText().length()) {
@@ -449,61 +440,61 @@ public class MainActivity extends AppCompatActivity{
                         for (int i = 0; i < str.length(); i++) { // strの先頭から1文字ずつString型にして取り出す
                             String inputStr = String.valueOf(str.charAt(i));
 
-                            if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && termDisplay.getCursorX() == termDisplay.getRowLength(termDisplay.getTotalColumns() - 1)) {
+                            if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
                                 Log.d("termDisplay****", "set");
                                 termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
-                            } else {
+                                moveCursorX(1);
+                            } else { //insert
                                 Log.d("termDisplay****", "insert");
-                                if(!inputStr.equals(LF)) {
+                                if(!inputStr.equals(LF)) { //LFじゃない
                                     termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                                    moveCursorX(1);
                                     //termDisplay.insertTextItem(termDisplay.getCursorX(), termDisplay.getCursorY(), inputStr, termDisplay.getDefaultColor());
-                                } else {
-                                    if(getSelectRowIndex() < termDisplay.getRowLength(getSelectRowIndex())){
-                                        termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                                } else { //LF
+                                    if(termDisplay.getRowLength(getSelectRowIndex())+1 < termDisplay.getDisplayRowSize()){ //
+                                        termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
                                     }
                                 }
                                 changeDisplay();
                             }
-                            moveCursorX(1);
 
                             Log.d(TAG, "ASCII code/ " + str);
                             if (inputStr.equals(LF)) {
                                 termDisplay.setCursorX(0);
-                                if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
+                                if (termDisplay.getCursorY() < termDisplay.getDisplayColumnSize()) {
                                     moveCursorY(1);
                                 }
-                                changeDisplay();
-
-                                if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
-                                    moveCursorY(-1);
-                                    termDisplay.addTopRow(1);
-                                    changeDisplay();
-                                }
+                                //if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
+                                  //  scrollDown();
+                                //}
+                                //changeDisplay();
                             }
 
                             Log.d("termDisplay**", "row length " + Integer.toString(getSelectLineText().length()));
                             //if (getSelectLineText().length() != 0 && getSelectLineText().length()%(termDisplay.getDisplayRowSize()) == 0) {
-                            if (getSelectLineText().length() >= termDisplay.getDisplayRowSize()) {
+                            if (getSelectLineText().length() >= termDisplay.getDisplayRowSize() && !getSelectLineText().contains(LF)) {
                                 Log.d("termDisplay**", "row length in if " + Integer.toString(getSelectLineText().length()));
                                 Log.d("termDisplay**", "append LF ");
                                 enterPutFlag = false;
                                 displayingFlag = true;
                                 receivingFlag = false;
-                                inputEditText.append(LF);
-                                //termDisplay.setCursorX();
-                                termDisplay.setCursorX(0);
-                                if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
-                                    moveCursorY(1);
-                                }
+                                //inputEditText.append(LF);
+                                changeDisplay();
                                 enterPutFlag = true;
                                 displayingFlag = false;
                                 receivingFlag = true;
-                                if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
-                                    //FIXME ここたぶん表示ばぐってる
-                                    moveCursorY(-1);
-                                    termDisplay.addTopRow(1);
-                                    changeDisplay();
+
+                                termDisplay.setCursorX(0);
+                                if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
+                                    moveCursorY(1);
+                                    //changeDisplay();
                                 }
+
+                                //if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
+                                    //FIXME ここたぶん表示ばぐってる
+                                   // scrollDown();
+                                  //  changeDisplay();
+                                //}
 
                             }
                             //changeDisplay();
@@ -514,12 +505,10 @@ public class MainActivity extends AppCompatActivity{
             else { //ASCIIじゃなければ入力前の状態にもどす
                 if(editingFlag) {
                     editingFlag = false;
-                    receivingFlag = false;
-                    inputEditText.setText(inputStrText);
-                    receivingFlag = true;
+                    changeDisplay();
                     editingFlag = true;
                 }
-                isWritring = false;
+                isWriting = false;
             }
             moveToSavedCursor();
             inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
@@ -591,247 +580,227 @@ public class MainActivity extends AppCompatActivity{
                 inputEditText.append(data);
                 receivingFlag = true;**/
                 int cnt = 0;
-                if (!isReceivingFlag){
-                    //isReceivingFlag = true;
-                    if (data != null) {
-                        String str="";
-                        byte[] utf = data.getBytes(StandardCharsets.UTF_8);
-                        for (byte b : utf) {
-                            str = Integer.toHexString(b & 0xff);
+                 if (data != null) {
+                     String str="";
+                     byte[] utf = data.getBytes(StandardCharsets.UTF_8);
+                     for (byte b : utf) {
+                         str = Integer.toHexString(b & 0xff);
 
 
-                            switch (str) {
-                                case KeyHexString.KEY_DEL:
-                                    escapeState = EscapeState.NONE;
-                                    escapeMoveFlag = false;
-                                    break;
-                                case KeyHexString.KEY_ENTER:
-                                    //editingFlag = false;
-                                    //addList(RNtext);
-                                    editable = inputEditText.getText();
-                                    receivingFlag = false;
-                                    editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), LF);
-                                    receivingFlag = true;
+                         switch (str) {
+                             case KeyHexString.KEY_DEL:
+                                 escapeState = EscapeState.NONE;
+                                 escapeMoveFlag = false;
+                                 break;
+                             case KeyHexString.KEY_ENTER:
+                                 //editingFlag = false;
+                                 //addList(RNtext);
+                                 editable = inputEditText.getText();
+                                 receivingFlag = false;
+                                 editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), LF);
+                                 receivingFlag = true;
 
-                                    changeDisplay();
-                                    escapeState = EscapeState.NONE;
-                                    escapeMoveFlag = false;
-                                    break;
-                                case KeyHexString.KEY_ESC:
-                                    Log.d(TAG, "receive esc");
-                                    escapeState = EscapeState.ESCAPE;
-                                    escapeMoveFlag = false;
-                                    break;
-                                case KeyHexString.KEY_SQUARE_LEFT:
-                                    Log.d(TAG, "receive square");
-                                    if (escapeState == EscapeState.ESCAPE) {
-                                        escapeState = EscapeState.SQUARE;
-                                        break;
-                                    } else {
-                                        escapeState = EscapeState.NONE;
-                                    }
-                                    escapeMoveFlag = false;
-                                default:
+                                 changeDisplay();
+                                 escapeState = EscapeState.NONE;
+                                 escapeMoveFlag = false;
+                                 break;
+                             case KeyHexString.KEY_ESC:
+                                 Log.d(TAG, "receive esc");
+                                 escapeState = EscapeState.ESCAPE;
+                                 escapeMoveFlag = false;
+                                 break;
+                             case KeyHexString.KEY_SQUARE_LEFT:
+                                 Log.d(TAG, "receive square");
+                                 if (escapeState == EscapeState.ESCAPE) {
+                                     escapeState = EscapeState.SQUARE;
+                                     break;
+                                 } else {
+                                     escapeState = EscapeState.NONE;
+                                 }
+                                 escapeMoveFlag = false;
+                             default:
 
-                                    if (escapeState == EscapeState.SQUARE && data.matches("[0-9]")) {
-                                        Log.d(TAG, "move flag is true");
-                                        escapeMoveNum += data;
-                                        clear += data;
-                                        if (Integer.parseInt(escapeMoveNum) > 1000 || Integer.parseInt(clear) > 1000) {
-                                            escapeMoveNum = "1000";
-                                            clear = "1000";
-                                        }
-                                        escapeMoveFlag = true;
-                                        break;
-                                    }
-                                    if (escapeState == EscapeState.SQUARE && data.equals(";")) {
-                                        if (escapeMoveFlag) {
-                                            h1 = Integer.parseInt(escapeMoveNum);
-                                        } else {
-                                            h1 = 1;
-                                        }
-                                        escapeMoveNum = "";
-                                        Hflag = true;
-                                        escapeMoveFlag = false;
-                                        break;
-                                    }
-                                    if (Hflag && !data.matches("[Hf]")) {
-                                        escapeMoveNum = "";
-                                        escapeState = EscapeState.NONE;
-                                        break;
-                                    }
-                                    if (escapeState == EscapeState.SQUARE) {
-                                        if (data.matches("[A-HJKSTfm]")) {
-                                            //escapeシーケンス用
-                                            int move;
-                                            int clearNum;
-                                            if (escapeMoveFlag) {
-                                                move = Integer.parseInt(escapeMoveNum);
-                                                clearNum = Integer.parseInt(clear);
-                                            } else {
-                                                move = 1;
-                                                clearNum = 0;
-                                            }
-                                            escapeMoveNum = "";
+                                 if (escapeState == EscapeState.SQUARE && data.matches("[0-9]")) {
+                                     Log.d(TAG, "move flag is true");
+                                     escapeMoveNum += data;
+                                     clear += data;
+                                     if (Integer.parseInt(escapeMoveNum) > 1000 || Integer.parseInt(clear) > 1000) {
+                                         escapeMoveNum = "1000";
+                                         clear = "1000";
+                                     }
+                                     escapeMoveFlag = true;
+                                     break;
+                                 }
+                                 if (escapeState == EscapeState.SQUARE && data.equals(";")) {
+                                     if (escapeMoveFlag) {
+                                         h1 = Integer.parseInt(escapeMoveNum);
+                                     } else {
+                                         h1 = 1;
+                                     }
+                                     escapeMoveNum = "";
+                                     Hflag = true;
+                                     escapeMoveFlag = false;
+                                     break;
+                                 }
+                                 if (Hflag && !data.matches("[Hf]")) {
+                                     escapeMoveNum = "";
+                                     escapeState = EscapeState.NONE;
+                                     break;
+                                 }
+                                 if (escapeState == EscapeState.SQUARE) {
+                                     if (data.matches("[A-HJKSTfm]")) {
+                                         //escapeシーケンス用
+                                         int move;
+                                         int clearNum;
+                                         if (escapeMoveFlag) {
+                                             move = Integer.parseInt(escapeMoveNum);
+                                             clearNum = Integer.parseInt(clear);
+                                         } else {
+                                             move = 1;
+                                             clearNum = 0;
+                                         }
+                                         escapeMoveNum = "";
 
-                                            Log.d(TAG, "moveFlag true && A-H");
-                                            switch (str) {
-                                                case KeyHexString.KEY_A:
-                                                    if (move >= termDisplay.getDisplayColumnSize())
-                                                        move = termDisplay.getDisplayColumnSize() - 1;
-                                                    escapeSequence.moveUp(move);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_B:
-                                                    if (move >= termDisplay.getDisplayColumnSize())
-                                                        move = termDisplay.getDisplayColumnSize() - 1;
-                                                    escapeSequence.moveDown(move);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_C:
-                                                    if (move >= termDisplay.getDisplayRowSize())
-                                                        move = termDisplay.getDisplayRowSize() - 1;
-                                                    escapeSequence.moveRight(move);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_D:
-                                                    if (move >= termDisplay.getDisplayRowSize())
-                                                        move = termDisplay.getDisplayRowSize() - 1;
-                                                    escapeSequence.moveLeft(move);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_E:
-                                                    if (move >= termDisplay.getDisplayColumnSize())
-                                                        move = termDisplay.getDisplayColumnSize() - 1;
-                                                    escapeSequence.moveDownToRowLead(move);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_F:
-                                                    if (move >= termDisplay.getDisplayColumnSize())
-                                                        move = termDisplay.getDisplayColumnSize() - 1;
-                                                    escapeSequence.moveUpToRowLead(move);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_G:
-                                                    if (move >= termDisplay.getDisplayRowSize())
-                                                        move = termDisplay.getDisplayRowSize() - 1;
-                                                    escapeSequence.moveSelection(move);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_H:
-                                                    if (!Hflag) {
-                                                        h1 = 1;
-                                                        move = 1;
-                                                    }
-                                                    if (h1 >= termDisplay.getDisplayColumnSize())
-                                                        h1 = termDisplay.getDisplayColumnSize() - 1;
-                                                    if (move >= termDisplay.getDisplayRowSize())
-                                                        move = termDisplay.getDisplayRowSize() - 1;
-                                                    escapeSequence.moveSelection(h1, move);
-                                                    Hflag = false;
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_J:
-                                                    escapeSequence.clearDisplay(clearNum);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_K:
-                                                    escapeSequence.clearRow(clearNum);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_S:
-                                                    escapeSequence.scrollNext(move);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_T:
-                                                    escapeSequence.scrollBack(move);
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_f:
-                                                    if (!Hflag) {
-                                                        h1 = 1;
-                                                        move = 1;
-                                                    }
-                                                    if (h1 >= termDisplay.getDisplayColumnSize())
-                                                        h1 = termDisplay.getDisplayColumnSize() - 1;
-                                                    if (move >= termDisplay.getDisplayRowSize())
-                                                        move = termDisplay.getDisplayRowSize() - 1;
-                                                    escapeSequence.moveSelection(h1, move);
-                                                    Hflag = false;
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                case KeyHexString.KEY_m:
-                                                    escapeSequence.selectGraphicRendition(move);
-                                                    inputEditText.setTextColor(Color.parseColor("#" + termDisplay.getDefaultColor()));
-                                                    escapeMoveNum = "";
-                                                    clear = "";
-                                                    break;
-                                                default:
-                                            }
-                                            changeDisplay();
-                                            escapeMoveFlag = false;
-                                            escapeState = EscapeState.NONE;
-                                            break;
-                                        }
-                                    }
-                                    editable = inputEditText.getText();
-                                    escapeState = EscapeState.NONE;
-                                    receivingFlag = false;
-                                    //editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), data);
-                                    //if(data.length() > 1) {
-                                    //FIXME よくわからん細いのがあるのでなおす
-                                    //FIXME 最後の部分がこない
+                                         Log.d(TAG, "moveFlag true && A-H");
+                                         switch (str) {
+                                             case KeyHexString.KEY_A:
+                                                 if (move >= termDisplay.getDisplayColumnSize())
+                                                     move = termDisplay.getDisplayColumnSize() - 1;
+                                                 escapeSequence.moveUp(move);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_B:
+                                                 if (move >= termDisplay.getDisplayColumnSize())
+                                                     move = termDisplay.getDisplayColumnSize() - 1;
+                                                 escapeSequence.moveDown(move);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_C:
+                                                 if (move >= termDisplay.getDisplayRowSize())
+                                                     move = termDisplay.getDisplayRowSize() - 1;
+                                                 escapeSequence.moveRight(move);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_D:
+                                                 if (move >= termDisplay.getDisplayRowSize())
+                                                     move = termDisplay.getDisplayRowSize() - 1;
+                                                 escapeSequence.moveLeft(move);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_E:
+                                                 if (move >= termDisplay.getDisplayColumnSize())
+                                                     move = termDisplay.getDisplayColumnSize() - 1;
+                                                 escapeSequence.moveDownToRowLead(move);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_F:
+                                                 if (move >= termDisplay.getDisplayColumnSize())
+                                                     move = termDisplay.getDisplayColumnSize() - 1;
+                                                 escapeSequence.moveUpToRowLead(move);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_G:
+                                                 if (move >= termDisplay.getDisplayRowSize())
+                                                     move = termDisplay.getDisplayRowSize() - 1;
+                                                 escapeSequence.moveSelection(move);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_H:
+                                                 if (!Hflag) {
+                                                     h1 = 1;
+                                                     move = 1;
+                                                 }
+                                                 if (h1 >= termDisplay.getDisplayColumnSize())
+                                                     h1 = termDisplay.getDisplayColumnSize() - 1;
+                                                 if (move >= termDisplay.getDisplayRowSize())
+                                                     move = termDisplay.getDisplayRowSize() - 1;
+                                                 escapeSequence.moveSelection(h1, move);
+                                                 Hflag = false;
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_J:
+                                                 escapeSequence.clearDisplay(clearNum);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_K:
+                                                 escapeSequence.clearRow(clearNum);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_S:
+                                                 escapeSequence.scrollNext(move);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_T:
+                                                 escapeSequence.scrollBack(move);
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_f:
+                                                 if (!Hflag) {
+                                                     h1 = 1;
+                                                     move = 1;
+                                                 }
+                                                 if (h1 >= termDisplay.getDisplayColumnSize())
+                                                     h1 = termDisplay.getDisplayColumnSize() - 1;
+                                                 if (move >= termDisplay.getDisplayRowSize())
+                                                     move = termDisplay.getDisplayRowSize() - 1;
+                                                 escapeSequence.moveSelection(h1, move);
+                                                 Hflag = false;
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             case KeyHexString.KEY_m:
+                                                 escapeSequence.selectGraphicRendition(move);
+                                                 inputEditText.setTextColor(Color.parseColor("#" + termDisplay.getDefaultColor()));
+                                                 escapeMoveNum = "";
+                                                 clear = "";
+                                                 break;
+                                             default:
+                                         }
+                                         changeDisplay();
+                                         escapeMoveFlag = false;
+                                         escapeState = EscapeState.NONE;
+                                         break;
+                                     }
+                                 }
+                                 editable = inputEditText.getText();
+                                 escapeState = EscapeState.NONE;
+                                 receivingFlag = false;
 
-                                    /**
-                                    String string;
-                                    for (int i = 0; i < data.length(); i++) {
-                                        string = Character.toString(data.charAt(i));
-                                        if (string.equals("\u0020")) {
-                                            string = " ";
-                                        }
+                                 //FIXME よくわからん細いのがあるのでなおす
+                                 //FIXME 最後の部分がこない
 
-                                        receivingFlag = false;
-                                        editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), string);
-                                        receivingFlag = true;
+                                 //FIXME へんこうしたので動作確認
+                                 String string;
+                                 string = Character.toString(data.charAt(cnt));
+                                 if (string.equals("\u0020")) {
+                                     string = " ";
+                                 }
 
-                                    }**/
-                                    //FIXME へんこうしたので動作確認
-                                    String string;
-                                    string = Character.toString(data.charAt(cnt));
-                                    if (string.equals("\u0020")) {
-                                        string = " ";
-                                    }
+                                 receivingFlag = false;
+                                 editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), string);
+                                 receivingFlag = true;
 
-                                    receivingFlag = false;
-                                    editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), string);
-                                    receivingFlag = true;
+                                 changeDisplay();
 
-                                    changeDisplay();
+                                 receivingFlag = true;
+                                 escapeMoveFlag = false;
 
-                                    receivingFlag = true;
-                                    escapeMoveFlag = false;
-
-                                    break;
-                            }
-                            cnt++;
-                        }
-
-                    isReceivingFlag = false;
-                    }
-
+                                 break;
+                         }
+                         cnt++;
+                     }
 
                 }
             }
@@ -1165,8 +1134,8 @@ public class MainActivity extends AppCompatActivity{
         int length = 0;
         for (int i = 0; i < y; i++){
             length = length + termDisplay.getRowLength(termDisplay.getTopRow() + i);
-            Log.d("coordinate**", "contents: " + termDisplay.getRowText(termDisplay.getTopRow() + i) +
-                                            "length: " + termDisplay.getRowLength(termDisplay.getTopRow() + i));
+            //Log.d("coordinate**", "contents: " + termDisplay.getRowText(termDisplay.getTopRow() + i) +
+              //                              "length: " + termDisplay.getRowLength(termDisplay.getTopRow() + i));
             if (termDisplay.getRowLength(termDisplay.getTopRow() + i) == 0){
                 length++;
             } else {
@@ -1193,6 +1162,9 @@ public class MainActivity extends AppCompatActivity{
         if(x == rowLength && rowText.lastIndexOf(LF) != -1){
             x = rowLength-1;
         }
+
+        Log.d("coordinate**", "length: " + x);
+
 
         length = length + x;
         if (length > inputEditText.length()){

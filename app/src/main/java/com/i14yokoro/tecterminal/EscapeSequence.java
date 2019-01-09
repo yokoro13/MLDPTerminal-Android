@@ -54,7 +54,7 @@ public class EscapeSequence {
 
     public void moveRight(int n){
         //012|3456 (n = 2, x = 3)-> 01234|56 (n = 2, x = 5) -> 0123456| (x = 7)
-        if(termDisplay.getCursorX() + n <= termDisplay.getRowLength(getSelectRowIndex())) {
+        if(termDisplay.getCursorX() + n < termDisplay.getRowLength(getSelectRowIndex())) {
             moveCursorX(n);
         } else {
             int move = n;
@@ -154,6 +154,12 @@ public class EscapeSequence {
         }
         if(m < 1){
             m = 1;
+        }
+        if(n > termDisplay.getDisplayColumnSize()){
+            n = termDisplay.getDisplayColumnSize();
+        }
+        if (m > termDisplay.getDisplayRowSize()){
+            m = termDisplay.getDisplayRowSize();
         }
         termDisplay.setCursorY(0);
         termDisplay.setCursorX(0);

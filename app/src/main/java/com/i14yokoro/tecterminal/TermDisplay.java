@@ -46,6 +46,7 @@ public class TermDisplay {
         TextItem textItem = new TextItem(text, color);
         int columnSize = getTotalColumns();
         //Log.d(TAG, "adding text: " + text);
+        int selectRow = getCursorY() + getTopRow();
 
         Log.d(TAG, "Add new textItem");
         textList.get(columnSize - 1).add(textItem);
@@ -55,7 +56,6 @@ public class TermDisplay {
             textList.add(items1);
         }
 
-        //if(false && textList.get(getTopRow() + getCursorY()).size() >= displayRowSize){
     }
 
     public void deleteTextItem(int x, int y){
@@ -85,6 +85,11 @@ public class TermDisplay {
         if(y < this.textList.size()) {
             TextItem textItem = new TextItem(text, color);
             this.textList.get(y).add(textItem);
+        }
+        if(text.equals(LF) || textList.get(y).size() >= displayRowSize){
+            Log.d(TAG, "Add new line2");
+            ArrayList<TextItem> items1 = new ArrayList<>();
+            textList.add(items1);
         }
     }
 
@@ -290,45 +295,33 @@ public class TermDisplay {
 
         for(int y = 0; y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
 
+            if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
+                setDisplaySize(displayY);
+                return output;
+            }
+
             if(displayY >= displayColumnSize){ //displayの描画が終わったらおわり
                 break;
             }
-            if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
-                return output;
-            }
+
             for (int x = 0, n = textList.get(y+topRow).size(); x < n; x++){ //xはそのyのサイズまで
                 text = textList.get(y+topRow).get(x).getText();
                 Log.d("termDisplay", "y "+Integer.toString(y));
-                if (text.equals("")){
-                    Log.d("termDisplay**", "empty");
-                    if (y < displaySize-1){
-                        output = output + LF;
-                    }
-                    break;
-                }
-
                 if (!colorChange) {
                     output = output + text;
                 } else {
                     output = output + "<font color=#" + getColor(x, getTopRow() + y) + ">" + text + "</font>";
                 }
-
                 displayContentsLength++; //ついでにサイズも保存しておく
                 if((x == displayRowSize-1) && !text.equals(LF)){
-                    Log.d("termDisplay**", "max size");
                     output = output + LF;
                     break;
-                    //editText.append(LF);
                 }
-
                 if(text.equals(LF)){
-                    Log.d("termDisplay**", "this is LF");
                     break;
                 }
-
             }
-
-            if (!getRowText(y + getTopRow()).contains(LF) && textList.get(y+topRow).size() < getDisplayRowSize()){
+            if (y < displayColumnSize-1 && y + getTopRow() < totalColumns - 1 && !getRowText(y + getTopRow()).contains(LF) && textList.get(y + topRow).size() < getDisplayRowSize()) {
                 output = output + LF;
             }
             displayY++;
