@@ -425,6 +425,8 @@ public class MainActivity extends AppCompatActivity{
             //Log.d(TAG, "currX : " + currX);
             TimingLogger logger = new TimingLogger("TAG_TEST", "textChanged");
             Log.d(TAG, "afterTextChange");
+
+            //TODO ここの高速化
             if (str.matches("[\\p{ASCII}]*" ) && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!displayingFlag) {
                     if (enterPutFlag) { //無限ループ防止
@@ -580,6 +582,8 @@ public class MainActivity extends AppCompatActivity{
                 inputEditText.append(data);
                 receivingFlag = true;**/
                 int cnt = 0;
+
+                //TODO ここの高速化(マルチスレッド使ってもいいかも)
                  if (data != null) {
                      String str="";
                      byte[] utf = data.getBytes(StandardCharsets.UTF_8);
