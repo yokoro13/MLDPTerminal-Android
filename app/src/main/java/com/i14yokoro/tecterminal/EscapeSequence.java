@@ -145,7 +145,7 @@ public class EscapeSequence {
 
     public void moveSelection(int n){
         termDisplay.setCursorX(0);
-        moveRight(n);
+        moveRight(n-1);
     }
 
     public void moveSelection(int n, int m){ //n,mは1~
