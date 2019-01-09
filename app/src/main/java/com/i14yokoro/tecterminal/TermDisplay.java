@@ -286,7 +286,7 @@ public class TermDisplay {
         int displayY = 0;//displayの縦移動用
         displayContentsLength = 0;
         initialDisplay();
-        String output = "";
+        StringBuilder sb = new StringBuilder();
         String text;
 
         int totalColumns = getTotalColumns();
@@ -297,7 +297,7 @@ public class TermDisplay {
 
             if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
                 setDisplaySize(displayY);
-                return output;
+                return sb.toString();
             }
 
             if(displayY >= displayColumnSize){ //displayの描画が終わったらおわり
@@ -308,13 +308,14 @@ public class TermDisplay {
                 text = textList.get(y+topRow).get(x).getText();
                 Log.d("termDisplay", "y "+Integer.toString(y));
                 if (!colorChange) {
-                    output = output + text;
+                    sb.append(text);
+
                 } else {
-                    output = output + "<font color=#" + getColor(x, getTopRow() + y) + ">" + text + "</font>";
+                    sb.append("<font color=#").append(getColor(x, getTopRow() + y)).append(">").append(text).append("</font>");
                 }
                 displayContentsLength++; //ついでにサイズも保存しておく
                 if((x == displayRowSize-1) && !text.equals(LF)){
-                    output = output + LF;
+                    sb.append(LF);
                     break;
                 }
                 if(text.equals(LF)){
@@ -322,7 +323,7 @@ public class TermDisplay {
                 }
             }
             if (y < displayColumnSize-1 && y + getTopRow() < totalColumns - 1 && !getRowText(y + getTopRow()).contains(LF) && textList.get(y + topRow).size() < getDisplayRowSize()) {
-                output = output + LF;
+                sb.append(LF);
             }
             displayY++;
         }
@@ -331,7 +332,7 @@ public class TermDisplay {
         setDisplayContentsLength(displayContentsLength);
 
         logger.dumpToLog();
-        return output;
+        return sb.toString();
     }
 
     public int getRowLength(int y){
