@@ -40,10 +40,10 @@ public class TermDisplay {
 
         TextItem textItem = new TextItem(text, color);
         int columnSize = getTotalColumns();
-        //Log.d(TAG, "adding text: " + text);
         int selectRow = getCursorY() + getTopRow();
 
-        Log.d(TAG, "Add new textItem");
+        Log.d("termDisplay*****", "Add new textItem to " + Integer.toString(getCursorX()) + ", " + Integer.toString(getCursorY()));
+        Log.d("termDisplay*****", "adding text: " + text);
         textList.get(columnSize - 1).add(textItem);
         if(text.equals(LF) || textList.get(getTotalColumns()-1).size() >= displayRowSize){
             Log.d(TAG, "Add new line2");
@@ -87,9 +87,6 @@ public class TermDisplay {
         }
     }
 
-    public void insertRow(){
-
-    }
 
     public void addTextItemOverSize(int y, String text, String color){
         TextItem textItem = new TextItem(text, color);
@@ -144,12 +141,6 @@ public class TermDisplay {
             return this.textList.get(y).get(x).getText();
         } else {
             return "";
-        }
-    }
-
-    public void changeColor(int x, int y, String color){
-        if(y < this.textList.size() && x < this.textList.get(y).size()) {
-            this.textList.get(y).get(x).setColor(color);
         }
     }
 

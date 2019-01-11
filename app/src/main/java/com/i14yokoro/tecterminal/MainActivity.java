@@ -459,7 +459,11 @@ public class MainActivity extends AppCompatActivity{
 
                             if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
                                 Log.d("termDisplay****", "set");
-                                termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                                if(getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
+                                    termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                                } else {
+                                    termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                                }
                                 moveCursorX(1);
                             } else { //insert
                                 Log.d("termDisplay****", "insert");
@@ -777,7 +781,7 @@ public class MainActivity extends AppCompatActivity{
                                                  break;
                                              case KeyHexString.KEY_m:
                                                  escapeSequence.selectGraphicRendition(move);
-                                                 inputEditText.setTextColor(Color.parseColor("#" + termDisplay.getDefaultColor()));
+                                                 inputEditText.setTextColor(Color.parseColor(termDisplay.getDefaultColor()));
                                                  escapeMoveNum = "";
                                                  clear = "";
                                                  break;
