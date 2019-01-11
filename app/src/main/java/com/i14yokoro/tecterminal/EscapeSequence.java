@@ -1,10 +1,7 @@
 package com.i14yokoro.tecterminal;
 
 import android.content.Context;
-import android.text.Html;
-import android.text.SpannableString;
 import android.util.Log;
-import android.util.TimingLogger;
 import android.widget.EditText;
 
 public class EscapeSequence {
@@ -289,73 +286,6 @@ public class EscapeSequence {
                 //termDisplay.setDefaultColor("000000");
         }
     }
-
-    public void changeDisplay(){
-        String output = "";
-        String result = "";
-        SpannableString spannable;
-
-        editText.setText("");
-        termDisplay.createDisplay();
-        TimingLogger logger = new TimingLogger("TAG_TEST", "change display");
-        int totalColumns = termDisplay.getTotalColumns();
-        int displaySize = termDisplay.getDisplaySize();
-        int displayRowSize = termDisplay.getDisplayRowSize();
-        int dispayColumnSize = termDisplay.getDisplayColumnSize();
-        boolean colorChange = termDisplay.isColorChange();
-
-        for (int y = 0; y < totalColumns && y < displaySize; y++){
-            for (int x = 0; x < displayRowSize; x++){
-                Log.d("termDisplay", "y "+Integer.toString(y));
-                if(!termDisplay.getDisplay(x, y).equals("EOL")) {
-                    if (termDisplay.getDisplay(x, y).equals("")){
-                        Log.d("termDisplay**", "empty");
-                        if (y < displaySize-1){
-                            output = output + LF;
-                        }
-                        break;
-                    }
-                    if(y < dispayColumnSize-1) {
-                        if (!colorChange) {
-                            output = output + termDisplay.getDisplay(x, y);
-                        } else {
-                            output = output + "<font color=#" + termDisplay.getColor(x, getTop() + y) +
-                                    ">" + termDisplay.getDisplay(x, y) + "</font>";
-                        }
-                    }
-                } else{
-                    Log.d("termDisplay**", "here is EOL");
-                    if (!colorChange){
-                        editText.setText(output);
-                    }else {
-                        spannable = new SpannableString(output);
-                        result = HtmlParser.toHtml(spannable);
-                        editText.setText(Html.fromHtml(result));
-                    }
-                    logger.dumpToLog();
-                    return;
-                }
-                if((x == displayRowSize-1) && !termDisplay.getDisplay(x, y).equals(LF)){
-                    Log.d("termDisplay**", "max size");
-                    output = output + LF;
-                    //editText.append(LF);
-                }
-                if(termDisplay.getDisplay(x, y).equals(LF)){
-                    Log.d("termDisplay**", "this is LF");
-                    break;
-                }
-            }
-        }
-        if (!colorChange){
-            editText.setText(output);
-        }else {
-            spannable = new SpannableString(output);
-            result = HtmlParser.toHtml(spannable);
-            editText.setText(Html.fromHtml(result));
-        }
-        logger.dumpToLog();
-    }
-
 
     private int getSelectRowIndex() {
         return termDisplay.getCursorY() + termDisplay.getTopRow();

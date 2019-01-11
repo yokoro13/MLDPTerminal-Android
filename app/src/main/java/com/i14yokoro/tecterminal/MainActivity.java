@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity{
     private SharedPreferences prefs;
 
     private enum State {STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING} //state
-    private enum EscapeState {NONE, ESCAPE, SQUARE, MOVE, H, f, m}
+    private enum EscapeState {NONE, ESCAPE, SQUARE}
     private EscapeState escapeState = EscapeState.NONE;
 
     private State state = State.STARTING;
@@ -213,8 +213,6 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 //escapeSequence.moveSelection(100,100);
-                for (int i = 0; i < 100; i++)
-                    changeDisplay();
                 isBtn_ctl = true;
             }
         });
@@ -415,9 +413,16 @@ public class MainActivity extends AppCompatActivity{
 
             if (state == State.CONNECTED && count > before) {
                 if (receivingFlag) {
-                    Log.d("RNsend", s.subSequence(start + before, start + count).toString());
+                    String send = s.subSequence(start + before, start + count).toString();
+                    Log.d("RNsend", send);
                     isWriting = true;
-                    bleService.writeMLDP(s.subSequence(start + before, start + count).toString());
+                    if (isBtn_ctl){
+                        switch (send){
+                            case "C":
+                                send = "\u0003";
+                        }
+                    }
+                    bleService.writeMLDP(send);
                     //isWritring = false;
                     //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
                     //else editFlag = true;
@@ -506,8 +511,6 @@ public class MainActivity extends AppCompatActivity{
                                     moveCursorY(1);
                                     moveToSavedCursor();
                                 }
-
-
                             }
                             //changeDisplay();
                         }
@@ -584,7 +587,7 @@ public class MainActivity extends AppCompatActivity{
             else if (MldpBluetoothService.ACTION_BLE_DATA_RECEIVED.equals(action)) {
                 Log.d(TAG, "Received intent ACTION_BLE_DATA_RECEIVED");
                 String data = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA);
-                TimingLogger logger = new TimingLogger("TAG_TEST", "onRNReceive");
+                //TimingLogger logger = new TimingLogger("TAG_TEST", "onRNReceive");
 
                 Log.d("RNreceive", data);
 
@@ -594,13 +597,12 @@ public class MainActivity extends AppCompatActivity{
                 receivingFlag = true;**/
                 int cnt = 0;
 
-                //TODO ここの高速化(マルチスレッド使ってもいいかも)
+                //FIXME エスケープシーケンスの英語部分が表示されてしまう
                  if (data != null) {
                      String str="";
                      byte[] utf = data.getBytes(StandardCharsets.UTF_8);
                      for (byte b : utf) {
                          str = Integer.toHexString(b & 0xff);
-
 
                          switch (str) {
                              case KeyHexString.KEY_DEL:
@@ -608,8 +610,6 @@ public class MainActivity extends AppCompatActivity{
                                  escapeMoveFlag = false;
                                  break;
                              case KeyHexString.KEY_ENTER:
-                                 //editingFlag = false;
-                                 //addList(RNtext);
                                  editable = inputEditText.getText();
                                  receivingFlag = false;
                                  editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), LF);
@@ -807,7 +807,7 @@ public class MainActivity extends AppCompatActivity{
                                  editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), string);
                                  receivingFlag = true;
 
-                                 changeDisplay();
+                                 //
 
                                  receivingFlag = true;
                                  escapeMoveFlag = false;
@@ -815,10 +815,11 @@ public class MainActivity extends AppCompatActivity{
                                  break;
                          }
                          cnt++;
+                         changeDisplay();
                      }
 
                 }
-                logger.dumpToLog();
+                //logger.dumpToLog();
             }
         }
     };
@@ -879,7 +880,7 @@ public class MainActivity extends AppCompatActivity{
                     case CONNECTED:
                         //addNewLine("connected to " + bleDeviceName);
                         receivingFlag = false;
-                        addNewLine("connected to " + bleDeviceName);
+                        addNewLine(LF + "connected to " + bleDeviceName);
                         setProgressBarIndeterminateVisibility(false);
                         break;
                     case DISCONNECTING:
@@ -887,7 +888,7 @@ public class MainActivity extends AppCompatActivity{
                         //addNewLine("disconnected from " + bleDeviceName);
                         receivingFlag = false;
                         //inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
-                        addNewLine("disconnected from " + bleDeviceName);
+                        addNewLine(LF + "disconnected from " + bleDeviceName);
                         //inputEditText.addTextChangedListener(mInputTextWatcher);
                         break;
                     default:
@@ -958,16 +959,19 @@ public class MainActivity extends AppCompatActivity{
     };
 
     private void addNewLine(String newText){
-        enterPutFlag = false;
+        //enterPutFlag = false;
+        receivingFlag = false;
         for(int i = 0; i < newText.length(); i++){
-            termDisplay.setTextItem(Character.toString(newText.charAt(i)), termDisplay.getDefaultColor());
+            inputEditText.append(Character.toString(newText.charAt(i)));
         }
-        termDisplay.setTextItem(LF, termDisplay.getDefaultColor());
+        inputEditText.append(LF);
+        //termDisplay.setTextItem(LF, termDisplay.getDefaultColor());
         termDisplay.setCursorX(0);
-        moveCursorY(1);
-        changeDisplay();
-        enterPutFlag = true;
         receivingFlag = true;
+        //moveCursorY(2);
+        //changeDisplay();
+        //enterPutFlag = true;
+        //receivingFlag = true;
     }
 
     private int getMaxRowLength(){
@@ -1081,22 +1085,6 @@ public class MainActivity extends AppCompatActivity{
         //showDisplay();
     }
 
-    private void showDisplay(){
-        Log.d("termDisplay**", "******showDisplay******");
-        String row = "";
-        for (int y = 0; y < termDisplay.getDisplaySize(); y++){
-            for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
-                if (termDisplay.getDisplay(x,y).equals("")){
-                    row = row + "_";
-                } else {
-                    row = row + termDisplay.getDisplay(x, y);
-                }
-            }
-            row = row + LF;
-            System.out.println("termDisplay**" + y + row);
-            row = "";
-        }
-    }
 
     private void showListContents(){
         Log.d("termDisplay**", "******showListContent******");

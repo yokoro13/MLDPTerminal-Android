@@ -1,7 +1,6 @@
 package com.i14yokoro.tecterminal;
 
 import android.util.Log;
-import android.util.TimingLogger;
 
 import java.util.ArrayList;
 
@@ -11,8 +10,6 @@ public class TermDisplay {
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
 
     private int displayRowSize, displayColumnSize;
-
-    private String[][] display;
 
     private int cursorX;
     private int cursorY;
@@ -34,11 +31,9 @@ public class TermDisplay {
         cursorX = 0;
         cursorY = 0;
         topRow = 0;
-        display = new String[displayColumnSize][displayRowSize+1];
         ArrayList<TextItem> items = new ArrayList<>();
         textList = new ArrayList<>();
         textList.add(items);
-        createDisplay();
     }
 
     public void setTextItem(String text, String color){
@@ -55,7 +50,6 @@ public class TermDisplay {
             ArrayList<TextItem> items1 = new ArrayList<>();
             textList.add(items1);
         }
-
     }
 
     public void deleteTextItem(int x, int y){
@@ -213,17 +207,6 @@ public class TermDisplay {
         }
     }
 
-    public String getDisplay(int x, int y) {
-        if(display[y][x] == null){
-            return "";
-        }
-        return display[y][x];
-    }
-
-    public void setDisplay(int x, int y, String c) {
-        System.out.println(Integer.toString(x) + " " + Integer.toString(y) + " " + c);
-        this.display[y][x] = c;
-    }
 
     public int getTotalColumns() {
         return this.textList.size();
@@ -249,43 +232,10 @@ public class TermDisplay {
         this.topRow = this.topRow + count;
     }
 
-    public void createDisplay(){
-        TimingLogger logger = new TimingLogger("TAG_TEST", "create display");
-
-        int displayY = 0;//displayの縦移動用
-        displayContentsLength = 0;
-        initialDisplay();
-
-        for(int y = 0, totalColumns = getTotalColumns(); y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
-
-            if(displayY >= getDisplayColumnSize()){ //displayの描画が終わったらおわり
-                break;
-            }
-            if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
-                setDisplay(textList.get(totalColumns-1).size(), displayY, "EOL"); //最後に "EOL" という目印をつける
-                break;
-            }
-            for (int x = 0, n = textList.get(y+topRow).size(); x < n; x++){ //xはそのyのサイズまで
-                //Log.d(TAG, "get y+topRow" + (y+topRow));
-                setDisplay(x, displayY, textList.get(y+topRow).get(x).getText()); //そのないようをdisplayに
-                displayContentsLength++; //ついでにサイズも保存しておく
-            }
-            displayY++;
-            //logger.addSplit("abeshi");
-        }
-        setDisplaySize(displayY);
-        Log.d(TAG, "displaySize : " + displayY);
-        setDisplayContentsLength(displayContentsLength);
-
-        logger.dumpToLog();
-    }
-
     public String createDisplay_(){
-        TimingLogger logger = new TimingLogger("TAG_TEST", "create display");
 
         int displayY = 0;//displayの縦移動用
         displayContentsLength = 0;
-        initialDisplay();
         StringBuilder sb = new StringBuilder();
         String text;
 
@@ -331,7 +281,6 @@ public class TermDisplay {
         Log.d(TAG, "displaySize : " + displayY);
         setDisplayContentsLength(displayContentsLength);
 
-        logger.dumpToLog();
         return sb.toString();
     }
 
@@ -359,14 +308,6 @@ public class TermDisplay {
 
     private void setDisplayContentsLength(int displayContentsLength) {
         this.displayContentsLength = displayContentsLength;
-    }
-
-    private void initialDisplay(){
-        for (int y = 0; y < displayColumnSize; y++){
-            for (int x = 0; x < displayRowSize; x++){
-                display[y][x] = "";
-            }
-        }
     }
 
     public int getDisplaySize() {
