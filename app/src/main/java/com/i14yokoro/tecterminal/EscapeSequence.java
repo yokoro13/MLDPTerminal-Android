@@ -126,7 +126,7 @@ public class EscapeSequence {
         }
         for (int i = 0; i < n; i++){
             Log.d("termDisplay**", "add Blank"+Integer.toString(i));
-            termDisplay.insertTextItem(x, getSelectRowIndex(),"p", termDisplay.getDefaultColor());
+            termDisplay.insertTextItem(x, getSelectRowIndex(),'p', termDisplay.getDefaultColor());
         }
     }
 
@@ -190,7 +190,7 @@ public class EscapeSequence {
         if(n == 1){ //カーソルより前にある画面上の文字を消す
             for (int y = getTop(); y <= getSelectRowIndex(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
-                    termDisplay.changeText(x, y, " ");
+                    termDisplay.changeText(x, y, '\u0000');
                     if(y == getSelectRowIndex()){
                         if(x == termDisplay.getCursorX()){
                             break;
@@ -203,7 +203,7 @@ public class EscapeSequence {
         if(n == 2){ //全消去
             for (int y = getTop(); y < termDisplay.getDisplaySize() + getTop(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
-                    termDisplay.changeTextItem(x, y, " ", termDisplay.getDefaultColor());
+                    termDisplay.changeTextItem(x, y, '\u0000', termDisplay.getDefaultColor());
                 }
             }
         }
@@ -224,7 +224,7 @@ public class EscapeSequence {
 
         if(n == 1){ //カーソル以前にある文字を消す
             for (int x = 0; x <= termDisplay.getCursorX(); x++){
-                termDisplay.changeText(x, getSelectRowIndex(), " ");
+                termDisplay.changeText(x, getSelectRowIndex(), ' ');
                 //termDisplay.deleteTextItem(x, termDisplay.getCursorY());
             }
         }
@@ -232,7 +232,7 @@ public class EscapeSequence {
         if(n == 2){ //全消去
             int del = termDisplay.getRowLength(getSelectRowIndex());
             for (int x = 0; x < del; x++){
-                termDisplay.changeText(x, getSelectRowIndex(), " ");
+                termDisplay.changeText(x, getSelectRowIndex(), ' ');
             }
 
         }

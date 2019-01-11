@@ -49,7 +49,8 @@ public class MainActivity extends AppCompatActivity{
 
     private static final String TAG = "debug***";
 
-    private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
+    private final char LF = '\n'; //システムの改行コードを検出
+    //private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
     private EditText inputEditText; //ディスプレイのEdittext
 
     private static final String PREFS = "PREFS";
@@ -413,7 +414,7 @@ public class MainActivity extends AppCompatActivity{
                             changeDisplay();
                         }
                         for (int i = 0; i < str.length(); i++) { // strの先頭から1文字ずつString型にして取り出す
-                            String inputStr = String.valueOf(str.charAt(i));
+                            char inputStr = str.charAt(i);
 
                             if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
                                 Log.d("termDisplay****", "set");
@@ -425,7 +426,7 @@ public class MainActivity extends AppCompatActivity{
                                 moveCursorX(1);
                             } else { //insert
                                 Log.d("termDisplay****", "insert");
-                                if(!inputStr.equals(LF)) { //LFじゃない
+                                if(inputStr != LF) { //LFじゃない
                                     termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
                                     moveCursorX(1);
                                 } else { //LF
@@ -437,7 +438,7 @@ public class MainActivity extends AppCompatActivity{
                             }
 
                             Log.d(TAG, "ASCII code/ " + str);
-                            if (inputStr.equals(LF)) {
+                            if (inputStr == LF) {
                                 termDisplay.setCursorX(0);
                                 if (inputEditText.getLineCount() > termDisplay.getDisplayColumnSize()) {
                                     scrollDown();
@@ -449,7 +450,7 @@ public class MainActivity extends AppCompatActivity{
                             }
 
                             Log.d("termDisplay**", "row length " + Integer.toString(getSelectLineText().length()));
-                            if (getSelectLineText().length() >= termDisplay.getDisplayRowSize() && !getSelectLineText().contains(LF)) {
+                            if (getSelectLineText().length() >= termDisplay.getDisplayRowSize() && !getSelectLineText().contains("\n")) {
                                 enterPutFlag = false;
                                 displayingFlag = true;
                                 receivingFlag = false;
@@ -561,7 +562,7 @@ public class MainActivity extends AppCompatActivity{
                              case KeyHexString.KEY_ENTER:
                                  editable = inputEditText.getText();
                                  receivingFlag = false;
-                                 editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), LF);
+                                 editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), "\n");
                                  receivingFlag = true;
 
                                  changeDisplay();
@@ -901,7 +902,7 @@ public class MainActivity extends AppCompatActivity{
         for(int i = 0; i < newText.length(); i++){
             inputEditText.append(Character.toString(newText.charAt(i)));
         }
-        inputEditText.append(LF);
+        inputEditText.append("\n");
         //termDisplay.setTextItem(LF, termDisplay.getDefaultColor());
         termDisplay.setCursorX(0);
         receivingFlag = true;
@@ -1029,7 +1030,7 @@ public class MainActivity extends AppCompatActivity{
         for (int y = 0; y < termDisplay.getTotalColumns(); y++){
             for (int x = 0; x < termDisplay.getRowLength(y); x++){
                 row = row + termDisplay.getText(x, y);
-                if(termDisplay.getText(x, y).equals("")){
+                if(termDisplay.getText(x, y) == '\u0000'){
                     //row = row + LF;
                 }
 
@@ -1080,7 +1081,7 @@ public class MainActivity extends AppCompatActivity{
             if (termDisplay.getRowLength(termDisplay.getTopRow() + i) == 0){
                 length++;
             } else {
-                if (!termDisplay.getRowText(termDisplay.getTopRow() + i).contains(LF)) {
+                if (!termDisplay.getRowText(termDisplay.getTopRow() + i).contains("\n")) {
                     length++;
                 }
             }
@@ -1093,7 +1094,7 @@ public class MainActivity extends AppCompatActivity{
         if(rowLength == 0) x = 0;
         //移動先の文字数がカーソルXよりも短い
         if (x > rowLength){
-            if (rowText.contains(LF)) {
+            if (rowText.contains("\n")) {
                 x = rowLength - 1;
             } else {
                 x = rowLength;

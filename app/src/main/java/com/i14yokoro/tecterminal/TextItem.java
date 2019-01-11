@@ -1,19 +1,19 @@
 package com.i14yokoro.tecterminal;
 
 public class TextItem {
-    private String text;
+    private char text;
     private String color;
 
-    TextItem(String text, String color){
+    TextItem(char text, String color){
         this.text = text;
         this.color = color;
     }
 
-    public void setText(String text) {
+    public void setText(char text) {
         this.text = text;
     }
 
-    public String getText() {
+    public char getText() {
         return text;
     }
 
