@@ -126,7 +126,7 @@ public class EscapeSequence {
         }
         for (int i = 0; i < n; i++){
             Log.d("termDisplay**", "add Blank"+Integer.toString(i));
-            termDisplay.insertTextItem(x, getSelectRowIndex(),'p', termDisplay.getDefaultColor());
+            termDisplay.insertTextItem(x, getSelectRowIndex(),' ', termDisplay.getDefaultColor());
         }
     }
 

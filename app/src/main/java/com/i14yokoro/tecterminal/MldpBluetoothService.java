@@ -236,7 +236,6 @@ public class MldpBluetoothService extends Service {
             }
         }
 
-        //Received notification or indication with new value for a characteristic
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             try {
@@ -254,8 +253,6 @@ public class MldpBluetoothService extends Service {
             }
         }
 
-        //Write completed
-        //Use write queue because BluetoothGatt can only do one write at a time
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             try {

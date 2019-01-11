@@ -42,7 +42,6 @@ import android.widget.EditText;
 import java.nio.charset.StandardCharsets;
 
 /**
- * TODO スクロールしたとき一番下の行が空白でカーソルが残るのを直す
  * TODO RN側からきた文字の処理の仕方を考える
  */
 public class MainActivity extends AppCompatActivity{
@@ -521,8 +520,6 @@ public class MainActivity extends AppCompatActivity{
         return intentFilter;
     }
 
-
-    //FIXME 一番下の行での入力が表示されない
     private final BroadcastReceiver bleServiceReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -732,6 +729,7 @@ public class MainActivity extends AppCompatActivity{
                                                  clear = "";
                                                  break;
                                              default:
+                                                 break;
                                          }
                                          changeDisplay();
                                          escapeMoveFlag = false;
@@ -746,7 +744,6 @@ public class MainActivity extends AppCompatActivity{
                                  //FIXME よくわからん細いのがあるのでなおす
                                  //FIXME 最後の部分がこない
 
-                                 //FIXME へんこうしたので動作確認
                                  String string;
                                  string = Character.toString(data.charAt(cnt));
                                  if (string.equals("\u0020")) {
