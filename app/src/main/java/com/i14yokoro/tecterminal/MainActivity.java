@@ -1063,7 +1063,6 @@ public class MainActivity extends AppCompatActivity{
             selectionMovingFlag = true;
             Log.d(TAG, "moveToSavedCursor()");
 
-            String str = termDisplay.getRowText(getSelectRowIndex());
             int cursor;
             cursor = getRowLength(termDisplay.getCursorX(), termDisplay.getCursorY());
 
