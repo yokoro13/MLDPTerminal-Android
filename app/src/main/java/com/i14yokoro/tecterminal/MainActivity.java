@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.Html;
@@ -28,7 +29,6 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.util.TimingLogger;
 import android.view.ActionMode;
 import android.view.Display;
 import android.view.Menu;
@@ -52,8 +52,6 @@ public class MainActivity extends AppCompatActivity{
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
     private EditText inputEditText; //ディスプレイのEdittext
 
-    private String inputStrText; //入力したテキスト
-
     private static final String PREFS = "PREFS";
     private static final String PREFS_NAME = "NAME";
     private static final String PREFS_ADDRESS = "ADDR";
@@ -73,7 +71,7 @@ public class MainActivity extends AppCompatActivity{
     private SharedPreferences prefs;
 
     private enum State {STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING} //state
-    private enum EscapeState {NONE, ESCAPE, SQUARE, MOVE, H, f, m}
+    private enum EscapeState {NONE, ESCAPE, SQUARE}
     private EscapeState escapeState = EscapeState.NONE;
 
     private State state = State.STARTING;
@@ -99,7 +97,6 @@ public class MainActivity extends AppCompatActivity{
     private boolean selectionMovingFlag = false;
 
     private boolean isBtn_ctl = false;
-    private boolean isBtn_esc = false;
 
     private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
     private boolean displayingFlag = false;
@@ -113,6 +110,9 @@ public class MainActivity extends AppCompatActivity{
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build());
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -124,11 +124,9 @@ public class MainActivity extends AppCompatActivity{
 
         Log.d(TAG, "maxRow "+Integer.toString(getMaxRowLength()) +"maxColumn" + Integer.toString(getMaxColumnLength()));
 
-
         escapeSequence = new EscapeSequence(this, termDisplay); //今のContentを渡す
 
         state = State.STARTING;
-        inputStrText = inputEditText.getText().toString();
         connectTimeoutHandler = new Handler();
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
@@ -138,11 +136,9 @@ public class MainActivity extends AppCompatActivity{
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b" + "[1A");
                     if(termDisplay.getCursorY() > 0){
-                        //escapeSequence.moveUp();
                         moveToSavedCursor();
                     }
                 }
-                //escapeSequence.moveUp();
                 moveToSavedCursor();
             }
         });
@@ -158,7 +154,6 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
-                //escapeSequence.moveDown();
                 moveToSavedCursor();
             }
         });
@@ -171,7 +166,6 @@ public class MainActivity extends AppCompatActivity{
                 }
                 if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
                     if (termDisplay.getCursorX() < termDisplay.getRowLength(getSelectRowIndex())) {
-                        //escapeSequence.moveRight();
                         moveToSavedCursor();
                     }
                 }
@@ -185,7 +179,6 @@ public class MainActivity extends AppCompatActivity{
                 }
                 if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
                     if (termDisplay.getCursorX() > 0) {
-                        //escapeSequence.moveLeft();
                         moveToSavedCursor();
                     }
                 }
@@ -199,15 +192,12 @@ public class MainActivity extends AppCompatActivity{
                     bleService.writeMLDP("\u001b");
                 }
                 Log.d("termDisplay**", "display size" + termDisplay.getDisplaySize());
-                isBtn_esc = true;
             }
         });
 
         findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //escapeSequence.moveSelection(100,100);
-                changeDisplay();
                 isBtn_ctl = true;
             }
         });
@@ -347,8 +337,6 @@ public class MainActivity extends AppCompatActivity{
             menu.removeItem(android.R.id.addToDictionary);
             menu.removeItem(android.R.id.startSelectingText);
             menu.removeItem(android.R.id.selectTextMode);
-            //menu.removeItem(android.R.id.replaceText);
-            //menu.removeItem(android.R.id.autofill);
             return false;
         }
 
@@ -361,8 +349,6 @@ public class MainActivity extends AppCompatActivity{
             menu.removeItem(android.R.id.addToDictionary);
             menu.removeItem(android.R.id.startSelectingText);
             menu.removeItem(android.R.id.selectTextMode);
-            //menu.removeItem(android.R.id.replaceText);
-            //menu.removeItem(android.R.id.autofill);
             menu.close();
             return true;
         }
@@ -378,35 +364,10 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
-    private final TextWatcher mOutgoingTextWatcher = new TextWatcher() {
-
-        public void beforeTextChanged(CharSequence cs, int i, int i1, int i2) {
-        }
-        public void onTextChanged(CharSequence cs, int start, int before, int count) {
-            //before_str = inputEditText.getText().toString();
-
-            if (count > before) {
-                if (receivingFlag) {
-                    Log.d("RNsend", cs.subSequence(start + before, start + count).toString());
-                    isWriting = true;
-                    bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
-                    //isWritring = false;
-                    //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
-                    //else editFlag = true;
-                }
-            }
-        }
-
-        public void afterTextChanged(Editable edtbl) {
-        }
-    };
-
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            if (editingFlag && enterPutFlag) {
-                inputStrText = s.toString(); //おされた瞬間のテキストを保持
-            }
+
         }
 
         @Override
@@ -414,16 +375,28 @@ public class MainActivity extends AppCompatActivity{
             eStart = start;//文字列のスタート位置
             eCount = count;//追加される文字
             eBefore = before;//削除すう
-            //inputEditText.setBackgroundColor(Color.parseColor("#00FF00"));
+
+            if (state == State.CONNECTED && count > before) {
+                if (receivingFlag) {
+                    String send = s.subSequence(start + before, start + count).toString();
+                    Log.d("RNsend", send);
+                    isWriting = true;
+                    if (isBtn_ctl){
+                        switch (send){
+                            case "C":
+                                send = "\u0003";
+                        }
+                    }
+                    bleService.writeMLDP(send);
+                }
+            }
         }
 
         @Override
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
-            //currX = (currX + eCount)%maxRowLength;
-            //Log.d(TAG, "currX : " + currX);
-            TimingLogger logger = new TimingLogger("TAG_TEST", "textChanged");
+
             Log.d(TAG, "afterTextChange");
 
             //TODO ここの高速化
@@ -444,14 +417,17 @@ public class MainActivity extends AppCompatActivity{
 
                             if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
                                 Log.d("termDisplay****", "set");
-                                termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                                if(getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
+                                    termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                                } else {
+                                    termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                                }
                                 moveCursorX(1);
                             } else { //insert
                                 Log.d("termDisplay****", "insert");
                                 if(!inputStr.equals(LF)) { //LFじゃない
                                     termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
                                     moveCursorX(1);
-                                    //termDisplay.insertTextItem(termDisplay.getCursorX(), termDisplay.getCursorY(), inputStr, termDisplay.getDefaultColor());
                                 } else { //LF
                                     if(termDisplay.getRowLength(getSelectRowIndex())+1 < termDisplay.getDisplayRowSize()){ //
                                         termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
@@ -463,20 +439,17 @@ public class MainActivity extends AppCompatActivity{
                             Log.d(TAG, "ASCII code/ " + str);
                             if (inputStr.equals(LF)) {
                                 termDisplay.setCursorX(0);
+                                if (inputEditText.getLineCount() > termDisplay.getDisplayColumnSize()) {
+                                    scrollDown();
+                                }
                                 if (termDisplay.getCursorY() < termDisplay.getDisplayColumnSize()) {
                                     moveCursorY(1);
+                                    moveToSavedCursor();
                                 }
-                                //if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
-                                  //  scrollDown();
-                                //}
-                                //changeDisplay();
                             }
 
                             Log.d("termDisplay**", "row length " + Integer.toString(getSelectLineText().length()));
-                            //if (getSelectLineText().length() != 0 && getSelectLineText().length()%(termDisplay.getDisplayRowSize()) == 0) {
                             if (getSelectLineText().length() >= termDisplay.getDisplayRowSize() && !getSelectLineText().contains(LF)) {
-                                Log.d("termDisplay**", "row length in if " + Integer.toString(getSelectLineText().length()));
-                                Log.d("termDisplay**", "append LF ");
                                 enterPutFlag = false;
                                 displayingFlag = true;
                                 receivingFlag = false;
@@ -487,19 +460,16 @@ public class MainActivity extends AppCompatActivity{
                                 receivingFlag = true;
 
                                 termDisplay.setCursorX(0);
-                                if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
-                                    moveCursorY(1);
-                                    //changeDisplay();
+                                if (inputEditText.getLineCount() > termDisplay.getDisplayColumnSize()) {
+                                    scrollDown();
                                 }
 
-                                //if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
-                                    //FIXME ここたぶん表示ばぐってる
-                                   // scrollDown();
-                                  //  changeDisplay();
-                                //}
-
+                                termDisplay.setCursorX(0);
+                                if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
+                                    moveCursorY(1);
+                                    moveToSavedCursor();
+                                }
                             }
-                            //changeDisplay();
                         }
                     }
                 }
@@ -514,19 +484,16 @@ public class MainActivity extends AppCompatActivity{
             }
             moveToSavedCursor();
             inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-            logger.dumpToLog();
         }
     };
 
     final SpanWatcher watcher = new SpanWatcher() {
         @Override
         public void onSpanAdded(final Spannable text, final Object what, final int start, final int end) {
-            // Nothing here.
         }
 
         @Override
         public void onSpanRemoved(final Spannable text, final Object what, final int start, final int end) {
-            // Nothing here.
         }
 
         @Override
@@ -577,19 +544,14 @@ public class MainActivity extends AppCompatActivity{
 
                 Log.d("RNreceive", data);
 
-                /**
-                receivingFlag = false;
-                inputEditText.append(data);
-                receivingFlag = true;**/
                 int cnt = 0;
 
-                //TODO ここの高速化(マルチスレッド使ってもいいかも)
+                //FIXME エスケープシーケンスの英語部分が表示されてしまう
                  if (data != null) {
                      String str="";
                      byte[] utf = data.getBytes(StandardCharsets.UTF_8);
                      for (byte b : utf) {
                          str = Integer.toHexString(b & 0xff);
-
 
                          switch (str) {
                              case KeyHexString.KEY_DEL:
@@ -597,8 +559,6 @@ public class MainActivity extends AppCompatActivity{
                                  escapeMoveFlag = false;
                                  break;
                              case KeyHexString.KEY_ENTER:
-                                 //editingFlag = false;
-                                 //addList(RNtext);
                                  editable = inputEditText.getText();
                                  receivingFlag = false;
                                  editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), LF);
@@ -766,7 +726,7 @@ public class MainActivity extends AppCompatActivity{
                                                  break;
                                              case KeyHexString.KEY_m:
                                                  escapeSequence.selectGraphicRendition(move);
-                                                 inputEditText.setTextColor(Color.parseColor("#" + termDisplay.getDefaultColor()));
+                                                 inputEditText.setTextColor(Color.parseColor(termDisplay.getDefaultColor()));
                                                  escapeMoveNum = "";
                                                  clear = "";
                                                  break;
@@ -796,14 +756,13 @@ public class MainActivity extends AppCompatActivity{
                                  editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), string);
                                  receivingFlag = true;
 
-                                 changeDisplay();
-
                                  receivingFlag = true;
                                  escapeMoveFlag = false;
 
                                  break;
                          }
                          cnt++;
+                         changeDisplay();
                      }
 
                 }
@@ -855,28 +814,19 @@ public class MainActivity extends AppCompatActivity{
                     case SCANNING:
                     case DISCONNECTED:
                         setProgressBarIndeterminateVisibility(false);
-                        inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
                         break;
                     case CONNECTING:
                         setProgressBarIndeterminateVisibility(true);
-                        inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
-                        //inputEditText.removeTextChangedListener(mInputTextWatcher);
-
-                        inputEditText.addTextChangedListener(mOutgoingTextWatcher);
                         break;
                     case CONNECTED:
-                        //addNewLine("connected to " + bleDeviceName);
                         receivingFlag = false;
-                        addNewLine("connected to " + bleDeviceName);
+                        addNewLine(LF + "connected to " + bleDeviceName);
                         setProgressBarIndeterminateVisibility(false);
                         break;
                     case DISCONNECTING:
                         setProgressBarIndeterminateVisibility(false);
-                        //addNewLine("disconnected from " + bleDeviceName);
                         receivingFlag = false;
-                        inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
-                        addNewLine("disconnected from " + bleDeviceName);
-                        //inputEditText.addTextChangedListener(mInputTextWatcher);
+                        addNewLine(LF + "disconnected from " + bleDeviceName);
                         break;
                     default:
                         state = State.STARTING;
@@ -946,16 +896,19 @@ public class MainActivity extends AppCompatActivity{
     };
 
     private void addNewLine(String newText){
-        enterPutFlag = false;
+        //enterPutFlag = false;
+        receivingFlag = false;
         for(int i = 0; i < newText.length(); i++){
-            termDisplay.setTextItem(Character.toString(newText.charAt(i)), termDisplay.getDefaultColor());
+            inputEditText.append(Character.toString(newText.charAt(i)));
         }
-        termDisplay.setTextItem(LF, termDisplay.getDefaultColor());
+        inputEditText.append(LF);
+        //termDisplay.setTextItem(LF, termDisplay.getDefaultColor());
         termDisplay.setCursorX(0);
-        moveCursorY(1);
-        changeDisplay();
-        enterPutFlag = true;
         receivingFlag = true;
+        //moveCursorY(2);
+        //changeDisplay();
+        //enterPutFlag = true;
+        //receivingFlag = true;
     }
 
     private int getMaxRowLength(){
@@ -1069,22 +1022,6 @@ public class MainActivity extends AppCompatActivity{
         //showDisplay();
     }
 
-    private void showDisplay(){
-        Log.d("termDisplay**", "******showDisplay******");
-        String row = "";
-        for (int y = 0; y < termDisplay.getDisplaySize(); y++){
-            for (int x = 0; x < termDisplay.getDisplayRowSize(); x++){
-                if (termDisplay.getDisplay(x,y).equals("")){
-                    row = row + "_";
-                } else {
-                    row = row + termDisplay.getDisplay(x, y);
-                }
-            }
-            row = row + LF;
-            System.out.println("termDisplay**" + y + row);
-            row = "";
-        }
-    }
 
     private void showListContents(){
         Log.d("termDisplay**", "******showListContent******");
@@ -1169,7 +1106,6 @@ public class MainActivity extends AppCompatActivity{
 
         Log.d("coordinate**", "length: " + x);
 
-
         length = length + x;
         if (length > inputEditText.length()){
             length = inputEditText.length();
@@ -1185,17 +1121,14 @@ public class MainActivity extends AppCompatActivity{
             termDisplay.addTopRow(-1);
             changeDisplay();
         }
-        moveToSavedCursor();
     }
 
     private void scrollDown(){
-        TimingLogger logger = new TimingLogger("TAG_TEST", "scrollDown");
-        if(termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns() ){//+ termDisplay.getRowLength(termDisplay.getTopRow())/getMaxColumnLength()){
+
+        if(termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns() ){
             moveCursorY(-1);
             termDisplay.addTopRow(1);
             changeDisplay();
         }
-        moveToSavedCursor();
-        logger.dumpToLog();
     }
 }
