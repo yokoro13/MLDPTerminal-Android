@@ -22,7 +22,7 @@ public class TermDisplay {
 
     private ArrayList<ArrayList<TextItem>> textList;
 
-    private String defaultColor = "000000";
+    private int defaultColor = 0x000000;
 
     private boolean colorChange = false;
 
@@ -37,7 +37,7 @@ public class TermDisplay {
         textList.add(items);
     }
 
-    public void setTextItem(char text, String color){
+    public void setTextItem(char text, int color){
 
         TextItem textItem = new TextItem(text, color);
         int columnSize = getTotalColumns();
@@ -68,14 +68,14 @@ public class TermDisplay {
         }
     }
 
-    public void changeTextItem(int x, int y, char text, String color){
+    public void changeTextItem(int x, int y, char text, int color){
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
             TextItem textItem = new TextItem(text, color);
             this.textList.get(y).set(x, textItem);
         }
     }
 
-    public void addTextItem(int y, char text, String color){
+    public void addTextItem(int y, char text, int color){
         if(y < this.textList.size()) {
             TextItem textItem = new TextItem(text, color);
             this.textList.get(y).add(textItem);
@@ -88,7 +88,7 @@ public class TermDisplay {
     }
 
 
-    public void addTextItemOverSize(int y, char text, String color){
+    public void addTextItemOverSize(int y, char text, int color){
         TextItem textItem = new TextItem(text, color);
         ArrayList<TextItem> items = new ArrayList<>();
         items.add(textItem);
@@ -104,7 +104,7 @@ public class TermDisplay {
         Log.d(TAG, "Add new line1");
     }
 
-    public void insertTextItem(int x, int y, char text, String color){
+    public void insertTextItem(int x, int y, char text, int color){
         int checkLF = x - 1;
         if(checkLF < 0){
             checkLF = 0;
@@ -144,11 +144,11 @@ public class TermDisplay {
         }
     }
 
-    public String getColor(int x, int y){
+    public int getColor(int x, int y){
         if(y < this.textList.size() && x < this.textList.get(y).size()) {
             return this.textList.get(y).get(x).getColor();
         } else {
-            return null;
+            return 0x000000;
         }
     }
 
@@ -250,9 +250,8 @@ public class TermDisplay {
                 Log.d("termDisplay", "y "+Integer.toString(y));
                 if (!colorChange) {
                     sb.append(text);
-
                 } else {
-                    sb.append("<font color=#").append(getColor(x, getTopRow() + y)).append(">").append(text).append("</font>");
+                    sb.append("<font color=#").append(Integer.toHexString(getColor(x, getTopRow() + y))).append(">").append(text).append("</font>");
                 }
                 displayContentsLength++; //ついでにサイズも保存しておく
                 if((x == displayRowSize-1) && text != LF){
@@ -309,11 +308,12 @@ public class TermDisplay {
         this.displaySize = displaySize;
     }
 
-    public String getDefaultColor() {
+    public int getDefaultColor() {
         return defaultColor;
     }
 
-    public void setDefaultColor(String defaultColor) {
+    public void setDefaultColor(int defaultColor) {
+
         this.defaultColor = defaultColor;
     }
 

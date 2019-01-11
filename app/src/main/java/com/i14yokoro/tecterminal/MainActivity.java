@@ -199,6 +199,8 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                termDisplay.setColorChange(true);
+                termDisplay.setDefaultColor(0x00ff00);
                 isBtn_ctl = true;
             }
         });
@@ -727,7 +729,7 @@ public class MainActivity extends AppCompatActivity{
                                                  break;
                                              case KeyHexString.KEY_m:
                                                  escapeSequence.selectGraphicRendition(move);
-                                                 inputEditText.setTextColor(Color.parseColor(termDisplay.getDefaultColor()));
+                                                 inputEditText.setTextColor(Color.parseColor(Integer.toString(termDisplay.getDefaultColor())));
                                                  escapeMoveNum = "";
                                                  clear = "";
                                                  break;
@@ -1014,9 +1016,13 @@ public class MainActivity extends AppCompatActivity{
         receivingFlag = false;
         //escapeSequence.changeDisplay();
         output = termDisplay.createDisplay_();
-        spannable = new SpannableString(output);
-        result = HtmlParser.toHtml(spannable);
-        inputEditText.setText(Html.fromHtml(result));
+        if (!termDisplay.isColorChange()){
+            inputEditText.setText(output);
+        } else {
+            spannable = new SpannableString(output);
+            result = HtmlParser.toHtml(spannable);
+            inputEditText.setText(Html.fromHtml(result));
+        }
         enterPutFlag = true;
         displayingFlag = false;
         receivingFlag = true;
