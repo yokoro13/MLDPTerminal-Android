@@ -199,8 +199,6 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                termDisplay.setColorChange(true);
-                termDisplay.setDefaultColor(0x00ff00);
                 isBtn_ctl = true;
             }
         });
@@ -1131,7 +1129,6 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void scrollDown(){
-
         if(termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns() ){
             moveCursorY(-1);
             termDisplay.addTopRow(1);
