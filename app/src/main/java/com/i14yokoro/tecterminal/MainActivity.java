@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.Html;
@@ -113,6 +114,11 @@ public class MainActivity extends AppCompatActivity{
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                .detectAll()
+                .penaltyLog()
+                .build());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -207,7 +213,8 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 //escapeSequence.moveSelection(100,100);
-                changeDisplay();
+                for (int i = 0; i < 100; i++)
+                    changeDisplay();
                 isBtn_ctl = true;
             }
         });
@@ -385,16 +392,7 @@ public class MainActivity extends AppCompatActivity{
         public void onTextChanged(CharSequence cs, int start, int before, int count) {
             //before_str = inputEditText.getText().toString();
 
-            if (count > before) {
-                if (receivingFlag) {
-                    Log.d("RNsend", cs.subSequence(start + before, start + count).toString());
-                    isWriting = true;
-                    bleService.writeMLDP(cs.subSequence(start + before, start + count).toString());
-                    //isWritring = false;
-                    //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
-                    //else editFlag = true;
-                }
-            }
+
         }
 
         public void afterTextChanged(Editable edtbl) {
@@ -414,6 +412,18 @@ public class MainActivity extends AppCompatActivity{
             eStart = start;//文字列のスタート位置
             eCount = count;//追加される文字
             eBefore = before;//削除すう
+
+            if (state == State.CONNECTED && count > before) {
+                if (receivingFlag) {
+                    Log.d("RNsend", s.subSequence(start + before, start + count).toString());
+                    isWriting = true;
+                    bleService.writeMLDP(s.subSequence(start + before, start + count).toString());
+                    //isWritring = false;
+                    //bleService.writeMLDP(cs.subSequence(start + before, start + count).toString().getBytes());
+                    //else editFlag = true;
+                }
+            }
+
             //inputEditText.setBackgroundColor(Color.parseColor("#00FF00"));
         }
 
@@ -463,13 +473,13 @@ public class MainActivity extends AppCompatActivity{
                             Log.d(TAG, "ASCII code/ " + str);
                             if (inputStr.equals(LF)) {
                                 termDisplay.setCursorX(0);
+                                if (inputEditText.getLineCount() > termDisplay.getDisplayColumnSize()) {
+                                    scrollDown();
+                                }
                                 if (termDisplay.getCursorY() < termDisplay.getDisplayColumnSize()) {
                                     moveCursorY(1);
+                                    moveToSavedCursor();
                                 }
-                                //if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
-                                  //  scrollDown();
-                                //}
-                                //changeDisplay();
                             }
 
                             Log.d("termDisplay**", "row length " + Integer.toString(getSelectLineText().length()));
@@ -487,16 +497,16 @@ public class MainActivity extends AppCompatActivity{
                                 receivingFlag = true;
 
                                 termDisplay.setCursorX(0);
-                                if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
-                                    moveCursorY(1);
-                                    //changeDisplay();
+                                if (inputEditText.getLineCount() > termDisplay.getDisplayColumnSize()) {
+                                    scrollDown();
                                 }
 
-                                //if (inputEditText.getLineCount() >= termDisplay.getDisplayColumnSize()) {
-                                    //FIXME ここたぶん表示ばぐってる
-                                   // scrollDown();
-                                  //  changeDisplay();
-                                //}
+                                termDisplay.setCursorX(0);
+                                if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
+                                    moveCursorY(1);
+                                    moveToSavedCursor();
+                                }
+
 
                             }
                             //changeDisplay();
@@ -574,6 +584,7 @@ public class MainActivity extends AppCompatActivity{
             else if (MldpBluetoothService.ACTION_BLE_DATA_RECEIVED.equals(action)) {
                 Log.d(TAG, "Received intent ACTION_BLE_DATA_RECEIVED");
                 String data = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA);
+                TimingLogger logger = new TimingLogger("TAG_TEST", "onRNReceive");
 
                 Log.d("RNreceive", data);
 
@@ -807,6 +818,7 @@ public class MainActivity extends AppCompatActivity{
                      }
 
                 }
+                logger.dumpToLog();
             }
         }
     };
@@ -855,14 +867,14 @@ public class MainActivity extends AppCompatActivity{
                     case SCANNING:
                     case DISCONNECTED:
                         setProgressBarIndeterminateVisibility(false);
-                        inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
+                        //inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
                         break;
                     case CONNECTING:
                         setProgressBarIndeterminateVisibility(true);
-                        inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
+                        //inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
                         //inputEditText.removeTextChangedListener(mInputTextWatcher);
 
-                        inputEditText.addTextChangedListener(mOutgoingTextWatcher);
+                        //inputEditText.addTextChangedListener(mOutgoingTextWatcher);
                         break;
                     case CONNECTED:
                         //addNewLine("connected to " + bleDeviceName);
@@ -874,7 +886,7 @@ public class MainActivity extends AppCompatActivity{
                         setProgressBarIndeterminateVisibility(false);
                         //addNewLine("disconnected from " + bleDeviceName);
                         receivingFlag = false;
-                        inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
+                        //inputEditText.removeTextChangedListener(mOutgoingTextWatcher);
                         addNewLine("disconnected from " + bleDeviceName);
                         //inputEditText.addTextChangedListener(mInputTextWatcher);
                         break;
@@ -1185,7 +1197,7 @@ public class MainActivity extends AppCompatActivity{
             termDisplay.addTopRow(-1);
             changeDisplay();
         }
-        moveToSavedCursor();
+        //moveToSavedCursor();
     }
 
     private void scrollDown(){
@@ -1195,7 +1207,7 @@ public class MainActivity extends AppCompatActivity{
             termDisplay.addTopRow(1);
             changeDisplay();
         }
-        moveToSavedCursor();
+        //moveToSavedCursor();
         logger.dumpToLog();
     }
 }
