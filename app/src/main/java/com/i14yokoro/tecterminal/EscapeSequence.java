@@ -1,18 +1,11 @@
 package com.i14yokoro.tecterminal;
 
-import android.content.Context;
-import android.util.Log;
-import android.widget.EditText;
-
 public class EscapeSequence {
-    private String TAG = "**debug**";
     private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
 
-    private EditText editText;
     private TermDisplay termDisplay;
 
-    EscapeSequence(Context context, TermDisplay termDisplay){
-        this.editText = (EditText) ((MainActivity)context).findViewById(R.id.main_display);
+    EscapeSequence(TermDisplay termDisplay){
         this.termDisplay = termDisplay;
     }
 
@@ -24,33 +17,7 @@ public class EscapeSequence {
         termDisplay.setTopRow(top);
     }
 
-    public void moveRight(){
-
-        if(termDisplay.getCursorX() >= termDisplay.getRowLength(getSelectRowIndex()) && termDisplay.getRowText(getSelectRowIndex()).lastIndexOf(LF) != -1){
-            termDisplay.setCursorX(termDisplay.getRowLength(getSelectRowIndex()));
-        } else {
-            moveCursorX(1);
-        }
-    }
-
-    public void moveLeft(){
-
-        if(termDisplay.getCursorX() >= termDisplay.getRowLength(getSelectRowIndex()) && termDisplay.getRowText(getSelectRowIndex()).lastIndexOf(LF) != -1){
-            termDisplay.setCursorX(termDisplay.getRowLength(getSelectRowIndex()) - 2);
-        } else {
-            moveCursorX(-1);
-        }
-    }
-
-    public void moveUp(){
-        moveCursorY(-1);
-    }
-    public void moveDown(){
-        moveCursorY(1);
-    }
-
     public void moveRight(int n){
-        //012|3456 (n = 2, x = 3)-> 01234|56 (n = 2, x = 5) -> 0123456| (x = 7)
         if(termDisplay.getCursorX() + n < termDisplay.getRowLength(getSelectRowIndex())) {
             moveCursorX(n);
         } else {
@@ -80,13 +47,13 @@ public class EscapeSequence {
             termDisplay.setCursorY(0);
         } else {
             moveCursorY(-n);
-            Log.d("termDisplay***","moveUp to y: " + Integer.toString(termDisplay.getCursorY()));
+            //Log.d("termDisplay***","moveUp to y: " + Integer.toString(termDisplay.getCursorY()));
         }
         int rowLength = termDisplay.getRowLength(getSelectRowIndex());
 
         if(rowLength < termDisplay.getCursorX()){
             int add = termDisplay.getCursorX() - rowLength + 1;
-            Log.d("termDisplay***","sub curX " + Integer.toString(add));
+            //Log.d("termDisplay***","sub curX " + Integer.toString(add));
             addBlank(add);
         }
 
@@ -101,7 +68,7 @@ public class EscapeSequence {
             }
             int move = termDisplay.getCursorY() - termDisplay.getDisplaySize();//2,1のばあい
             for (int i = 0; i <= move; i++){
-                Log.d("termDisplay**", "add empty" + Integer.toString(i));
+                //Log.d("termDisplay**", "add empty" + Integer.toString(i));
                 termDisplay.addEmptyRow();
             }
         }else { //移動先が一番下の行を超えない
@@ -125,8 +92,8 @@ public class EscapeSequence {
             x = 0;
         }
         for (int i = 0; i < n; i++){
-            Log.d("termDisplay**", "add Blank"+Integer.toString(i));
-            termDisplay.insertTextItem(x, getSelectRowIndex(),"p", termDisplay.getDefaultColor());
+            //Log.d("termDisplay**", "add Blank"+Integer.toString(i));
+            termDisplay.insertTextItem(x, getSelectRowIndex(),' ', termDisplay.getDefaultColor());
         }
     }
 
@@ -190,7 +157,7 @@ public class EscapeSequence {
         if(n == 1){ //カーソルより前にある画面上の文字を消す
             for (int y = getTop(); y <= getSelectRowIndex(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
-                    termDisplay.changeText(x, y, " ");
+                    termDisplay.changeText(x, y, '\u0000');
                     if(y == getSelectRowIndex()){
                         if(x == termDisplay.getCursorX()){
                             break;
@@ -203,7 +170,7 @@ public class EscapeSequence {
         if(n == 2){ //全消去
             for (int y = getTop(); y < termDisplay.getDisplaySize() + getTop(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
-                    termDisplay.changeTextItem(x, y, " ", termDisplay.getDefaultColor());
+                    termDisplay.changeTextItem(x, y, '\u0000', termDisplay.getDefaultColor());
                 }
             }
         }
@@ -224,7 +191,7 @@ public class EscapeSequence {
 
         if(n == 1){ //カーソル以前にある文字を消す
             for (int x = 0; x <= termDisplay.getCursorX(); x++){
-                termDisplay.changeText(x, getSelectRowIndex(), " ");
+                termDisplay.changeText(x, getSelectRowIndex(), ' ');
                 //termDisplay.deleteTextItem(x, termDisplay.getCursorY());
             }
         }
@@ -232,7 +199,7 @@ public class EscapeSequence {
         if(n == 2){ //全消去
             int del = termDisplay.getRowLength(getSelectRowIndex());
             for (int x = 0; x < del; x++){
-                termDisplay.changeText(x, getSelectRowIndex(), " ");
+                termDisplay.changeText(x, getSelectRowIndex(), ' ');
             }
 
         }
@@ -253,34 +220,34 @@ public class EscapeSequence {
         termDisplay.setColorChange(true);
         switch (n){
             case 0:
-                termDisplay.setDefaultColor("000000");
+                termDisplay.setDefaultColor(0x000000);
                 break;
             case 30:
-                termDisplay.setDefaultColor("000000");
+                termDisplay.setDefaultColor(0x000000);
                 break;
             case 31:
-                termDisplay.setDefaultColor("FF0000");
+                termDisplay.setDefaultColor(0xff0000);
                 break;
             case 32:
-                termDisplay.setDefaultColor("008000");
+                termDisplay.setDefaultColor(0x008000);
                 break;
             case 33:
-                termDisplay.setDefaultColor("FFFF00");
+                termDisplay.setDefaultColor(0xFFFF00);
                 break;
             case 34:
-                termDisplay.setDefaultColor("0000FF");
+                termDisplay.setDefaultColor(0x0000FF);
                 break;
             case 35:
-                termDisplay.setDefaultColor("FF00FF");
+                termDisplay.setDefaultColor(0xFF00FF);
                 break;
             case 36:
-                termDisplay.setDefaultColor("00FFFF");
+                termDisplay.setDefaultColor(0x00FFFF);
                 break;
             case 37:
-                termDisplay.setDefaultColor("FFFFFF");
+                termDisplay.setDefaultColor(0xFFFFFF);
                 break;
             case 39:
-                termDisplay.setDefaultColor("000000");
+                termDisplay.setDefaultColor(0x000000);
                 break;
             default:
                 //termDisplay.setDefaultColor("000000");
@@ -289,10 +256,6 @@ public class EscapeSequence {
 
     private int getSelectRowIndex() {
         return termDisplay.getCursorY() + termDisplay.getTopRow();
-    }
-
-    private String getSelectLineText(){
-        return termDisplay.getRowText(getSelectRowIndex());
     }
 
     private void moveCursorX(int x){
