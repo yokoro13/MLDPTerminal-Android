@@ -199,6 +199,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 isBtn_ctl = true;
+                moveToSavedCursor();
             }
         });
 
@@ -400,7 +401,7 @@ public class MainActivity extends AppCompatActivity{
             Log.d(TAG, "afterTextChange");
 
             //TODO ここの高速化
-            if (str.matches("[\\p{ASCII}]*" ) && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
+            if (str.matches("[\\x20-\\x7F\\x0a]") && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!displayingFlag) {
                     if (enterPutFlag) { //無限ループ防止
                         if (termDisplay.getCursorX() > getSelectLineText().length()) {
@@ -409,6 +410,11 @@ public class MainActivity extends AppCompatActivity{
                         if (eBefore > 0) {
                             if (termDisplay.getCursorX() > 0) {
                                 moveCursorX(-1);
+                                if (state == State.CONNECTED){
+                                    receivingFlag = false;
+                                    bleService.writeMLDP(" ");
+                                    receivingFlag = true;
+                                }
                             }
                             changeDisplay();
                         }
@@ -546,6 +552,8 @@ public class MainActivity extends AppCompatActivity{
 
                 //FIXME エスケープシーケンスの英語部分が表示されてしまう
                  if (data != null) {
+                     String[] strings = data.split("", -1);
+                     Log.d("debug****", "str[]" + strings[cnt+1]);
                      String str="";
                      byte[] utf = data.getBytes(StandardCharsets.UTF_8);
                      for (byte b : utf) {
@@ -582,10 +590,10 @@ public class MainActivity extends AppCompatActivity{
                                  escapeMoveFlag = false;
                              default:
 
-                                 if (escapeState == EscapeState.SQUARE && data.matches("[0-9]")) {
+                                 if (escapeState == EscapeState.SQUARE && strings[cnt+1].matches("[0-9]")) {
                                      Log.d(TAG, "move flag is true");
-                                     escapeMoveNum += data;
-                                     clear += data;
+                                     escapeMoveNum += strings[cnt+1];
+                                     clear += strings[cnt+1];
                                      if (Integer.parseInt(escapeMoveNum) > 1000 || Integer.parseInt(clear) > 1000) {
                                          escapeMoveNum = "1000";
                                          clear = "1000";
@@ -593,24 +601,27 @@ public class MainActivity extends AppCompatActivity{
                                      escapeMoveFlag = true;
                                      break;
                                  }
-                                 if (escapeState == EscapeState.SQUARE && data.equals(";")) {
+                                 if (escapeState == EscapeState.SQUARE && strings[cnt+1].equals(";")) {
                                      if (escapeMoveFlag) {
                                          h1 = Integer.parseInt(escapeMoveNum);
                                      } else {
                                          h1 = 1;
                                      }
                                      escapeMoveNum = "";
+                                     clear = "";
                                      Hflag = true;
                                      escapeMoveFlag = false;
                                      break;
                                  }
-                                 if (Hflag && !data.matches("[Hf]")) {
+                                 if (Hflag && !strings[cnt+1].matches("[Hf]")) {
                                      escapeMoveNum = "";
+                                     clear = "";
+                                     escapeMoveFlag = false;
                                      escapeState = EscapeState.NONE;
                                      break;
                                  }
                                  if (escapeState == EscapeState.SQUARE) {
-                                     if (data.matches("[A-HJKSTfm]")) {
+                                     if (strings[cnt+1].matches("[A-HJKSTfm]")) {
                                          //escapeシーケンス用
                                          int move;
                                          int clearNum;
@@ -731,18 +742,15 @@ public class MainActivity extends AppCompatActivity{
                                              default:
                                                  break;
                                          }
-                                         changeDisplay();
                                          escapeMoveFlag = false;
                                          escapeState = EscapeState.NONE;
                                          break;
                                      }
                                  }
+
                                  editable = inputEditText.getText();
                                  escapeState = EscapeState.NONE;
                                  receivingFlag = false;
-
-                                 //FIXME よくわからん細いのがあるのでなおす
-                                 //FIXME 最後の部分がこない
 
                                  String string;
                                  string = Character.toString(data.charAt(cnt));
@@ -753,16 +761,14 @@ public class MainActivity extends AppCompatActivity{
                                  receivingFlag = false;
                                  editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), string);
                                  receivingFlag = true;
-
-                                 receivingFlag = true;
                                  escapeMoveFlag = false;
 
                                  break;
                          }
                          cnt++;
-                         changeDisplay();
-                     }
 
+                     }
+                     changeDisplay();
                 }
             }
         }
@@ -894,19 +900,13 @@ public class MainActivity extends AppCompatActivity{
     };
 
     private void addNewLine(String newText){
-        //enterPutFlag = false;
         receivingFlag = false;
         for(int i = 0; i < newText.length(); i++){
             inputEditText.append(Character.toString(newText.charAt(i)));
         }
         inputEditText.append("\n");
-        //termDisplay.setTextItem(LF, termDisplay.getDefaultColor());
         termDisplay.setCursorX(0);
         receivingFlag = true;
-        //moveCursorY(2);
-        //changeDisplay();
-        //enterPutFlag = true;
-        //receivingFlag = true;
     }
 
     private int getMaxRowLength(){
@@ -996,25 +996,16 @@ public class MainActivity extends AppCompatActivity{
                 imm.hideSoftInputFromWindow(v.getWindowToken(),0);
             }
     }
-
-    private void test(){
-        for(int i = 0; i < 100; i++){
-            addNewLine(Integer.toString(i));
-        }
-        changeDisplay();
-    }
-
+    
     private void changeDisplay(){
-        String output;
         displayingFlag = true;
         enterPutFlag = false;
         receivingFlag = false;
-        //escapeSequence.changeDisplay();
-        output = termDisplay.createDisplay_();
+
         if (!termDisplay.isColorChange()){
-            inputEditText.setText(output);
+            inputEditText.setText(termDisplay.createDisplay_());
         } else {
-            spannable = new SpannableString(output);
+            spannable = new SpannableString(termDisplay.createDisplay_());
             result = HtmlParser.toHtml(spannable);
             inputEditText.setText(Html.fromHtml(result));
         }
