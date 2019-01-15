@@ -49,7 +49,6 @@ public class MainActivity extends AppCompatActivity{
     private static final String TAG = "debug***";
 
     private final char LF = '\n'; //システムの改行コードを検出
-    //private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
     private EditText inputEditText; //ディスプレイのEdittext
 
     private static final String PREFS = "PREFS";
@@ -124,7 +123,7 @@ public class MainActivity extends AppCompatActivity{
 
         Log.d(TAG, "maxRow "+Integer.toString(getMaxRowLength()) +"maxColumn" + Integer.toString(getMaxColumnLength()));
 
-        escapeSequence = new EscapeSequence(this, termDisplay); //今のContentを渡す
+        escapeSequence = new EscapeSequence(termDisplay); //今のContentを渡す
 
         state = State.STARTING;
         connectTimeoutHandler = new Handler();
@@ -543,17 +542,17 @@ public class MainActivity extends AppCompatActivity{
                 updateConnectionState();
             }
             else if (MldpBluetoothService.ACTION_BLE_DATA_RECEIVED.equals(action)) {
-                Log.d(TAG, "Received intent ACTION_BLE_DATA_RECEIVED");
+                //Log.d(TAG, "Received intent ACTION_BLE_DATA_RECEIVED");
                 String data = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA);
 
-                Log.d("RNreceive", data);
+                //Log.d("RNreceive", data);
 
                 int cnt = 0;
 
                 //FIXME エスケープシーケンスの英語部分が表示されてしまう
                  if (data != null) {
                      String[] strings = data.split("", -1);
-                     Log.d("debug****", "str[]" + strings[cnt+1]);
+                     //Log.d("debug****", "str[]" + strings[cnt+1]);
                      String str="";
                      byte[] utf = data.getBytes(StandardCharsets.UTF_8);
                      for (byte b : utf) {
@@ -996,7 +995,7 @@ public class MainActivity extends AppCompatActivity{
                 imm.hideSoftInputFromWindow(v.getWindowToken(),0);
             }
     }
-    
+
     private void changeDisplay(){
         displayingFlag = true;
         enterPutFlag = false;
@@ -1013,24 +1012,6 @@ public class MainActivity extends AppCompatActivity{
         displayingFlag = false;
         receivingFlag = true;
         //showDisplay();
-    }
-
-
-    private void showListContents(){
-        Log.d("termDisplay**", "******showListContent******");
-        String row = "";
-        for (int y = 0; y < termDisplay.getTotalColumns(); y++){
-            for (int x = 0; x < termDisplay.getRowLength(y); x++){
-                row = row + termDisplay.getText(x, y);
-                if(termDisplay.getText(x, y) == '\u0000'){
-                    //row = row + LF;
-                }
-
-            }
-            row = row + LF;
-            System.out.println("termDisplay**" + y + row);
-            row = "";
-        }
     }
 
     private String getSelectLineText(){
