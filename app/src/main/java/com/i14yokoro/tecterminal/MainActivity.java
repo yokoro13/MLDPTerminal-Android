@@ -41,9 +41,6 @@ import android.widget.EditText;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * TODO RN側からきた文字の処理の仕方を考える
- */
 public class MainActivity extends AppCompatActivity{
 
     private static final String TAG = "debug***";
@@ -386,6 +383,7 @@ public class MainActivity extends AppCompatActivity{
                             case "C":
                                 send = "\u0003";
                         }
+                        isBtn_ctl = false;
                     }
                     bleService.writeMLDP(send);
                 }
@@ -399,7 +397,8 @@ public class MainActivity extends AppCompatActivity{
 
             Log.d(TAG, "afterTextChange");
 
-            if (str.matches("[\\x20-\\x7f\\x0a\\u232b]") && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
+            //TODO 削除の文字こーどっわからん
+            if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!displayingFlag) {
                     if (enterPutFlag) { //無限ループ防止
                         if (termDisplay.getCursorX() > getSelectLineText().length()) {
@@ -541,22 +540,25 @@ public class MainActivity extends AppCompatActivity{
 
                 //Log.d("RNreceive", data);
 
-                int cnt = 0;
+                int cnt = 1;
 
-                //FIXME エスケープシーケンスの英語部分が表示されてしまう
                  if (data != null) {
                      String[] strings = data.split("", -1);
-                     Log.d("debug****", "str[]" + strings[cnt+1]);
-                     String str="";
+                     Log.d("debug****", "str[]" + strings[cnt]);
                      byte[] utf = data.getBytes(StandardCharsets.UTF_8);
                      for (byte b : utf) {
-                         //stringにする必要ある？
-                         str = Integer.toHexString(b & 0xff);
 
-                         switch (str) {
+                         switch (b) {
                              //TODO タブとバックスペースつくる
                              case KeyHexString.KEY_BS:
+                                 moveCursorX(-1);
+                                 escapeState = EscapeState.NONE;
+                                 escapeMoveFlag = false;
+                                 break;
+                             case KeyHexString.KEY_HT:
 
+                                 escapeState = EscapeState.NONE;
+                                 escapeMoveFlag = false;
                                  break;
                              case KeyHexString.KEY_DEL:
                                  escapeState = EscapeState.NONE;
@@ -587,10 +589,10 @@ public class MainActivity extends AppCompatActivity{
                                  escapeMoveFlag = false;
                              default:
 
-                                 if (escapeState == EscapeState.SQUARE && strings[cnt+1].matches("[0-9]")) {
+                                 if (escapeState == EscapeState.SQUARE && strings[cnt].matches("[0-9]")) {
                                      Log.d(TAG, "move flag is true");
-                                     escapeMoveNum += strings[cnt+1];
-                                     clear += strings[cnt+1];
+                                     escapeMoveNum += strings[cnt];
+                                     clear += strings[cnt];
                                      if (Integer.parseInt(escapeMoveNum) > 1000 || Integer.parseInt(clear) > 1000) {
                                          escapeMoveNum = "1000";
                                          clear = "1000";
@@ -598,7 +600,7 @@ public class MainActivity extends AppCompatActivity{
                                      escapeMoveFlag = true;
                                      break;
                                  }
-                                 if (escapeState == EscapeState.SQUARE && strings[cnt+1].equals(";")) {
+                                 if (escapeState == EscapeState.SQUARE && strings[cnt].equals(";")) {
                                      if (escapeMoveFlag) {
                                          h1 = Integer.parseInt(escapeMoveNum);
                                      } else {
@@ -610,7 +612,7 @@ public class MainActivity extends AppCompatActivity{
                                      escapeMoveFlag = false;
                                      break;
                                  }
-                                 if (Hflag && !strings[cnt+1].matches("[Hf]")) {
+                                 if (Hflag && !strings[cnt].matches("[Hf]")) {
                                      escapeMoveNum = "";
                                      clear = "";
                                      escapeMoveFlag = false;
@@ -618,7 +620,7 @@ public class MainActivity extends AppCompatActivity{
                                      break;
                                  }
                                  if (escapeState == EscapeState.SQUARE) {
-                                     if (strings[cnt+1].matches("[A-HJKSTfm]")) {
+                                     if (strings[cnt].matches("[A-HJKSTfm]")) {
                                          //escapeシーケンス用
                                          int move;
                                          int clearNum;
@@ -632,7 +634,7 @@ public class MainActivity extends AppCompatActivity{
                                          escapeMoveNum = "";
 
                                          Log.d(TAG, "moveFlag true && A-H");
-                                         switch (str) {
+                                         switch (b) {
                                              case KeyHexString.KEY_A:
                                                  if (move >= termDisplay.getDisplayColumnSize())
                                                      move = termDisplay.getDisplayColumnSize() - 1;
@@ -749,14 +751,12 @@ public class MainActivity extends AppCompatActivity{
                                  escapeState = EscapeState.NONE;
                                  receivingFlag = false;
 
-                                 String string;
-                                 string = Character.toString(data.charAt(cnt));
-                                 if (string.equals("\u0020")) {
-                                     string = " ";
+                                 if (strings[cnt].equals("\u0020")) {
+                                     strings[cnt] = " ";
                                  }
 
                                  receivingFlag = false;
-                                 editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), string);
+                                 editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), strings[cnt]);
                                  receivingFlag = true;
                                  escapeMoveFlag = false;
 
@@ -1080,7 +1080,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void scrollUp(){
-        if(termDisplay.getTopRow() -1 >= 0){
+        if(termDisplay.getTopRow() - 1 >= 0 ){
             if (termDisplay.getCursorY() + 1 < termDisplay.getDisplayColumnSize()) {
                 moveCursorY(1);
             }
@@ -1090,10 +1090,12 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void scrollDown(){
-        if(termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns() ){
-            moveCursorY(-1);
-            termDisplay.addTopRow(1);
-            changeDisplay();
+        if (termDisplay.getTotalColumns() > termDisplay.getDisplayColumnSize()) {
+            if (termDisplay.getTopRow() + 1 < termDisplay.getTotalColumns()) {
+                moveCursorY(-1);
+                termDisplay.addTopRow(1);
+                changeDisplay();
+            }
         }
     }
 }

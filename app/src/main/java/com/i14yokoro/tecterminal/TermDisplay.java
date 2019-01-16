@@ -71,17 +71,7 @@ public class TermDisplay {
         }
     }
 
-
-    public void addTextItemOverSize(int y, char text, int color){
-        TextItem textItem = new TextItem(text, color);
-        ArrayList<TextItem> items = new ArrayList<>();
-        items.add(textItem);
-        //Log.d(TAG, "Add new line1");
-        textList.add(items);
-    }
-
     public void addEmptyRow(){
-        TextItem textItem = new TextItem('\u0000', getDefaultColor());
         ArrayList<TextItem> items1 = new ArrayList<>();
         textList.add(items1);
         //Log.d(TAG, "Add new line1");
@@ -254,11 +244,11 @@ public class TermDisplay {
     }
 
     public String getRowText(int y){
-        String str = "";
+        StringBuilder str = new StringBuilder();
         for (int x = 0; x < getRowLength(y); x++){
-            str += getText(x, y);
+            str.append(getText(x, y));
         }
-        return str;
+        return str.toString();
     }
 
     public int getDisplaySize() {

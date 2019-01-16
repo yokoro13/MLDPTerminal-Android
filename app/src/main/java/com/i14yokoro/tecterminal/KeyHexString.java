@@ -2,28 +2,27 @@ package com.i14yokoro.tecterminal;
 
 class KeyHexString {
 
-    static final String KEY_A = "41";
-    static final String KEY_B = "42";
-    static final String KEY_C = "43";
-    static final String KEY_D = "44";
-    static final String KEY_E = "45";
-    static final String KEY_F = "46";
-    static final String KEY_G = "47";
-    static final String KEY_H = "48";
-    static final String KEY_I = "48";
-    static final String KEY_J = "4a";
-    static final String KEY_K = "4b";
-    static final String KEY_S = "53";
-    static final String KEY_T = "54";
-    static final String KEY_f = "66";
-    static final String KEY_m = "6D";
+    static final int KEY_A = 0x41;
+    static final int KEY_B = 0x42;
+    static final int KEY_C = 0x43;
+    static final int KEY_D = 0x44;
+    static final int KEY_E = 0x45;
+    static final int KEY_F = 0x46;
+    static final int KEY_G = 0x47;
+    static final int KEY_H = 0x48;
+    static final int KEY_J = 0x4a;
+    static final int KEY_K = 0x4b;
+    static final int KEY_S = 0x53;
+    static final int KEY_T = 0x54;
+    static final int KEY_f = 0x66;
+    static final int KEY_m = 0x6D;
 
-    static final String KEY_SQUARE_LEFT = "5b";
+    static final int KEY_SQUARE_LEFT = 0x5b;
 
-    static final String KEY_DEL = "7f";
-    static final String KEY_ENTER = "d";
-    static final String KEY_ESC = "1b";
+    static final int KEY_DEL = 0x7f;
+    static final int KEY_ENTER = 0x0d;
+    static final int KEY_ESC = 0x1b;
 
-    static final String KEY_BS = "8";
-    static final String KEY_HT = "9";
+    static final int KEY_BS = 0x08;
+    static final int KEY_HT = 0x09;
 }

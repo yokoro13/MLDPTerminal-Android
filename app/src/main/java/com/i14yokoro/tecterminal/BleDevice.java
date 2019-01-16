@@ -1,5 +1,7 @@
 package com.i14yokoro.tecterminal;
 
+import android.support.annotation.NonNull;
+
 class BleDevice {
     private String address;
     private String name;
@@ -30,6 +32,7 @@ class BleDevice {
         return this.address.hashCode();
     }
 
+    @NonNull
     @Override
     public String toString(){
         String str;
