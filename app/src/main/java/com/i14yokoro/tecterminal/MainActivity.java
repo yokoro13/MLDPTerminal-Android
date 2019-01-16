@@ -444,7 +444,6 @@ public class MainActivity extends AppCompatActivity{
                                 }
                                 if (termDisplay.getCursorY() < termDisplay.getDisplayColumnSize()) {
                                     moveCursorY(1);
-                                    moveToSavedCursor();
                                 }
                             }
 
@@ -547,13 +546,18 @@ public class MainActivity extends AppCompatActivity{
                 //FIXME エスケープシーケンスの英語部分が表示されてしまう
                  if (data != null) {
                      String[] strings = data.split("", -1);
-                     //Log.d("debug****", "str[]" + strings[cnt+1]);
+                     Log.d("debug****", "str[]" + strings[cnt+1]);
                      String str="";
                      byte[] utf = data.getBytes(StandardCharsets.UTF_8);
                      for (byte b : utf) {
+                         //stringにする必要ある？
                          str = Integer.toHexString(b & 0xff);
 
                          switch (str) {
+                             //TODO タブとバックスペースつくる
+                             case KeyHexString.KEY_BS:
+
+                                 break;
                              case KeyHexString.KEY_DEL:
                                  escapeState = EscapeState.NONE;
                                  escapeMoveFlag = false;
@@ -563,7 +567,6 @@ public class MainActivity extends AppCompatActivity{
                                  receivingFlag = false;
                                  editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), "\n");
                                  receivingFlag = true;
-
                                  changeDisplay();
                                  escapeState = EscapeState.NONE;
                                  escapeMoveFlag = false;

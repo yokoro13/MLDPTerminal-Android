@@ -1,8 +1,6 @@
 package com.i14yokoro.tecterminal;
 
 public class EscapeSequence {
-    private final String LF = System.getProperty("line.separator"); //システムの改行コードを検出
-
     private TermDisplay termDisplay;
 
     EscapeSequence(TermDisplay termDisplay){

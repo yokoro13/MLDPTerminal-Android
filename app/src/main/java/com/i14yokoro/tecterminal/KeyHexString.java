@@ -23,4 +23,7 @@ class KeyHexString {
     static final String KEY_DEL = "7f";
     static final String KEY_ENTER = "d";
     static final String KEY_ESC = "1b";
+
+    static final String KEY_BS = "8";
+    static final String KEY_HT = "9";
 }
