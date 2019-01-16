@@ -191,6 +191,15 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
+        findViewById(R.id.btn_tab).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (state == State.CONNECTED){
+                    bleService.writeMLDP("\u0009");
+                }
+            }
+        });
+
         findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
