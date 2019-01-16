@@ -150,10 +150,10 @@ public class MldpBluetoothScanActivity extends ListActivity {
             if (MldpBluetoothService.ACTION_BLE_SCAN_RESULT.equals(action)) {
                 Log.d(TAG, "Scan scan result received");
                 final BleDevice device = new BleDevice(intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_ADDRESS), intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_NAME)); //Create new item to hold name and address
-//                if (device.getName().contains("Bob")) {
-//                }
-                bleDeviceListAdapter.addDevice(device);
-                bleDeviceListAdapter.notifyDataSetChanged();
+                if (device.getName() != null && device.getName().contains("RN")) {
+                    bleDeviceListAdapter.addDevice(device);
+                    bleDeviceListAdapter.notifyDataSetChanged();
+                }
             }
         }
     };

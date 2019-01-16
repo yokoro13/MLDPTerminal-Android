@@ -399,21 +399,16 @@ public class MainActivity extends AppCompatActivity{
 
             Log.d(TAG, "afterTextChange");
 
-            //TODO ここの高速化
-            if (str.matches("[\\x20-\\x7F\\x0a]") && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
+            if (str.matches("[\\x20-\\x7f\\x0a\\u232b]") && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!displayingFlag) {
                     if (enterPutFlag) { //無限ループ防止
                         if (termDisplay.getCursorX() > getSelectLineText().length()) {
                             termDisplay.setCursorX(getSelectLineText().length());
                         }
                         if (eBefore > 0) {
+                            //TODO 削除キナ会なおす
                             if (termDisplay.getCursorX() > 0) {
                                 moveCursorX(-1);
-                                if (state == State.CONNECTED){
-                                    receivingFlag = false;
-                                    bleService.writeMLDP(" ");
-                                    receivingFlag = true;
-                                }
                             }
                             changeDisplay();
                         }
@@ -768,6 +763,7 @@ public class MainActivity extends AppCompatActivity{
 
                      }
                      changeDisplay();
+                     moveToSavedCursor();
                 }
             }
         }
@@ -1011,11 +1007,10 @@ public class MainActivity extends AppCompatActivity{
         enterPutFlag = true;
         displayingFlag = false;
         receivingFlag = true;
-        //showDisplay();
     }
 
     private String getSelectLineText(){
-        Log.d("select row index", "select line "+Integer.toString(getSelectRowIndex()));
+        Log.d("select row index", "select line ");
         return termDisplay.getRowText(getSelectRowIndex());
     }
 
@@ -1035,10 +1030,10 @@ public class MainActivity extends AppCompatActivity{
             int cursor;
             cursor = getRowLength(termDisplay.getCursorX(), termDisplay.getCursorY());
 
-            Log.d("coordinate**", "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
+            //Log.d("coordinate**", "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
             if (cursor >= 0) {
                 inputEditText.setSelection(cursor);
-                Log.d("coordinate**", "cursor" + cursor);
+                //Log.d("coordinate**", "cursor" + cursor);
             }
             selectionMovingFlag = false;
         }
@@ -1058,27 +1053,22 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
         }
-
         int rowLength = termDisplay.getRowLength(termDisplay.getTopRow() + y);
         String rowText = termDisplay.getRowText(termDisplay.getTopRow() + y);
+        if(rowLength == 0) x = 0;        //空
+        if (x > rowLength){        //移動先の文字数がカーソルXよりも短い
 
-        //空
-        if(rowLength == 0) x = 0;
-        //移動先の文字数がカーソルXよりも短い
-        if (x > rowLength){
             if (rowText.contains("\n")) {
                 x = rowLength - 1;
             } else {
                 x = rowLength;
             }
         }
-        //カーソルXが移動先の文字数と等しくて，改行コードが存在する
-        if(x == rowLength && rowText.lastIndexOf(LF) != -1){
+        if(x == rowLength && rowText.lastIndexOf(LF) != -1){        //カーソルXが移動先の文字数と等しくて，改行コードが存在する
+
             x = rowLength-1;
         }
-
-        Log.d("coordinate**", "length: " + x);
-
+        //Log.d("coordinate**", "length: " + x);
         length = length + x;
         if (length > inputEditText.length()){
             length = inputEditText.length();
