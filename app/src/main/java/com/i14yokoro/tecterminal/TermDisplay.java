@@ -223,7 +223,7 @@ public class TermDisplay {
                     break;
                 }
             }
-            if (y < displayColumnSize-1 && y + getTopRow() < totalColumns - 1 && !getRowText(y + getTopRow()).contains("\n") && textList.get(y + topRow).size() < getDisplayRowSize()) {
+            if (y+1 < displayColumnSize && y + getTopRow() < totalColumns - 1 && !getRowText(y + getTopRow()).contains("\n") && textList.get(y + topRow).size() < getDisplayRowSize()) {
                 sb.append(LF);
             }
             displayY++;

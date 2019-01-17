@@ -248,7 +248,7 @@ public class EscapeSequence {
                 termDisplay.setDefaultColor(0x000000);
                 break;
             default:
-                //termDisplay.setDefaultColor("000000");
+                //termDisplay.setDefaultColor(0x000000);
         }
     }
 
