@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity{
 
     float r;
 
-    private int eStart, eCount, eBefore;
+    private int eStart, eCount;
 
     private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
     private boolean editingFlag = true;
@@ -193,7 +193,6 @@ public class MainActivity extends AppCompatActivity{
                 if(state == State.CONNECTED) {
                     bleService.writeMLDP("\u001b");
                 }
-                Log.d("termDisplay**", "display size" + termDisplay.getDisplaySize());
             }
         });
 
@@ -261,7 +260,6 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
-        //TODO 削除 onKeyためしてみる
         inputEditText.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
@@ -397,14 +395,12 @@ public class MainActivity extends AppCompatActivity{
     private final TextWatcher mInputTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
         }
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
             eStart = start;//文字列のスタート位置
             eCount = count;//追加される文字
-            eBefore = before;//削除すう
 
             if (state == State.CONNECTED && count > before) {
                 if (receivingFlag) {
@@ -430,19 +426,11 @@ public class MainActivity extends AppCompatActivity{
 
             Log.d(TAG, "afterTextChange");
 
-            //TODO 削除の文字こーどっわからん
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!displayingFlag) {
                     if (enterPutFlag) { //無限ループ防止
                         if (termDisplay.getCursorX() > getSelectLineText().length()) {
                             termDisplay.setCursorX(getSelectLineText().length());
-                        }
-                        if (eBefore > 0) {
-                            //TODO 削除キナ会なおす
-                            if (termDisplay.getCursorX() > 0) {
-                                moveCursorX(-1);
-                            }
-                            changeDisplay();
                         }
                         char inputStr = str.charAt(0);
 
@@ -480,7 +468,7 @@ public class MainActivity extends AppCompatActivity{
 
                         if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n")) {
                             termDisplay.setCursorX(0);
-                            if (inputEditText.getLineCount() > displayColumnSize) {
+                            if (inputEditText.getLineCount() >= displayColumnSize) {
                                 scrollDown();
                             }
 
@@ -930,7 +918,6 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private int getMaxRowLength(){
-        //int weight = input.getWidth();
         WindowManager wm =  (WindowManager)getSystemService(WINDOW_SERVICE);
         Display disp = null;
         if (wm != null) {
@@ -941,7 +928,6 @@ public class MainActivity extends AppCompatActivity{
         if (disp != null) {
             dispWidth = disp.getWidth();
         }
-        Log.d(TAG, "display width is " + Integer.toString(dispWidth));
         int textWidth = getTextWidth();
         return dispWidth/textWidth;
     }
@@ -957,37 +943,26 @@ public class MainActivity extends AppCompatActivity{
             dispHeight = disp.getHeight();
         }
 
-        Log.d(TAG, "display height is " + dispHeight);
-
         int height = dispHeight - 100;
         int text = (int)getTextHeight();
-        Log.d(TAG, Float.toString(height/text));
 
         return (height/text)-1;
     }
 
     private int getTextWidth(){
-
         // TypefaceがMonospace 「" "」の幅を取得
         Paint paint = new Paint();
         paint.setTextSize(inputEditText.getTextSize());
         paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
-        int textWidth = (int)paint.measureText(" ");
-
-        Log.d(TAG, "text width is " + Integer.toString(textWidth));
-        return textWidth;
+        return (int)paint.measureText(" ");
     }
 
     private float getTextHeight(){
-
         Paint paint = new Paint();
         paint.setTextSize(inputEditText.getTextSize());
         paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
         Paint.FontMetrics fontMetrics = paint.getFontMetrics();
-        float textHeight = Math.abs(fontMetrics.top) + Math.abs(fontMetrics.bottom);
-
-        Log.d(TAG, "text Height is " + textHeight);
-        return textHeight;
+        return Math.abs(fontMetrics.top) + Math.abs(fontMetrics.bottom);
     }
 
     //選択中の行番号を返す
@@ -1056,10 +1031,8 @@ public class MainActivity extends AppCompatActivity{
             int cursor;
             cursor = getRowLength(termDisplay.getCursorX(), termDisplay.getCursorY());
 
-            //Log.d("coordinate**", "moved to " + termDisplay.getCursorX() + ", " + termDisplay.getCursorY());
             if (cursor >= 0) {
                 inputEditText.setSelection(cursor);
-                //Log.d("coordinate**", "cursor" + cursor);
             }
             selectionMovingFlag = false;
         }
@@ -1069,8 +1042,6 @@ public class MainActivity extends AppCompatActivity{
         int length = 0;
         for (int i = 0; i < y; i++){
             length = length + termDisplay.getRowLength(termDisplay.getTopRow() + i);
-            //Log.d("coordinate**", "contents: " + termDisplay.getRowText(termDisplay.getTopRow() + i) +
-              //                              "length: " + termDisplay.getRowLength(termDisplay.getTopRow() + i));
             if (termDisplay.getRowLength(termDisplay.getTopRow() + i) == 0){
                 length++;
             } else {
@@ -1094,7 +1065,6 @@ public class MainActivity extends AppCompatActivity{
 
             x = rowLength-1;
         }
-        //Log.d("coordinate**", "length: " + x);
         length = length + x;
         if (length > inputEditText.length()){
             length = inputEditText.length();
