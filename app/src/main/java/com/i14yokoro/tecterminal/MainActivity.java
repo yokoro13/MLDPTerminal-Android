@@ -103,7 +103,9 @@ public class MainActivity extends AppCompatActivity{
     private String result = "";
     private SpannableString spannable;
 
-    int displayRowSize, displayColumnSize;
+    private int displayRowSize, displayColumnSize;
+
+    private boolean isInserting = false;
 
 
     @SuppressLint("ClickableViewAccessibility")
@@ -447,10 +449,14 @@ public class MainActivity extends AppCompatActivity{
                             if(inputStr != LF) { //LFじゃない
                                 termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
                                 moveCursorX(1);
+                                if (termDisplay.getCursorX() < displayRowSize) {
+                                    isInserting = true;
+                                }
                             } else { //LF
+                                /**
                                 if(termDisplay.getRowLength(getSelectRowIndex())+1 < displayRowSize){ //
                                     termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                                }
+                                }**/
                             }
                             changeDisplay();
                         }
@@ -474,9 +480,13 @@ public class MainActivity extends AppCompatActivity{
 
                             if (termDisplay.getCursorY() + 1 < displayColumnSize) {
                                 moveCursorY(1);
-                                moveToSavedCursor();
+                                changeDisplay();
+                                //moveToSavedCursor();
+
                             }
                         }
+                        isInserting = false;
+                        moveToSavedCursor();
 
                     }
                 }
@@ -489,7 +499,6 @@ public class MainActivity extends AppCompatActivity{
                 }
                 isWriting = false;
             }
-            moveToSavedCursor();
             inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         }
     };
@@ -999,6 +1008,7 @@ public class MainActivity extends AppCompatActivity{
         enterPutFlag = false;
         receivingFlag = false;
 
+        //TextKeyListener.clear(inputEditText.getText());
         if (!termDisplay.isColorChange()){
             inputEditText.setText(termDisplay.createDisplay_());
         } else {
