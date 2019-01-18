@@ -761,14 +761,16 @@ public class MainActivity extends AppCompatActivity{
                                  escapeState = EscapeState.NONE;
                                  receivingFlag = false;
 
-                                 if (strings[cnt].equals("\u0020")) {
-                                     strings[cnt] = " ";
-                                 }
+                                 if(cnt <= data.length()) {
+                                     if (strings[cnt].equals("\u0020")) {
+                                         strings[cnt] = " ";
+                                     }
 
-                                 receivingFlag = false;
-                                 editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), strings[cnt]);
-                                 receivingFlag = true;
-                                 escapeMoveFlag = false;
+                                     receivingFlag = false;
+                                     editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), strings[cnt]);
+                                     receivingFlag = true;
+                                     escapeMoveFlag = false;
+                                 }
 
                                  break;
                          }
