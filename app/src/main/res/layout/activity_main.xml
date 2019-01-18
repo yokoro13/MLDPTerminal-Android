@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,47 +9,28 @@
     android:fitsSystemWindows="true"
     android:id="@+id/topLayout">
 
-    <LinearLayout
-        android:id="@+id/linear_display"
+
+    <EditText
+        android:id="@+id/main_display"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <EditText
-            android:id="@+id/main_display"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textCursorDrawable="@drawable/color_cursor"
-            android:layout_above="@id/linearLayout"
-            android:background="#00000000"
-            android:fontFamily="monospace"
-            android:gravity="top|left"
-            android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
-            android:paddingBottom="100px"
-            android:textSize="30px"
-            android:typeface="monospace" />
-
-    </LinearLayout>
-
-    <View
-        android:id="@+id/view2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/main_display"
-        android:layout_marginStart="0dp"
-        android:layout_marginTop="-121dp"
-        android:layout_weight="1" />
+        android:layout_height="match_parent"
+        android:background="#00000000"
+        android:fontFamily="monospace"
+        android:gravity="top|start"
+        android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
+        android:paddingBottom="100px"
+        android:textSize="30px"
+        android:textCursorDrawable="@drawable/color_cursor"
+        android:typeface="monospace" />
 
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="100px"
         android:fitsSystemWindows="true"
+        android:layout_alignParentBottom="true"
         android:gravity="bottom|center"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:ignore="MissingConstraints"
-        tools:layout_editor_absoluteX="0dp">
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/btn_esc"
@@ -59,11 +40,18 @@
             android:text="ESC" />
 
         <Button
+            android:id="@+id/btn_tab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="TAB"/>
+
+        <Button
             android:id="@+id/btn_ctl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="ctl" />
+            android:text="CTL" />
 
         <Button
             android:id="@+id/btn_up"
@@ -94,4 +82,4 @@
             android:text="→" />
     </LinearLayout>
 
-</LinearLayout>
+</RelativeLayout>

@@ -494,14 +494,5 @@ public class MldpBluetoothService extends Service {
             super.onScanFailed(errorCode);
             Log.e(TAG, "onScanFailed Error!");
         }
-
-//        @Override
-//        public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-//            final Intent intent = new Intent(ACTION_BLE_SCAN_RESULT);
-//            intent.putExtra(INTENT_EXTRA_SERVICE_ADDRESS, device.getAddress());
-//            intent.putExtra(INTENT_EXTRA_SERVICE_NAME, device.getName());
-//            sendBroadcast(intent);
-//            return;
-//        }
     };
 }
