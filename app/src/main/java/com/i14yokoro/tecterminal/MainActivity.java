@@ -81,21 +81,19 @@ public class MainActivity extends AppCompatActivity{
     private EscapeSequence escapeSequence;
     private TermDisplay termDisplay;
 
-    float r;
-
     private int eStart, eCount;
 
     private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
-    private boolean editingFlag = true;
-    private boolean enterPutFlag = true;
+    private boolean isEditing = true;
+    private boolean isPuttingEnter = true;
 
     private boolean Hflag = false;
 
-    private boolean selectionMovingFlag = false;
+    private boolean isMovingCursor = false;
 
     private boolean isBtn_ctl = false;
 
-    private boolean receivingFlag = true; //RN側に送りたくないものがあるときはfalseにする
+    private boolean isNotSending = true; //RN側に送りたくないものがあるときはfalseにする
     private boolean displayingFlag = false;
 
     private boolean isWriting = false;
@@ -107,6 +105,8 @@ public class MainActivity extends AppCompatActivity{
 
     private boolean isInserting = false;
 
+    private StringBuilder receivingBuffer = new StringBuilder();
+    private boolean isReceiving = false;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -405,7 +405,7 @@ public class MainActivity extends AppCompatActivity{
             eCount = count;//追加される文字
 
             if (state == State.CONNECTED && count > before) {
-                if (receivingFlag) {
+                if (isNotSending) {
                     String send = s.subSequence(start + before, start + count).toString();
                     Log.d("RNsend", send);
                     isWriting = true;
@@ -430,7 +430,7 @@ public class MainActivity extends AppCompatActivity{
 
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!displayingFlag) {
-                    if (enterPutFlag) { //無限ループ防止
+                    if (isPuttingEnter) { //無限ループ防止
                         if (termDisplay.getCursorX() > getSelectLineText().length()) {
                             termDisplay.setCursorX(getSelectLineText().length());
                         }
@@ -472,7 +472,7 @@ public class MainActivity extends AppCompatActivity{
                             }
                         }
 
-                        if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n")) {
+                        if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n") && !isInserting) {
                             termDisplay.setCursorX(0);
                             if (inputEditText.getLineCount() >= displayColumnSize) {
                                 scrollDown();
@@ -492,13 +492,14 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
             else { //ASCIIじゃなければ入力前の状態にもどす
-                if(editingFlag) {
-                    editingFlag = false;
+                if(isEditing) {
+                    isEditing = false;
                     changeDisplay();
-                    editingFlag = true;
+                    isEditing = true;
                 }
                 isWriting = false;
             }
+            moveToSavedCursor();
             inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         }
     };
@@ -558,6 +559,7 @@ public class MainActivity extends AppCompatActivity{
 
                 int cnt = 1;
 
+
                  if (data != null) {
                      String[] strings = data.split("", -1);
                      Log.d("debug****", "str[]" + strings[cnt]);
@@ -585,9 +587,9 @@ public class MainActivity extends AppCompatActivity{
                                  break;
                              case KeyHexString.KEY_ENTER:
                                  editable = inputEditText.getText();
-                                 receivingFlag = false;
+                                 isNotSending = false;
                                  editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), "\n");
-                                 receivingFlag = true;
+                                 isNotSending = true;
                                  changeDisplay();
                                  escapeState = EscapeState.NONE;
                                  escapeMoveFlag = false;
@@ -768,16 +770,16 @@ public class MainActivity extends AppCompatActivity{
 
                                  editable = inputEditText.getText();
                                  escapeState = EscapeState.NONE;
-                                 receivingFlag = false;
+                                 isNotSending = false;
 
                                  if(cnt <= data.length()) {
                                      if (strings[cnt].equals("\u0020")) {
                                          strings[cnt] = " ";
                                      }
 
-                                     receivingFlag = false;
+                                     isNotSending = false;
                                      editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), strings[cnt]);
-                                     receivingFlag = true;
+                                     isNotSending = true;
                                      escapeMoveFlag = false;
                                  }
 
@@ -842,13 +844,13 @@ public class MainActivity extends AppCompatActivity{
                         setProgressBarIndeterminateVisibility(true);
                         break;
                     case CONNECTED:
-                        receivingFlag = false;
+                        isNotSending = false;
                         addNewLine(LF + "connected to " + bleDeviceName);
                         setProgressBarIndeterminateVisibility(false);
                         break;
                     case DISCONNECTING:
                         setProgressBarIndeterminateVisibility(false);
-                        receivingFlag = false;
+                        isNotSending = false;
                         addNewLine(LF + "disconnected from " + bleDeviceName);
                         break;
                     default:
@@ -919,13 +921,13 @@ public class MainActivity extends AppCompatActivity{
     };
 
     private void addNewLine(String newText){
-        receivingFlag = false;
+        isNotSending = false;
         for(int i = 0; i < newText.length(); i++){
             inputEditText.append(Character.toString(newText.charAt(i)));
         }
         inputEditText.append("\n");
         termDisplay.setCursorX(0);
-        receivingFlag = true;
+        isNotSending = true;
     }
 
     private int getMaxRowLength(){
@@ -1005,8 +1007,8 @@ public class MainActivity extends AppCompatActivity{
 
     private void changeDisplay(){
         displayingFlag = true;
-        enterPutFlag = false;
-        receivingFlag = false;
+        isPuttingEnter = false;
+        isNotSending = false;
 
         //TextKeyListener.clear(inputEditText.getText());
         if (!termDisplay.isColorChange()){
@@ -1017,9 +1019,9 @@ public class MainActivity extends AppCompatActivity{
             inputEditText.setText(Html.fromHtml(result));
         }
 
-        enterPutFlag = true;
+        isPuttingEnter = true;
         displayingFlag = false;
-        receivingFlag = true;
+        isNotSending = true;
     }
 
     private String getSelectLineText(){
@@ -1036,8 +1038,8 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void moveToSavedCursor(){
-        if(!selectionMovingFlag) {
-            selectionMovingFlag = true;
+        if(!isMovingCursor) {
+            isMovingCursor = true;
             Log.d(TAG, "moveToSavedCursor()");
 
             int cursor;
@@ -1046,7 +1048,7 @@ public class MainActivity extends AppCompatActivity{
             if (cursor >= 0) {
                 inputEditText.setSelection(cursor);
             }
-            selectionMovingFlag = false;
+            isMovingCursor = false;
         }
     }
 
