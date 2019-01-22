@@ -216,7 +216,7 @@ public class TermDisplay{
                 } else {
                     sb.append("<font color=#").append(Integer.toHexString(getColor(x, getTopRow() + y))).append(">").append(text).append("</font>");
                 }
-                if((x == displayRowSize-1) && text != LF){
+                if((x == displayRowSize-1) && text != LF && y+1 != displayColumnSize){
                     sb.append(LF);
                     break;
                 }
