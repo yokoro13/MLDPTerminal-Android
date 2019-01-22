@@ -46,8 +46,8 @@ public class MainActivity extends AppCompatActivity{
 
     private static final String TAG = "debug***";
 
-    private final char LF = '\n'; //システムの改行コードを検出
-    private EditText inputEditText; //ディスプレイのEdittext
+    private final char LF = '\n';
+    private EditText inputEditText; //ディスプレイのEditText
 
     private static final String PREFS = "PREFS";
     private static final String PREFS_NAME = "NAME";
@@ -83,29 +83,24 @@ public class MainActivity extends AppCompatActivity{
 
     private int eStart, eCount;
 
-    private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
-    private boolean isEditing = true;
-    private boolean isPuttingEnter = true;
-
-    private boolean Hflag = false;
-
-    private boolean isMovingCursor = false;
-
-    private boolean isBtn_ctl = false;
-
-    private boolean isNotSending = false; //RN側に送りたくないものがあるときはfalseにする
-    private boolean isDisplaying = false;
-
-    private boolean isWriting = false;
-
     private String result = "";
     private SpannableString spannable;
 
     private int displayRowSize, displayColumnSize;
 
-    private boolean isInserting = false;
+    private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
+    private boolean isEditing = true; //無限ループ防止
+    private boolean isReceivingH = false; //エスケープシーケンスのHを受信したらtrue
+    private boolean isMovingCursor = false; //カーソル移動中ならtrue
+    private boolean isBtn_ctl = false; //CTLボタンを押したらtrue
+    private boolean isNotSending = false; //RN側に送りたくないものがあるときはfalseにする
+    private boolean isDisplaying = false; //画面更新中はtrue
+    private boolean isSending = false; //RNにデータを送信しているときtrue
+    private boolean isOverWriting = false; //文字を上書きするときtrue
+    private boolean isReceiving = false; //RNからデータを受信したらtrue
 
-    private boolean isReceiving = false;
+
+
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -132,6 +127,8 @@ public class MainActivity extends AppCompatActivity{
 
         state = State.STARTING;
         connectTimeoutHandler = new Handler();
+
+        inputEditText.setTextIsSelectable(false);
 
         findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -380,7 +377,7 @@ public class MainActivity extends AppCompatActivity{
             menu.removeItem(android.R.id.startSelectingText);
             menu.removeItem(android.R.id.selectTextMode);
             menu.close();
-            return true;
+            return false;
         }
 
         @Override
@@ -408,7 +405,7 @@ public class MainActivity extends AppCompatActivity{
                 if (!isNotSending) {
                     String send = s.subSequence(start + before, start + count).toString();
                     Log.d("RNsend", send);
-                    isWriting = true;
+                    isSending = true;
                     if (isBtn_ctl){
                         switch (send){
                             case "C":
@@ -428,71 +425,70 @@ public class MainActivity extends AppCompatActivity{
 
             Log.d(TAG, "afterTextChange");
 
-            if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isWriting/*&& items.get(getSelectRow()).isWritable()*/ ) {
+            if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending/*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!isDisplaying) {
-                    if (isPuttingEnter) { //無限ループ防止
-                        if (termDisplay.getCursorX() > getSelectLineText().length()) {
-                            termDisplay.setCursorX(getSelectLineText().length());
-                        }
-
-                            char inputStr = str.charAt(0);
-
-                            if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
-                                Log.d("termDisplay****", "set");
-                                if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) {
-                                    termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
-                                } else {
+                    if (termDisplay.getCursorX() > getSelectLineText().length()) {
+                        termDisplay.setCursorX(getSelectLineText().length());
+                    }
+                    char inputStr = str.charAt(0);
+                    if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
+                        Log.d("termDisplay****", "set");
+                        if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) {
+                            termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                        } else {
+                            if (inputStr != LF ) {
+                                termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                            } else { //LF
+                                if (!getSelectLineText().contains("\n")){
                                     termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
                                 }
+                            }
+                        }
+                        moveCursorX(1);
+                    } else { //insert
+                        Log.d("termDisplay****", "insert");
+                        if (inputStr != LF) { //LFじゃない
+                            termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                            if (termDisplay.getCursorX() + 1 < displayRowSize) {
+                                isOverWriting = true;
                                 moveCursorX(1);
-                            } else { //insert
-                                Log.d("termDisplay****", "insert");
-                                if (inputStr != LF) { //LFじゃない
-                                    termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                                    //TODO ここの条件式をかんがえる．
-                                    if (termDisplay.getCursorX()+1 < displayRowSize) {
-                                        isInserting = true;
-                                        moveCursorX(1);
-                                    } else {
-                                        isInserting = false;
-                                    }
-
-                                } else { //LF
-                                    if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) {
-                                        if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
-                                            termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                                        }
-                                    }
-                                }
-                                if (!isReceiving)changeDisplay();
+                            } else {
+                                isOverWriting = false;
                             }
 
-                            Log.d(TAG, "ASCII code/ " + str);
-                            if (inputStr == LF) {
-                                termDisplay.setCursorX(0);
-                                if (inputEditText.getLineCount() > displayColumnSize) {
-                                    scrollDown();
-                                }
-                                if (termDisplay.getCursorY() < displayColumnSize) {
-                                    moveCursorY(1);
+                        } else { //LF
+                            if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && !getSelectLineText().contains("\n")) {
+                                if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
+                                    termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
                                 }
                             }
-
-                            if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n") && !isInserting) {
-                                termDisplay.setCursorX(0);
-                                if (inputEditText.getLineCount() >= displayColumnSize) {
-                                    scrollDown();
-                                }
-
-                                if (termDisplay.getCursorY() + 1 < displayColumnSize) {
-                                    moveCursorY(1);
-                                    changeDisplay();
-                                    //moveToSavedCursor();
-
-                                }
-                            }
-                            isInserting = false;
+                        }
+                        if (!isReceiving)changeDisplay();
                     }
+
+                    Log.d(TAG, "ASCII code/ " + str);
+                    if (inputStr == LF) {
+                        termDisplay.setCursorX(0);
+                        if (inputEditText.getLineCount() > displayColumnSize) {
+                            scrollDown();
+                        }
+                        if (termDisplay.getCursorY() < displayColumnSize) {
+                            moveCursorY(1);
+                        }
+                    }
+
+                    if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n") && !isOverWriting) {
+                        termDisplay.setCursorX(0);
+                        if (inputEditText.getLineCount() >= displayColumnSize) {
+                            scrollDown();
+                        }
+
+                        if (termDisplay.getCursorY() + 1 < displayColumnSize) {
+                            moveCursorY(1);
+                            changeDisplay();
+                        }
+                    }
+                    isOverWriting = false;
                 }
             }
             else { //ASCIIじゃなければ入力前の状態にもどす
@@ -501,7 +497,7 @@ public class MainActivity extends AppCompatActivity{
                     if (!isReceiving) changeDisplay();
                     isEditing = true;
                 }
-                isWriting = false;
+                isSending = false;
             }
             moveToSavedCursor();
             inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
@@ -632,11 +628,11 @@ public class MainActivity extends AppCompatActivity{
                                      }
                                      escapeMoveNum = "";
                                      clear = "";
-                                     Hflag = true;
+                                     isReceivingH = true;
                                      escapeMoveFlag = false;
                                      break;
                                  }
-                                 if (Hflag && !strings[cnt].matches("[Hf]")) {
+                                 if (isReceivingH && !strings[cnt].matches("[Hf]")) {
                                      escapeMoveNum = "";
                                      clear = "";
                                      escapeMoveFlag = false;
@@ -709,7 +705,7 @@ public class MainActivity extends AppCompatActivity{
                                                  clear = "";
                                                  break;
                                              case KeyHexString.KEY_H:
-                                                 if (!Hflag) {
+                                                 if (!isReceivingH) {
                                                      h1 = 1;
                                                      move = 1;
                                                  }
@@ -718,7 +714,7 @@ public class MainActivity extends AppCompatActivity{
                                                  if (move >= displayRowSize)
                                                      move = displayRowSize - 1;
                                                  escapeSequence.moveSelection(h1, move);
-                                                 Hflag = false;
+                                                 isReceivingH = false;
                                                  escapeMoveNum = "";
                                                  clear = "";
                                                  break;
@@ -743,7 +739,7 @@ public class MainActivity extends AppCompatActivity{
                                                  clear = "";
                                                  break;
                                              case KeyHexString.KEY_f:
-                                                 if (!Hflag) {
+                                                 if (!isReceivingH) {
                                                      h1 = 1;
                                                      move = 1;
                                                  }
@@ -752,7 +748,7 @@ public class MainActivity extends AppCompatActivity{
                                                  if (move >= displayRowSize)
                                                      move = displayRowSize - 1;
                                                  escapeSequence.moveSelection(h1, move);
-                                                 Hflag = false;
+                                                 isReceivingH = false;
                                                  escapeMoveNum = "";
                                                  clear = "";
                                                  break;
@@ -779,7 +775,6 @@ public class MainActivity extends AppCompatActivity{
                                          strings[cnt] = " ";
                                      }
 
-                                     if (isReceiving)
                                      isNotSending = true;
                                      editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), strings[cnt]);
                                      isNotSending = false;
@@ -1012,7 +1007,6 @@ public class MainActivity extends AppCompatActivity{
 
     private void changeDisplay(){
         isDisplaying = true;
-        isPuttingEnter = false;
         isNotSending = true;
 
         inputEditText.getText().clear();
@@ -1023,8 +1017,10 @@ public class MainActivity extends AppCompatActivity{
             result = HtmlParser.toHtml(spannable);
             inputEditText.append(Html.fromHtml(result));
         }
+        Log.d("TermDisplay****", "****create****");
 
-        isPuttingEnter = true;
+        Log.d("TermDisplay****", termDisplay.createDisplay() + "END");
+
         isDisplaying = false;
         isNotSending = false;
     }
@@ -1059,6 +1055,9 @@ public class MainActivity extends AppCompatActivity{
 
     private int getRowLength(int x, int y){
         int length = 0;
+        int rowLength = termDisplay.getRowLength(termDisplay.getTopRow() + y);
+        String rowText = termDisplay.getRowText(termDisplay.getTopRow() + y);
+
         for (int i = 0; i < y; i++){
             length = length + termDisplay.getRowLength(termDisplay.getTopRow() + i);
             if (termDisplay.getRowLength(termDisplay.getTopRow() + i) == 0){
@@ -1069,21 +1068,20 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
         }
-        int rowLength = termDisplay.getRowLength(termDisplay.getTopRow() + y);
-        String rowText = termDisplay.getRowText(termDisplay.getTopRow() + y);
-        if(rowLength == 0) x = 0;        //空
-        if (x > rowLength){        //移動先の文字数がカーソルXよりも短い
+        if(rowLength == 0) x = 0; //空
 
+        if (x > rowLength){ //移動先の文字数がカーソルXよりも短い
             if (rowText.contains("\n")) {
                 x = rowLength - 1;
             } else {
                 x = rowLength;
             }
         }
-        if(x == rowLength && rowText.lastIndexOf(LF) != -1){        //カーソルXが移動先の文字数と等しくて，改行コードが存在する
 
+        if(x == rowLength && rowText.lastIndexOf(LF) != -1){ //カーソルXが移動先の文字数と等しくて，改行コードが存在する
             x = rowLength-1;
         }
+
         length = length + x;
         if (length > inputEditText.length()){
             length = inputEditText.length();

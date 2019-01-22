@@ -42,6 +42,7 @@ public class TermDisplay{
         if(text == LF || textList.get(getTotalColumns()-1).size() >= displayRowSize){
             ArrayList<TextItem> items1 = new ArrayList<>(displayRowSize+5);
             textList.add(items1);
+            Log.d("termDisplay***", "Add new line1");
         }
     }
 
@@ -61,16 +62,17 @@ public class TermDisplay{
             TextItem textItem = new TextItem(text, color);
             textList.get(y).add(textItem);
         }
-        if(text == LF || textList.get(y).size() >= displayRowSize){
-            //Log.d(TAG, "Add new line2");
+        if((text == LF || textList.get(y).size() >= displayRowSize) && y == getTotalColumns()-1){
             ArrayList<TextItem> items1 = new ArrayList<>(displayRowSize);
             textList.add(items1);
+            Log.d("termDisplay***", "Add new line2");
         }
     }
 
     public void addEmptyRow(){
         ArrayList<TextItem> items1 = new ArrayList<>();
         textList.add(items1);
+        Log.d("termDisplay***", "Add new line3");
     }
 
     public void insertTextItem(int x, int y, char text, int color){
@@ -206,6 +208,9 @@ public class TermDisplay{
             }
             for (int x = 0, n = textList.get(y+topRow).size(); x < n; x++){ //xはそのyのサイズまで
                 text = textList.get(y+topRow).get(x).getText();
+                if (text == LF && y+1 == displayColumnSize){
+                    break;
+                }
                 if (!colorChange){
                     sb.append(text);
                 } else {
