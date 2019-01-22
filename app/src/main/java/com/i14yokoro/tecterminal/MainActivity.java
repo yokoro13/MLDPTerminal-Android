@@ -457,6 +457,7 @@ public class MainActivity extends AppCompatActivity{
                             }
 
                         } else { //LF
+                            //FIXME 一番下で改行を入力した場合，スクロールしてくれない
                             if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && !getSelectLineText().contains("\n")) {
                                 if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
                                     termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
