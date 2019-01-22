@@ -2,9 +2,10 @@ package com.i14yokoro.tecterminal;
 
 import android.util.Log;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class TermDisplay {
+public class TermDisplay implements Serializable {
     private static final String TAG = "termDisplay**";
     private static final char LF = '\n'; //システムの改行コードを検出
 
@@ -21,6 +22,8 @@ public class TermDisplay {
     private int defaultColor = 0x000000;
 
     private boolean colorChange = false;
+
+    StringBuilder sb = new StringBuilder();
 
     public TermDisplay(int displayRowSize, int displayColumnSize){
         this.displayRowSize = displayRowSize;
@@ -156,13 +159,20 @@ public class TermDisplay {
         }
     }
 
-
     public int getTotalColumns() {
         return this.textList.size();
     }
 
+    public void setDisplayRowSize(int displayRowSize) {
+        this.displayRowSize = displayRowSize;
+    }
+
     public int getDisplayRowSize() {
         return displayRowSize;
+    }
+
+    public void setDisplayColumnSize(int displayColumnSize) {
+        this.displayColumnSize = displayColumnSize;
     }
 
     public int getDisplayColumnSize() {
@@ -181,10 +191,8 @@ public class TermDisplay {
         this.topRow = this.topRow + count;
     }
 
-    public String createDisplay_(){
-
-        int displayY = 0;//displayの縦移動用
-        StringBuilder sb = new StringBuilder();
+    public String createDisplay(){
+        sb.setLength(0);
         char text;
 
         int totalColumns = getTotalColumns();
@@ -193,18 +201,13 @@ public class TermDisplay {
 
         for(int y = 0; y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
 
-            if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
-                setDisplaySize(displayY);
+            if((y+topRow >= totalColumns)){ //yがリストよりでかくなったら
+                setDisplaySize(y-1);
                 return sb.toString();
             }
-
-            if(displayY >= displayColumnSize){ //displayの描画が終わったらおわり
-                break;
-            }
-
             for (int x = 0, n = textList.get(y+topRow).size(); x < n; x++){ //xはそのyのサイズまで
                 text = textList.get(y+topRow).get(x).getText();
-                if (!colorChange) {
+                if (!colorChange){
                     sb.append(text);
                 } else {
                     sb.append("<font color=#").append(Integer.toHexString(getColor(x, getTopRow() + y))).append(">").append(text).append("</font>");
@@ -214,15 +217,17 @@ public class TermDisplay {
                     break;
                 }
                 if(text == LF){
+                    if (y-1 == displayColumnSize){
+                        sb.deleteCharAt(sb.length()-1);
+                    }
                     break;
                 }
             }
             if (y+1 < displayColumnSize && y + getTopRow() < totalColumns - 1 && !getRowText(y + getTopRow()).contains("\n") && textList.get(y + topRow).size() < getDisplayRowSize()) {
                 sb.append(LF);
             }
-            displayY++;
         }
-        setDisplaySize(displayY);
+        setDisplaySize(displayColumnSize);
 
         return sb.toString();
     }
