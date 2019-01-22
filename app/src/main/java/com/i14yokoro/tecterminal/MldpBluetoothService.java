@@ -236,6 +236,7 @@ public class MldpBluetoothService extends Service {
             }
         }
 
+        //MLDPから文字を受けとったことをActivityに通知
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             try {

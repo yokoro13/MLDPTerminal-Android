@@ -4,31 +4,31 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
-public class TermDisplay {
+public class TermDisplay{
     private static final String TAG = "termDisplay**";
     private static final char LF = '\n'; //システムの改行コードを検出
 
     private int displayRowSize, displayColumnSize;
 
-    private int cursorX;
-    private int cursorY;
+    private int cursorX = 0;
+    private int cursorY = 0;
 
     private int displaySize = 0;
 
-    private int topRow;
+    private int topRow = 0;
     private ArrayList<ArrayList<TextItem>> textList;
 
     private int defaultColor = 0x000000;
 
     private boolean colorChange = false;
 
+    StringBuilder sb = new StringBuilder();
+
     public TermDisplay(int displayRowSize, int displayColumnSize){
         this.displayRowSize = displayRowSize;
         this.displayColumnSize = displayColumnSize;
-        cursorX = 0;
-        cursorY = 0;
-        topRow = 0;
-        ArrayList<TextItem> items = new ArrayList<>(displayRowSize+5);
+
+        ArrayList<TextItem> items = new ArrayList<>(displayRowSize);
         textList = new ArrayList<>();
         textList.add(items);
     }
@@ -38,13 +38,11 @@ public class TermDisplay {
         TextItem textItem = new TextItem(text, color);
         int columnSize = getTotalColumns();
 
-        //Log.d("termDisplay*****", "Add new textItem to " + Integer.toString(getCursorX()) + ", " + Integer.toString(getCursorY()));
-        //Log.d("termDisplay*****", "adding text: " + text);
         textList.get(columnSize - 1).add(textItem);
         if(text == LF || textList.get(getTotalColumns()-1).size() >= displayRowSize){
-            //Log.d(TAG, "Add new line2");
             ArrayList<TextItem> items1 = new ArrayList<>(displayRowSize+5);
             textList.add(items1);
+            Log.d("termDisplay***", "Add new line1");
         }
     }
 
@@ -53,28 +51,28 @@ public class TermDisplay {
     }
 
     public void changeTextItem(int x, int y, char text, int color){
-        if(y < this.textList.size() && x < this.textList.get(y).size()) {
+        if(y < textList.size() && x < textList.get(y).size()) {
             TextItem textItem = new TextItem(text, color);
-            this.textList.get(y).set(x, textItem);
+            textList.get(y).set(x, textItem);
         }
     }
 
     public void addTextItem(int y, char text, int color){
-        if(y < this.textList.size()) {
+        if(y < textList.size()) {
             TextItem textItem = new TextItem(text, color);
-            this.textList.get(y).add(textItem);
+            textList.get(y).add(textItem);
         }
-        if(text == LF || textList.get(y).size() >= displayRowSize){
-            //Log.d(TAG, "Add new line2");
-            ArrayList<TextItem> items1 = new ArrayList<>();
+        if((text == LF || textList.get(y).size() >= displayRowSize) && y == getTotalColumns()-1){
+            ArrayList<TextItem> items1 = new ArrayList<>(displayRowSize);
             textList.add(items1);
+            Log.d("termDisplay***", "Add new line2");
         }
     }
 
     public void addEmptyRow(){
         ArrayList<TextItem> items1 = new ArrayList<>();
         textList.add(items1);
-        //Log.d(TAG, "Add new line1");
+        Log.d("termDisplay***", "Add new line3");
     }
 
     public void insertTextItem(int x, int y, char text, int color){
@@ -82,7 +80,7 @@ public class TermDisplay {
         if(checkLF < 0){
             checkLF = 0;
         }
-        if(y < this.textList.size() && x <= this.textList.get(y).size()) {
+        if(y < textList.size() && x <= textList.get(y).size()) {
             if (getRowLength(y) >= displayRowSize && getText(displayRowSize-1, y) == LF){
                 deleteTextItem(displayRowSize-1, y);
             }
@@ -162,13 +160,20 @@ public class TermDisplay {
         }
     }
 
-
     public int getTotalColumns() {
         return this.textList.size();
     }
 
+    public void setDisplayRowSize(int displayRowSize) {
+        this.displayRowSize = displayRowSize;
+    }
+
     public int getDisplayRowSize() {
         return displayRowSize;
+    }
+
+    public void setDisplayColumnSize(int displayColumnSize) {
+        this.displayColumnSize = displayColumnSize;
     }
 
     public int getDisplayColumnSize() {
@@ -187,10 +192,8 @@ public class TermDisplay {
         this.topRow = this.topRow + count;
     }
 
-    public String createDisplay_(){
-
-        int displayY = 0;//displayの縦移動用
-        StringBuilder sb = new StringBuilder();
+    public String createDisplay(){
+        sb.setLength(0);
         char text;
 
         int totalColumns = getTotalColumns();
@@ -199,36 +202,36 @@ public class TermDisplay {
 
         for(int y = 0; y < displayColumnSize; y++){//これはリストの縦移動用（最大でスクリーンの最大値分移動）
 
-            if((y >= totalColumns || y+topRow >= totalColumns)){ //yがリストよりでかくなったら
-                setDisplaySize(displayY);
+            if((y+topRow >= totalColumns)){ //yがリストよりでかくなったら
+                setDisplaySize(y-1);
                 return sb.toString();
             }
-
-            if(displayY >= displayColumnSize){ //displayの描画が終わったらおわり
-                break;
-            }
-
             for (int x = 0, n = textList.get(y+topRow).size(); x < n; x++){ //xはそのyのサイズまで
                 text = textList.get(y+topRow).get(x).getText();
-                if (!colorChange) {
+                if (text == LF && y+1 == displayColumnSize){
+                    break;
+                }
+                if (!colorChange){
                     sb.append(text);
                 } else {
                     sb.append("<font color=#").append(Integer.toHexString(getColor(x, getTopRow() + y))).append(">").append(text).append("</font>");
                 }
-                if((x == displayRowSize-1) && text != LF){
+                if((x == displayRowSize-1) && text != LF && y+1 != displayColumnSize){
                     sb.append(LF);
                     break;
                 }
                 if(text == LF){
+                    if (y-1 == displayColumnSize){
+                        sb.deleteCharAt(sb.length()-1);
+                    }
                     break;
                 }
             }
             if (y+1 < displayColumnSize && y + getTopRow() < totalColumns - 1 && !getRowText(y + getTopRow()).contains("\n") && textList.get(y + topRow).size() < getDisplayRowSize()) {
                 sb.append(LF);
             }
-            displayY++;
         }
-        setDisplaySize(displayY);
+        setDisplaySize(displayColumnSize);
 
         return sb.toString();
     }
