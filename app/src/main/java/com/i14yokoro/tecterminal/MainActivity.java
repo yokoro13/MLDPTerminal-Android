@@ -449,11 +449,14 @@ public class MainActivity extends AppCompatActivity{
                                 Log.d("termDisplay****", "insert");
                                 if (inputStr != LF) { //LFじゃない
                                     termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                                    moveCursorX(1);
                                     //TODO ここの条件式をかんがえる．
-                                    if (termDisplay.getCursorX() < displayColumnSize) {
+                                    if (termDisplay.getCursorX()+1 < displayRowSize) {
                                         isInserting = true;
+                                        moveCursorX(1);
+                                    } else {
+                                        isInserting = false;
                                     }
+
                                 } else { //LF
                                     if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) {
                                         if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
@@ -489,8 +492,6 @@ public class MainActivity extends AppCompatActivity{
                                 }
                             }
                             isInserting = false;
-                        //}
-                        //changeDisplay();
                     }
                 }
             }
@@ -519,11 +520,9 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void onSpanChanged(final Spannable text, final Object what, final int ostart, final int oend, final int nstart, final int nend) {
             if (what == Selection.SELECTION_START) {
-                // Selection start changed from ostart to nstart.
                 Log.d(TAG, "selection start is changed");
                 moveToSavedCursor();
             } else if (what == Selection.SELECTION_END) {
-                // Selection end changed from ostart to nstart.
                 Log.d(TAG, "selection end is changed");
                 moveToSavedCursor();
             }
