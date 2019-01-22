@@ -105,7 +105,6 @@ public class MainActivity extends AppCompatActivity{
 
     private boolean isInserting = false;
 
-    private StringBuilder receivingBuffer = new StringBuilder();
     private boolean isReceiving = false;
 
     @SuppressLint("ClickableViewAccessibility")
@@ -124,13 +123,8 @@ public class MainActivity extends AppCompatActivity{
         displayRowSize = getMaxRowLength();
         displayColumnSize = getMaxColumnLength();
 
-        if (savedInstanceState == null){
-            termDisplay = new TermDisplay(displayRowSize, displayColumnSize);
-        } else {
-            termDisplay = (TermDisplay)savedInstanceState.getSerializable("Display");
-            termDisplay.setDisplayRowSize(displayRowSize);
-            termDisplay.setDisplayColumnSize(displayColumnSize);
-        }
+        termDisplay = new TermDisplay(displayRowSize, displayColumnSize);
+
 
         Log.d(TAG, "maxRow "+Integer.toString(getMaxRowLength()) +"maxColumn" + Integer.toString(getMaxColumnLength()));
 
@@ -285,12 +279,6 @@ public class MainActivity extends AppCompatActivity{
                 return false;
             }
         });
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle saveInstanceState){
-        super.onSaveInstanceState(saveInstanceState);
-        saveInstanceState.putSerializable("Display", termDisplay);
     }
 
     @Override

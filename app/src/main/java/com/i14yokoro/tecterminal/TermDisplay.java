@@ -2,10 +2,9 @@ package com.i14yokoro.tecterminal;
 
 import android.util.Log;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
-public class TermDisplay implements Serializable {
+public class TermDisplay{
     private static final String TAG = "termDisplay**";
     private static final char LF = '\n'; //システムの改行コードを検出
 
