@@ -207,8 +207,6 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 isBtn_ctl = true;
-                moveToSavedCursor();
-                Log.d("termDisplay***", "size: " + Integer.toString(termDisplay.getDisplaySize()));
             }
         });
 
@@ -457,6 +455,7 @@ public class MainActivity extends AppCompatActivity{
                             }
 
                         } else { //LF
+                            //FIXME 一番下で改行を入力した場合，スクロールしてくれない
                             if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && !getSelectLineText().contains("\n")) {
                                 if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
                                     termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
@@ -469,7 +468,7 @@ public class MainActivity extends AppCompatActivity{
                     Log.d(TAG, "ASCII code/ " + str);
                     if (inputStr == LF) {
                         termDisplay.setCursorX(0);
-                        if (inputEditText.getLineCount() > displayColumnSize) {
+                        if (termDisplay.getCursorY() +1 >= displayColumnSize) {
                             scrollDown();
                         }
                         if (termDisplay.getCursorY() < displayColumnSize) {
