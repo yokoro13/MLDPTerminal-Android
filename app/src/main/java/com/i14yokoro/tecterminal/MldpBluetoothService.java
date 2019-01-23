@@ -157,7 +157,6 @@ public class MldpBluetoothService extends Service {
             }
         }
 
-        //Service discovery completed
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             try {
@@ -270,8 +269,6 @@ public class MldpBluetoothService extends Service {
             }
         }
 
-        //Write descriptor completed
-        //Use write queue because BluetoothGatt can only do one write at a time
         @Override
         public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
             try {
@@ -288,7 +285,6 @@ public class MldpBluetoothService extends Service {
             }
         }
 
-        //Read completed. For information only. This application uses Notification or Indication to receive updated characteristic data, not Read
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         }
@@ -306,7 +302,6 @@ public class MldpBluetoothService extends Service {
         }
     };
 
-    // Check whether Bluetooth radio is enabled
     public boolean isBluetoothRadioEnabled() {
         try {
             if (bluetoothAdapter != null) {
@@ -321,9 +316,6 @@ public class MldpBluetoothService extends Service {
         return false;
     }
 
-    // ----------------------------------------------------------------------------------------------------------------
-    // Start scan for BLE devices
-    // The bleScanCallback method is called each time a device is found during the scan
     public void scanStart() {
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
         if(bluetoothLeScanner != null){
@@ -334,7 +326,6 @@ public class MldpBluetoothService extends Service {
                 Log.d(TAG, "scan start in serviceActivity");
 
                 bluetoothLeScanner.startScan(bleScanCallback);
-//                bluetoothAdapter.startLeScan(uuidScanList, bleScanCallback);
             }
             else {
                 bluetoothLeScanner.startScan(bleScanCallback);
@@ -345,8 +336,7 @@ public class MldpBluetoothService extends Service {
         }
     }
 
-    // ----------------------------------------------------------------------------------------------------------------
-    // Stop scan for BLE devices
+
     public void scanStop() {
         try {
             bluetoothLeScanner.stopScan(bleScanCallback);
@@ -356,7 +346,6 @@ public class MldpBluetoothService extends Service {
         }
     }
 
-    // Connect to a Bluetooth LE device with a specific address
     public boolean connect(final String address) {
         try {
             if (bluetoothAdapter == null || address == null) {
@@ -383,7 +372,6 @@ public class MldpBluetoothService extends Service {
         }
     }
 
-    // Disconnect an existing connection or cancel a connection that has been requested
     public void disconnect() {
         try {
             if (bluetoothAdapter == null || bluetoothGatt == null) {

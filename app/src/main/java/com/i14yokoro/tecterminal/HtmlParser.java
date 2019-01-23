@@ -11,7 +11,6 @@ public class HtmlParser {
         final SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
         int start, end;
 
-        // Replace Style spans with <b></b> or <i></i>
         StyleSpan[] styleSpans = ssBuilder.getSpans(0, text.length(), StyleSpan.class);
         for (int i = styleSpans.length - 1; i >= 0; i--) {
             StyleSpan span = styleSpans[i];
@@ -27,7 +26,6 @@ public class HtmlParser {
             }
         }
 
-        // Replace underline spans with <u></u>
         UnderlineSpan[] underSpans = ssBuilder.getSpans(0, ssBuilder.length(), UnderlineSpan.class);
         for (int i = underSpans.length - 1; i >= 0; i--) {
             UnderlineSpan span = underSpans[i];
