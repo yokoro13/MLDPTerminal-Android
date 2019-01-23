@@ -207,8 +207,6 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 isBtn_ctl = true;
-                moveToSavedCursor();
-                Log.d("termDisplay***", "size: " + Integer.toString(termDisplay.getDisplaySize()));
             }
         });
 
@@ -470,7 +468,7 @@ public class MainActivity extends AppCompatActivity{
                     Log.d(TAG, "ASCII code/ " + str);
                     if (inputStr == LF) {
                         termDisplay.setCursorX(0);
-                        if (inputEditText.getLineCount() > displayColumnSize) {
+                        if (termDisplay.getCursorY() +1 >= displayColumnSize) {
                             scrollDown();
                         }
                         if (termDisplay.getCursorY() < displayColumnSize) {
