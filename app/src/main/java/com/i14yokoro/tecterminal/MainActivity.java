@@ -408,6 +408,10 @@ public class MainActivity extends AppCompatActivity{
                         switch (send){
                             case "C":
                                 send = "\u0003";
+                                break;
+                            case "m":
+                                send = "\r";
+                                break;
                         }
                         isBtn_ctl = false;
                     }
