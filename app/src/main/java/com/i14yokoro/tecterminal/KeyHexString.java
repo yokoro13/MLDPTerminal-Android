@@ -20,7 +20,8 @@ class KeyHexString {
     static final int KEY_SQUARE_LEFT = 0x5b;
 
     static final int KEY_DEL = 0x7f;
-    static final int KEY_ENTER = 0x0d;
+    static final int KEY_LF = 0x0a;
+    static final int KEY_CR = 0x0d;
     static final int KEY_ESC = 0x1b;
 
     static final int KEY_BS = 0x08;
