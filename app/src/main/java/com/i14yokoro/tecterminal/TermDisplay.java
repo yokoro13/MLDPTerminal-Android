@@ -24,6 +24,8 @@ public class TermDisplay{
 
     StringBuilder sb = new StringBuilder();
 
+    private int currRow = 0;
+
     public TermDisplay(int displayRowSize, int displayColumnSize){
         this.displayRowSize = displayRowSize;
         this.displayColumnSize = displayColumnSize;
@@ -158,6 +160,7 @@ public class TermDisplay{
                 this.cursorY = cursorY;
             }
         }
+        setCurrRow(topRow + this.cursorY);
     }
 
     public int getTotalColumns() {
@@ -277,5 +280,13 @@ public class TermDisplay{
 
     public boolean isColorChange(){
         return this.colorChange;
+    }
+
+    public int getCurrRow() {
+        return currRow;
+    }
+
+    public void setCurrRow(int currRow) {
+        this.currRow = currRow;
     }
 }

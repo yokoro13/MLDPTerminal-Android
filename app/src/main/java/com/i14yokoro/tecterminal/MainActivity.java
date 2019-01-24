@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean isOverWriting = false; //文字を上書きするときtrue
     private boolean isReceiving = false; //RNからデータを受信したらtrue
 
-
+    private boolean isOutOfScreen = false;
 
 
     @SuppressLint("ClickableViewAccessibility")
@@ -242,10 +242,10 @@ public class MainActivity extends AppCompatActivity{
                         Log.d(TAG, "action move");
                         hideKeyboard();
                         if (oldY > event.getRawY()) {
-                            scrollUp();
+                            scrollDown();
                         }
                         if (oldY < event.getRawY()){
-                            scrollDown();
+                            scrollUp();
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -1099,8 +1099,17 @@ public class MainActivity extends AppCompatActivity{
 
     private void scrollUp(){
         if(termDisplay.getTopRow() - 1 >= 0 ){
-            if (termDisplay.getCursorY() + 1 < displayColumnSize) {
-                moveCursorY(1);
+            if (termDisplay.getCurrRow() >= termDisplay.getTopRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize) {
+                inputEditText.setFocusable(true);
+                inputEditText.setFocusableInTouchMode(true);
+                inputEditText.requestFocus();
+                if (!isOutOfScreen) {
+                    moveCursorY(1);
+                }
+                isOutOfScreen = false;
+            } else {
+                inputEditText.setFocusable(false);
+                isOutOfScreen = true;
             }
             termDisplay.addTopRow(-1);
             changeDisplay();
@@ -1110,7 +1119,18 @@ public class MainActivity extends AppCompatActivity{
     private void scrollDown(){
         if (termDisplay.getTotalColumns() > displayColumnSize) {
             if (termDisplay.getTopRow() + displayColumnSize < termDisplay.getTotalColumns()) {
-                moveCursorY(-1);
+                if (termDisplay.getCurrRow() > termDisplay.getTopRow() && termDisplay.getCurrRow() <= termDisplay.getTopRow() + displayColumnSize){
+                    inputEditText.setFocusable(true);
+                    inputEditText.setFocusableInTouchMode(true);
+                    inputEditText.requestFocus();
+                    if (!isOutOfScreen) {
+                        moveCursorY(-1);
+                    }
+                    isOutOfScreen = false;
+                } else {
+                    inputEditText.setFocusable(false);
+                    isOutOfScreen = true;
+                }
                 termDisplay.addTopRow(1);
                 changeDisplay();
             }
