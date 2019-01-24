@@ -11,7 +11,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -762,7 +761,7 @@ public class MainActivity extends AppCompatActivity{
                                                 break;
                                             case KeyHexString.KEY_m:
                                                 escapeSequence.selectGraphicRendition(move);
-                                                inputEditText.setTextColor(Color.parseColor("#" + Integer.toString(termDisplay.getDefaultColor())));
+                                                inputEditText.setTextColor(termDisplay.getDefaultColor());
                                                 escapeMoveNum = "";
                                                 clear = "";
                                                 break;
