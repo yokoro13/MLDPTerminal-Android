@@ -762,7 +762,7 @@ public class MainActivity extends AppCompatActivity{
                                                 break;
                                             case KeyHexString.KEY_m:
                                                 escapeSequence.selectGraphicRendition(move);
-                                                inputEditText.setTextColor(Color.parseColor(Integer.toString(termDisplay.getDefaultColor())));
+                                                inputEditText.setTextColor(Color.parseColor("#" + Integer.toString(termDisplay.getDefaultColor())));
                                                 escapeMoveNum = "";
                                                 clear = "";
                                                 break;

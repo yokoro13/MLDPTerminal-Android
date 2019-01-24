@@ -218,34 +218,34 @@ public class EscapeSequence {
         termDisplay.setColorChange(true);
         switch (n){
             case 0:
-                termDisplay.setDefaultColor(0x000000);
+                termDisplay.setDefaultColor(0xFF000000);
                 break;
             case 30:
-                termDisplay.setDefaultColor(0x000000);
+                termDisplay.setDefaultColor(0xFF000000);
                 break;
             case 31:
-                termDisplay.setDefaultColor(0xff0000);
+                termDisplay.setDefaultColor(0xFFff0000);
                 break;
             case 32:
-                termDisplay.setDefaultColor(0x008000);
+                termDisplay.setDefaultColor(0xFF008000);
                 break;
             case 33:
-                termDisplay.setDefaultColor(0xFFFF00);
+                termDisplay.setDefaultColor(0xFFFFFF00);
                 break;
             case 34:
-                termDisplay.setDefaultColor(0x0000FF);
+                termDisplay.setDefaultColor(0xFF0000FF);
                 break;
             case 35:
-                termDisplay.setDefaultColor(0xFF00FF);
+                termDisplay.setDefaultColor(0xFFFF00FF);
                 break;
             case 36:
-                termDisplay.setDefaultColor(0x00FFFF);
+                termDisplay.setDefaultColor(0xFF00FFFF);
                 break;
             case 37:
-                termDisplay.setDefaultColor(0xFFFFFF);
+                termDisplay.setDefaultColor(0xFFFFFFFF);
                 break;
             case 39:
-                termDisplay.setDefaultColor(0x000000);
+                termDisplay.setDefaultColor(0xFF000000);
                 break;
             default:
                 //termDisplay.setDefaultColor(0x000000);
