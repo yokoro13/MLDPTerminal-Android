@@ -39,8 +39,6 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
-import com.i14yokoro.tecterminal.R;
-
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends AppCompatActivity{
@@ -853,8 +851,8 @@ public class MainActivity extends AppCompatActivity{
                         setProgressBarIndeterminateVisibility(true);
                         break;
                     case CONNECTED:
-                        isNotSending = true;
-                        addNewLine(LF + "connected to " + bleDeviceName);
+
+                        //addNewLine(LF + "connected to " + bleDeviceName);
                         setProgressBarIndeterminateVisibility(false);
                         break;
                     case DISCONNECTING:

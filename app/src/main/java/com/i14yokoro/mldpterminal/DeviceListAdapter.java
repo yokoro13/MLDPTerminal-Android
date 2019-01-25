@@ -8,8 +8,6 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.i14yokoro.tecterminal.R;
-
 import java.util.ArrayList;
 
 class DeviceListAdapter extends ArrayAdapter<BleDevice> {
