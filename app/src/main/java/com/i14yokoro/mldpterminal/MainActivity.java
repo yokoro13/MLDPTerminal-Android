@@ -344,9 +344,8 @@ public class MainActivity extends AppCompatActivity{
                 state = State.DISCONNECTING;
                 updateConnectionState();
                 bleService.disconnect();
-                unbindService(bleServiceConnection);
+                //unbindService(bleServiceConnection);
                 return true;
-
         }
         return super.onOptionsItemSelected(item);
     }
@@ -428,6 +427,13 @@ public class MainActivity extends AppCompatActivity{
 
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending/*&& items.get(getSelectRow()).isWritable()*/ ) {
                 if (!isDisplaying) {
+                    if (isOutOfScreen){
+                        inputEditText.setFocusable(true);
+                        inputEditText.setFocusableInTouchMode(true);
+                        inputEditText.requestFocus();
+                        termDisplay.setTopRow(termDisplay.getCurrRow()-termDisplay.getCursorY());
+                        changeDisplay();
+                    }
                     if (termDisplay.getCursorX() > getSelectLineText().length()) {
                         termDisplay.setCursorX(getSelectLineText().length());
                     }
@@ -458,7 +464,6 @@ public class MainActivity extends AppCompatActivity{
                             }
 
                         } else { //LF
-                            //FIXME 一番下で改行を入力した場合，スクロールしてくれない
                             if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && !getSelectLineText().contains("\n")) {
                                 if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
                                     termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
@@ -893,7 +898,7 @@ public class MainActivity extends AppCompatActivity{
                     state = State.CONNECTING;
                     updateConnectionState();
                     if(!connectWithAddress(bleDeviceAddress)){
-                        addNewLine("connect is failed");
+                        Log.d(TAG, "connect is failed");
                     }
                 }
             }
@@ -928,8 +933,8 @@ public class MainActivity extends AppCompatActivity{
     };
 
     private void addNewLine(String newText){
-        isNotSending = true;
         for(int i = 0; i < newText.length(); i++){
+            isNotSending = true;
             inputEditText.append(Character.toString(newText.charAt(i)));
         }
         inputEditText.append("\n");

@@ -35,11 +35,11 @@ public class MldpBluetoothService extends Service {
     public static final String INTENT_EXTRA_SERVICE_NAME = "BLE_SERVICE_DEVICE_NAME";
     public static final String INTENT_EXTRA_SERVICE_DATA = "BLE_SERVICE_DATA";
 
-    public final static String ACTION_BLE_REQ_ENABLE_BT = "com.i14yokoro.tecterminal.ACTION_BLE_REQ_ENABLE_BT";
-    public final static String ACTION_BLE_SCAN_RESULT = "com.i14yokoro.tecterminal.ACTION_BLE_SCAN_RESULT";
-    public final static String ACTION_BLE_CONNECTED = "com.i14yokoro.tecterminal.ACTION_BLE_CONNECTED";
-    public final static String ACTION_BLE_DISCONNECTED = "com.i14yokoro.tecterminal.ACTION_BLE_DISCONNECTED";
-    public final static String ACTION_BLE_DATA_RECEIVED = "com.i14yokoro.tecterminal.ACTION_BLE_DATA_RECEIVED";
+    public final static String ACTION_BLE_REQ_ENABLE_BT = "com.i14yokoro.mldpterminal.ACTION_BLE_REQ_ENABLE_BT";
+    public final static String ACTION_BLE_SCAN_RESULT = "com.i14yokoro.mldpterminal.ACTION_BLE_SCAN_RESULT";
+    public final static String ACTION_BLE_CONNECTED = "com.i14yokoro.mldpterminal.ACTION_BLE_CONNECTED";
+    public final static String ACTION_BLE_DISCONNECTED = "com.i14yokoro.mldpterminal.ACTION_BLE_DISCONNECTED";
+    public final static String ACTION_BLE_DATA_RECEIVED = "com.i14yokoro.mldpterminal.ACTION_BLE_DATA_RECEIVED";
 
     private final static byte[] SCAN_RECORD_MLDP_PRIVATE_SERVICE = {0x00, 0x03, 0x00, 0x3a, 0x12, 0x08, 0x1a, 0x02, (byte) 0xdd, 0x07, (byte) 0xe6, 0x58, 0x03, 0x5b, 0x03, 0x00};
 

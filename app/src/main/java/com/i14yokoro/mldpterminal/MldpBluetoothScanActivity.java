@@ -37,11 +37,6 @@ import android.view.Window;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
-import com.i14yokoro.tecterminal.R;
-
-/**
- * Activity for scanning and displaying available Bluetooth LE devices
- */
 public class MldpBluetoothScanActivity extends ListActivity {
 	private final static String TAG = "debug***";
 
