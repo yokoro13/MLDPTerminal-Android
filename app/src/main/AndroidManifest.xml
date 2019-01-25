@@ -16,7 +16,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity"
+        <activity android:name="com.i14yokoro.mldpterminal.MainActivity"
                   android:screenOrientation="portrait"
                   android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -26,10 +26,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MldpBluetoothScanActivity"
+            android:name="com.i14yokoro.mldpterminal.MldpBluetoothScanActivity"
             android:screenOrientation="portrait" />
         <service
-            android:name=".MldpBluetoothService" />
+            android:name="com.i14yokoro.mldpterminal.MldpBluetoothService" />
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

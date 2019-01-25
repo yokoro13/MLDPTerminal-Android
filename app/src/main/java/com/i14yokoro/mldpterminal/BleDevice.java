@@ -1,4 +1,4 @@
-package com.i14yokoro.tecterminal;
+package com.i14yokoro.mldpterminal;
 
 import android.support.annotation.NonNull;
 

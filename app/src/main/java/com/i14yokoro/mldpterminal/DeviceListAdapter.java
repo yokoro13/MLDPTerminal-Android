@@ -1,4 +1,4 @@
-package com.i14yokoro.tecterminal;
+package com.i14yokoro.mldpterminal;
 
 import android.app.Activity;
 import android.content.Context;
@@ -7,6 +7,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+
+import com.i14yokoro.tecterminal.R;
 
 import java.util.ArrayList;
 

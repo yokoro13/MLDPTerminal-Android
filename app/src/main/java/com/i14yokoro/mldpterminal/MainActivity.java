@@ -1,4 +1,4 @@
-package com.i14yokoro.tecterminal;
+package com.i14yokoro.mldpterminal;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -38,6 +38,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+
+import com.i14yokoro.tecterminal.R;
 
 import java.nio.charset.StandardCharsets;
 

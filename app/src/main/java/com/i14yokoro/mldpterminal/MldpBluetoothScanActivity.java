@@ -15,7 +15,7 @@
  * MICROCHIP PROVIDES THIS SOFTWARE CONDITIONALLY UPON YOUR ACCEPTANCE OF THESE TERMS.
  */
 
-package com.i14yokoro.tecterminal;
+package com.i14yokoro.mldpterminal;
 
 import android.app.Activity;
 import android.app.ListActivity;
@@ -36,6 +36,8 @@ import android.view.View;
 import android.view.Window;
 import android.widget.CheckBox;
 import android.widget.ListView;
+
+import com.i14yokoro.tecterminal.R;
 
 /**
  * Activity for scanning and displaying available Bluetooth LE devices
