@@ -363,7 +363,7 @@ public class MldpBluetoothService extends Service {
             }
             connectionAttemptCountdown = 3;
             bluetoothGatt = bluetoothDevice.connectGatt(this, false, bleGattCallback);
-            Log.d(TAG, "Attempting to create a new Bluetooth connection");
+            Log.i(TAG, "Attempting to create a new Bluetooth connection");
             return true;
         }
         catch (Exception e) {
@@ -404,7 +404,7 @@ public class MldpBluetoothService extends Service {
             characteristicWriteQueue.add(writeDataCharacteristic);
             if(characteristicWriteQueue.size() == 1){
                 if (!bluetoothGatt.writeCharacteristic(writeDataCharacteristic)) {
-                    Log.d(TAG, "Failed to write characteristic");
+                    Log.w(TAG, "Failed to write characteristic");
                 }
             }
         }

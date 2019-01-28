@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TeCTerminal</string>
+    <string name="app_name">MLDPTerminal</string>
 
     <string name="ble_not_supported">BLE is not supported</string>
     <string name="mldp_not_supported">MLDP is not supported</string>

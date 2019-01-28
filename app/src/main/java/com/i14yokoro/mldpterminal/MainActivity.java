@@ -423,7 +423,7 @@ b1:         if (state == State.CONNECTED && count > before) {
 
             Log.d(TAG, "afterTextChange");
 
-            if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending/*&& items.get(getSelectRow()).isWritable()*/ ) {
+            if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending) {
                 if (!isDisplaying) {
                     if (isOutOfScreen){
                         inputEditText.setFocusable(true);
@@ -546,12 +546,12 @@ b1:         if (state == State.CONNECTED && count > before) {
             final String action = intent.getAction();
             if (MldpBluetoothService.ACTION_BLE_CONNECTED.equals(action)) {
                 connectTimeoutHandler.removeCallbacks(abortConnection);
-                Log.d(TAG, "Received intent  ACTION_BLE_CONNECTED");
+                Log.i(TAG, "Received intent  ACTION_BLE_CONNECTED");
                 state = State.CONNECTED;
                 updateConnectionState();
             }
             else if (MldpBluetoothService.ACTION_BLE_DISCONNECTED.equals(action)) {
-                Log.d(TAG, "Received intent ACTION_BLE_DISCONNECTED");
+                Log.i(TAG, "Received intent ACTION_BLE_DISCONNECTED");
 
                 state = State.DISCONNECTED;
                 updateConnectionState();
