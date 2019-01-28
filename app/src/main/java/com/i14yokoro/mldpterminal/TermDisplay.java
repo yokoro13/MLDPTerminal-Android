@@ -44,7 +44,6 @@ public class TermDisplay{
         if(text == LF || textList.get(getTotalColumns()-1).size() >= displayRowSize){
             ArrayList<TextItem> items1 = new ArrayList<>(displayRowSize+5);
             textList.add(items1);
-            Log.d("termDisplay***", "Add new line1");
         }
     }
 
@@ -67,14 +66,12 @@ public class TermDisplay{
         if((text == LF || textList.get(y).size() >= displayRowSize) && y == getTotalColumns()-1){
             ArrayList<TextItem> items1 = new ArrayList<>(displayRowSize);
             textList.add(items1);
-            Log.d("termDisplay***", "Add new line2");
         }
     }
 
     public void addEmptyRow(){
         ArrayList<TextItem> items1 = new ArrayList<>();
         textList.add(items1);
-        Log.d("termDisplay***", "Add new line3");
     }
 
     public void insertTextItem(int x, int y, char text, int color){
@@ -167,16 +164,8 @@ public class TermDisplay{
         return this.textList.size();
     }
 
-    public void setDisplayRowSize(int displayRowSize) {
-        this.displayRowSize = displayRowSize;
-    }
-
     public int getDisplayRowSize() {
         return displayRowSize;
-    }
-
-    public void setDisplayColumnSize(int displayColumnSize) {
-        this.displayColumnSize = displayColumnSize;
     }
 
     public int getDisplayColumnSize() {

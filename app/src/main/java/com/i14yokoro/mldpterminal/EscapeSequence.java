@@ -30,7 +30,6 @@ public class EscapeSequence {
             addBlank(add);
             moveCursorX(move);
         }
-
     }
 
     public void moveLeft(int n){
@@ -45,17 +44,15 @@ public class EscapeSequence {
             termDisplay.setCursorY(0);
         } else {
             moveCursorY(-n);
-            //Log.d("termDisplay***","moveUp to y: " + Integer.toString(termDisplay.getCursorY()));
         }
         int rowLength = termDisplay.getRowLength(getSelectRowIndex());
 
         if(rowLength < termDisplay.getCursorX()){
             int add = termDisplay.getCursorX() - rowLength + 1;
-            //Log.d("termDisplay***","sub curX " + Integer.toString(add));
             addBlank(add);
         }
-
     }
+
     public void moveDown(int n){
 
         if(termDisplay.getCursorY() + n >= termDisplay.getDisplaySize()) { //移動先が一番下の行を超える場合
@@ -66,7 +63,6 @@ public class EscapeSequence {
             }
             int move = termDisplay.getCursorY() - termDisplay.getDisplaySize();//2,1のばあい
             for (int i = 0; i <= move; i++){
-                //Log.d("termDisplay**", "add empty" + Integer.toString(i));
                 termDisplay.addEmptyRow();
             }
         }else { //移動先が一番下の行を超えない
@@ -84,13 +80,11 @@ public class EscapeSequence {
     }
 
     private void addBlank(int n){
-        //Log.d("termDisplay**", "add Blank"+);
         int x = termDisplay.getRowLength(getSelectRowIndex())-1;
         if(x < 0){
             x = 0;
         }
         for (int i = 0; i < n; i++){
-            //Log.d("termDisplay**", "add Blank"+Integer.toString(i));
             termDisplay.insertTextItem(x, getSelectRowIndex(),' ', termDisplay.getDefaultColor());
         }
     }
@@ -190,7 +184,6 @@ public class EscapeSequence {
         if(n == 1){ //カーソル以前にある文字を消す
             for (int x = 0; x <= termDisplay.getCursorX(); x++){
                 termDisplay.changeText(x, getSelectRowIndex(), ' ');
-                //termDisplay.deleteTextItem(x, termDisplay.getCursorY());
             }
         }
 

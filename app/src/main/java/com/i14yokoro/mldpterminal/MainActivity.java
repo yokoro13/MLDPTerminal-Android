@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity{
     private static final int REQ_CODE_SCAN_ACTIVITY = 1;
     private static final int REQ_CODE_ENABLE_BT = 2;
 
-    private static final long CONNECT_TIME = 5000; //スキャンする時間
+    private static final long CONNECT_TIME = 5000; //タイムアウトする時間
     private Handler connectTimeoutHandler;
     private MldpBluetoothService bleService;
 
@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity{
             public void onClick(View v) {
 
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\u001b" + "[1A");
+                    bleService.writeMLDP("\u001b" + "[A");
                     if(termDisplay.getCursorY() > 0){
                         moveToSavedCursor();
                     }
@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity{
             public void onClick(View v) {
 
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\u001b" + "[1B");
+                    bleService.writeMLDP("\u001b" + "[B");
                     if(termDisplay.getCursorY() < inputEditText.getLineCount()-1) {
                         moveToSavedCursor();
                     }
@@ -161,7 +161,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\u001b" + "[1C");
+                    bleService.writeMLDP("\u001b" + "[C");
                 }
                 if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
                     if (termDisplay.getCursorX() < termDisplay.getRowLength(getSelectRowIndex())) {
@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\u001b" + "[1D");
+                    bleService.writeMLDP("\u001b" + "[D");
                 }
                 if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
                     if (termDisplay.getCursorX() > 0) {
@@ -430,7 +430,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                         inputEditText.setFocusableInTouchMode(true);
                         inputEditText.requestFocus();
                         termDisplay.setTopRow(termDisplay.getCurrRow()-termDisplay.getCursorY());
-                        changeDisplay();
+                        if (!isReceiving) changeDisplay();
                     }
                     if (termDisplay.getCursorX() > getSelectLineText().length()) {
                         termDisplay.setCursorX(getSelectLineText().length());
@@ -490,7 +490,7 @@ b1:         if (state == State.CONNECTED && count > before) {
 
                         if (termDisplay.getCursorY() + 1 < displayColumnSize) {
                             moveCursorY(1);
-                            changeDisplay();
+                            //if (!isReceiving) changeDisplay();
                         }
                     }
                     isOverWriting = false;
@@ -521,10 +521,8 @@ b1:         if (state == State.CONNECTED && count > before) {
         @Override
         public void onSpanChanged(final Spannable text, final Object what, final int ostart, final int oend, final int nstart, final int nend) {
             if (what == Selection.SELECTION_START) {
-                Log.d(TAG, "selection start is changed");
                 moveToSavedCursor();
             } else if (what == Selection.SELECTION_END) {
-                Log.d(TAG, "selection end is changed");
                 moveToSavedCursor();
             }
         }
@@ -549,6 +547,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                 Log.i(TAG, "Received intent  ACTION_BLE_CONNECTED");
                 state = State.CONNECTED;
                 updateConnectionState();
+
             }
             else if (MldpBluetoothService.ACTION_BLE_DISCONNECTED.equals(action)) {
                 Log.i(TAG, "Received intent ACTION_BLE_DISCONNECTED");
@@ -854,9 +853,10 @@ b1:         if (state == State.CONNECTED && count > before) {
                         setProgressBarIndeterminateVisibility(true);
                         break;
                     case CONNECTED:
-
-                        //addNewLine(LF + "connected to " + bleDeviceName);
+                        isNotSending = true;
+                        addNewLine(LF + "connect to " + bleDeviceName);
                         setProgressBarIndeterminateVisibility(false);
+                        //bleService.writeMLDP("MLDP\r\nApp:on\r\n");
                         break;
                     case DISCONNECTING:
                         setProgressBarIndeterminateVisibility(false);
@@ -914,13 +914,11 @@ b1:         if (state == State.CONNECTED && count > before) {
         public void onServiceConnected(ComponentName componentName, IBinder service) {
             MldpBluetoothService.LocalBinder binder = (MldpBluetoothService.LocalBinder) service;
             bleService = binder.getService();
-            Log.d(TAG, "bleService");
             if (!bleService.isBluetoothRadioEnabled()) {
                 state = State.ENABLING;
                 updateConnectionState();
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, REQ_CODE_ENABLE_BT);
-                Log.d(TAG, "Requesting user to enable Bluetooth radio");
             }
         }
 
@@ -990,7 +988,6 @@ b1:         if (state == State.CONNECTED && count > before) {
 
     //選択中の行番号を返す
     private int getSelectRowIndex() {
-        Log.d("select row index", "enter");
         if(termDisplay.getCursorY() + termDisplay.getTopRow() <= 0){
             return 0;
         }
@@ -1027,8 +1024,6 @@ b1:         if (state == State.CONNECTED && count > before) {
             result = HtmlParser.toHtml(spannable);
             inputEditText.append(Html.fromHtml(result));
         }
-        Log.d("TermDisplay****", "****create****");
-
         Log.d("TermDisplay****", termDisplay.createDisplay() + "END");
 
         isDisplaying = false;
@@ -1036,7 +1031,6 @@ b1:         if (state == State.CONNECTED && count > before) {
     }
 
     private String getSelectLineText(){
-        Log.d("select row index", "select line ");
         return termDisplay.getRowText(getSelectRowIndex());
     }
 
@@ -1051,7 +1045,6 @@ b1:         if (state == State.CONNECTED && count > before) {
     private void moveToSavedCursor(){
         if(!isMovingCursor) {
             isMovingCursor = true;
-            Log.d(TAG, "moveToSavedCursor()");
 
             int cursor;
             cursor = getRowLength(termDisplay.getCursorX(), termDisplay.getCursorY());
