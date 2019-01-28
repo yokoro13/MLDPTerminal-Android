@@ -397,20 +397,18 @@ public class MainActivity extends AppCompatActivity{
             eStart = start;//文字列のスタート位置
             eCount = count;//追加される文字
 
-            if (state == State.CONNECTED && count > before) {
+b1:         if (state == State.CONNECTED && count > before) {
                 if (!isNotSending) {
                     String send = s.subSequence(start + before, start + count).toString();
                     Log.d("RNsend", send);
                     isSending = true;
                     if (isBtn_ctl){
-                        switch (send){
-                            case "C":
-                                send = "\u0003";
-                                break;
-                            case "m":
-                                send = "\r";
-                                break;
-                        }
+                        if (send.matches("[\\x5f-\\x7e]")) {
+                            byte[] sendB = {(byte) (send.getBytes()[0] & 0x1f)};
+                            bleService.writeMLDP(sendB);
+                            isBtn_ctl = false;
+                            break b1;
+                            }
                         isBtn_ctl = false;
                     }
                     bleService.writeMLDP(send);
