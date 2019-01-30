@@ -22,7 +22,7 @@ public class TermDisplay{
 
     private boolean colorChange = false;
 
-    StringBuilder sb = new StringBuilder();
+    private StringBuilder sb = new StringBuilder();
 
     private int currRow = 0;
 

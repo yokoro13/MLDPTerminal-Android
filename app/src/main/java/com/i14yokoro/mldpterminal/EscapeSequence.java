@@ -7,11 +7,11 @@ public class EscapeSequence {
         this.termDisplay = termDisplay;
     }
 
-    public int getTop(){
+    private int getTop(){
         return termDisplay.getTopRow();
     }
 
-    public void setTop(int top){
+    private void setTop(int top){
         termDisplay.setTopRow(top);
     }
 
