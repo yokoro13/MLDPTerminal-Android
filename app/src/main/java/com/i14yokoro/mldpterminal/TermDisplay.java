@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 public class TermDisplay{
     private static final String TAG = "termDisplay**";
-    private static final char LF = '\n'; //システムの改行コードを検出
+    private static final char LF = '\n';
 
     private int displayRowSize, displayColumnSize;
 
@@ -83,9 +83,7 @@ public class TermDisplay{
             if (getRowLength(y) >= displayRowSize && getText(displayRowSize-1, y) == LF){
                 deleteTextItem(displayRowSize-1, y);
             }
-            //Log.d(TAG, "insert to :" + x + ", " + y);
             if(textList.get(y).size() < displayRowSize && getText(checkLF, y) != LF) {
-                //if(getRowText(getCursorY()).lastIndexOf(LF) == )
                 TextItem textItem = new TextItem(text, color);
                 textList.get(y).add(x, textItem);
             } else {
