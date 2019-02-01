@@ -40,6 +40,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Timer;
 
 public class MainActivity extends AppCompatActivity{
 
@@ -100,6 +101,14 @@ public class MainActivity extends AppCompatActivity{
 
     private boolean isOutOfScreen = false;
 
+    private int stack = 0;
+
+    private int time = 1;
+
+    Timer timer = new Timer();
+    //Runnable task =  new MyTask();
+    //ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    //ScheduledFuture future;// = scheduler.schedule(task,  time, TimeUnit.MILLISECONDS);
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -423,6 +432,7 @@ b1:         if (state == State.CONNECTED && count > before) {
 
             Log.d(TAG, "afterTextChange");
 
+            //handler.removeCallbacks(task);
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending) {
                 if (!isDisplaying) {
                     if (isOutOfScreen){
@@ -430,7 +440,10 @@ b1:         if (state == State.CONNECTED && count > before) {
                         inputEditText.setFocusableInTouchMode(true);
                         inputEditText.requestFocus();
                         termDisplay.setTopRow(termDisplay.getCurrRow()-termDisplay.getCursorY());
-                        if (!isReceiving) changeDisplay();
+                        if (stack == 0){
+                            Log.d("TermDisplay****", "out of screen");
+                            changeDisplay();
+                        }
                     }
                     if (termDisplay.getCursorX() > getSelectLineText().length()) {
                         termDisplay.setCursorX(getSelectLineText().length());
@@ -468,7 +481,10 @@ b1:         if (state == State.CONNECTED && count > before) {
                                 }
                             }
                         }
-                        if (!isReceiving)changeDisplay();
+                        if (stack == 0){
+                            Log.d("TermDisplay****", "insert");
+                            changeDisplay();
+                        }
                     }
 
                     Log.d(TAG, "ASCII code/ " + str);
@@ -490,20 +506,24 @@ b1:         if (state == State.CONNECTED && count > before) {
 
                         if (termDisplay.getCursorY() + 1 < displayColumnSize) {
                             moveCursorY(1);
-                            //if (!isReceiving) changeDisplay();
                         }
                     }
+                    //handler.postDelayed(task, time);
                     isOverWriting = false;
                 }
             }
             else { //ASCIIじゃなければ入力前の状態にもどす
                 if(isEditing) {
                     isEditing = false;
-                    if (!isReceiving) changeDisplay();
+                    if (stack == 0){
+                        Log.d("TermDisplay****", "not ascii");
+                        changeDisplay();
+                    }
                     isEditing = true;
                 }
                 isSending = false;
             }
+
             moveToSavedCursor();
             inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         }
@@ -565,10 +585,18 @@ b1:         if (state == State.CONNECTED && count > before) {
                 if (data != null) {
                     String[] strings = data.split("", -1);
 
+                    //timer.cancel();
+                    //handler.removeCallbacks(task);
+                    /**
+                    if (timer != null){
+                        timer.cancel();
+                        timer = null;
+                    }**/
+                    stack += strings.length-2;
+                    Log.d("stack***", "stackLength" + stack);
                     byte[] utf = data.getBytes(StandardCharsets.UTF_8);
                     isReceiving = true;
                     for (byte b : utf) {
-
                         switch (b) {
                             case KeyHexString.KEY_BS:
                                 moveCursorX(-1);
@@ -594,7 +622,10 @@ b1:         if (state == State.CONNECTED && count > before) {
                                 isNotSending = true;
                                 editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), "\n");
                                 isNotSending = false;
-                                changeDisplay();
+                                if (stack == 0){
+                                    Log.d("TermDisplay****", "KEY_LF");
+                                    changeDisplay();
+                                }
                                 escapeState = EscapeState.NONE;
                                 escapeMoveFlag = false;
                                 break;
@@ -792,13 +823,26 @@ b1:         if (state == State.CONNECTED && count > before) {
 
                                 break;
                         }
+                        stack--;
+                        Log.d("stack***", "stackLength" + stack);
                         cnt++;
 
                     }
                     isReceiving = false;
 
-                    changeDisplay();
-                    moveToSavedCursor();
+                    if (stack == 0){
+                        Log.d("TermDisplay****", "stack is 0");
+                        changeDisplay();
+                        //timer = new Timer();
+                        //timer.schedule(task, time);
+                        /**
+                        if (timer == null){
+                            timer = new Timer();
+                            timer.schedule(task, time);
+                        }**/
+                        //handler.postDelayed(task, time);
+
+                    }
                 }
             }
         }
@@ -847,6 +891,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                     case ENABLING:
                     case SCANNING:
                     case DISCONNECTED:
+                        stack = 0;
                         setProgressBarIndeterminateVisibility(false);
                         break;
                     case CONNECTING:
@@ -1049,6 +1094,7 @@ b1:         if (state == State.CONNECTED && count > before) {
             int cursor;
             cursor = getRowLength(termDisplay.getCursorX(), termDisplay.getCursorY());
 
+            Log.d("debug***", "cursor" + cursor);
             if (cursor >= 0) {
                 inputEditText.setSelection(cursor);
             }
@@ -1107,7 +1153,10 @@ b1:         if (state == State.CONNECTED && count > before) {
                 isOutOfScreen = true;
             }
             termDisplay.addTopRow(-1);
-            changeDisplay();
+            if (stack == 0){
+                Log.d("TermDisplay****", "scroll up");
+                changeDisplay();
+            }
         }
     }
 
@@ -1127,8 +1176,37 @@ b1:         if (state == State.CONNECTED && count > before) {
                     isOutOfScreen = true;
                 }
                 termDisplay.addTopRow(1);
-                changeDisplay();
+                if (stack == 0){
+                    Log.d("TermDisplay****", "scroll down");
+                    changeDisplay();
+                }
             }
         }
     }
+
+
+    /**
+    TimerTask task = new TimerTask() {
+        @Override
+        public void run() {
+            changeDisplay();
+        }
+    };
+
+    private Handler handler = new Handler();
+    private final Runnable task = new Runnable() {
+        @Override
+        public void run() {
+            changeDisplay();
+            moveToSavedCursor();
+        }
+    };
+
+    class MyTask implements Runnable{
+        @Override
+        public void run() {
+            changeDisplay();
+            //moveToSavedCursor();
+        }
+    }**/
 }
