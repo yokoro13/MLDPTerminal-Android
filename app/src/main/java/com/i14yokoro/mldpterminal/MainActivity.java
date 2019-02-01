@@ -25,7 +25,6 @@ import android.text.Selection;
 import android.text.SpanWatcher;
 import android.text.Spannable;
 import android.text.SpannableString;
-import android.text.Spanned;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ActionMode;
@@ -40,7 +39,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Timer;
 
 public class MainActivity extends AppCompatActivity{
 
@@ -104,11 +102,6 @@ public class MainActivity extends AppCompatActivity{
     private int stack = 0;
 
     private int time = 1;
-
-    Timer timer = new Timer();
-    //Runnable task =  new MyTask();
-    //ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    //ScheduledFuture future;// = scheduler.schedule(task,  time, TimeUnit.MILLISECONDS);
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -432,84 +425,11 @@ b1:         if (state == State.CONNECTED && count > before) {
 
             Log.d(TAG, "afterTextChange");
 
-            //handler.removeCallbacks(task);
+            handler.removeCallbacks(task);
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending) {
                 if (!isDisplaying) {
-                    if (isOutOfScreen){
-                        inputEditText.setFocusable(true);
-                        inputEditText.setFocusableInTouchMode(true);
-                        inputEditText.requestFocus();
-                        termDisplay.setTopRow(termDisplay.getCurrRow()-termDisplay.getCursorY());
-                        if (stack == 0){
-                            Log.d("TermDisplay****", "out of screen");
-                            //changeDisplay();
-                        }
-                    }
-                    if (termDisplay.getCursorX() > getSelectLineText().length()) {
-                        termDisplay.setCursorX(getSelectLineText().length());
-                    }
-                    char inputStr = str.charAt(0);
-                    if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
-                        Log.d("termDisplay****", "set");
-                        if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) {
-                            termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
-                        } else {
-                            if (inputStr != LF ) {
-                                termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                            } else { //LF
-                                if (!getSelectLineText().contains("\n")){
-                                    termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                                }
-                            }
-                        }
-                        moveCursorX(1);
-                    } else { //insert
-                        Log.d("termDisplay****", "insert");
-                        if (inputStr != LF) { //LFじゃない
-                            termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                            if (termDisplay.getCursorX() + 1 < displayRowSize) {
-                                isOverWriting = true;
-                                moveCursorX(1);
-                            } else {
-                                isOverWriting = false;
-                            }
-
-                        } else { //LF
-                            if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && !getSelectLineText().contains("\n")) {
-                                if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
-                                    termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                                }
-                            }
-                        }
-                        if (stack == 0){
-                            Log.d("TermDisplay****", "insert");
-                            //changeDisplay();
-                        }
-                    }
-
-                    Log.d(TAG, "ASCII code/ " + str);
-                    if (inputStr == LF) {
-                        termDisplay.setCursorX(0);
-                        if (termDisplay.getCursorY() +1 >= displayColumnSize) {
-                            scrollDown();
-                        }
-                        if (termDisplay.getCursorY() < displayColumnSize) {
-                            moveCursorY(1);
-                        }
-                    }
-
-                    if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n") && !isOverWriting) {
-                        termDisplay.setCursorX(0);
-                        if (inputEditText.getLineCount() >= displayColumnSize) {
-                            scrollDown();
-                        }
-
-                        if (termDisplay.getCursorY() + 1 < displayColumnSize) {
-                            moveCursorY(1);
-                        }
-                    }
+                    addList(str);
                     handler.postDelayed(task, time);
-                    isOverWriting = false;
                 }
             }
             else { //ASCIIじゃなければ入力前の状態にもどす
@@ -517,16 +437,12 @@ b1:         if (state == State.CONNECTED && count > before) {
                     isEditing = false;
                     if (stack == 0){
                         Log.d("TermDisplay****", "not ascii");
-                        //changeDisplay();
-                        //handler.postDelayed(task, time);
+                        changeDisplay();
                     }
                     isEditing = true;
                 }
                 isSending = false;
             }
-
-            moveToSavedCursor();
-            inputEditText.getText().setSpan(watcher, 0, inputEditText.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         }
     };
 
@@ -588,11 +504,6 @@ b1:         if (state == State.CONNECTED && count > before) {
 
                     //timer.cancel();
                     handler.removeCallbacks(task);
-                    /**
-                    if (timer != null){
-                        timer.cancel();
-                        timer = null;
-                    }**/
                     stack += strings.length-2;
                     Log.d("stack***", "stackLength" + stack);
                     byte[] utf = data.getBytes(StandardCharsets.UTF_8);
@@ -817,7 +728,9 @@ b1:         if (state == State.CONNECTED && count > before) {
                                     }
 
                                     isNotSending = true;
-                                    editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), strings[cnt]);
+                                    addList(strings[cnt]);
+                                    //termDisplay.setTextItem(strings[cnt].charAt(0), termDisplay.getDefaultColor());
+                                    //editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), strings[cnt]);
                                     isNotSending = false;
                                     escapeMoveFlag = false;
                                 }
@@ -827,14 +740,13 @@ b1:         if (state == State.CONNECTED && count > before) {
                         stack--;
                         Log.d("stack***", "stackLength" + stack);
                         cnt++;
+                        if (stack == 0){
+                            Log.d("TermDisplay****", "stack is 0");
+                            handler.postDelayed(task, time);
+                        }
 
                     }
                     isReceiving = false;
-
-                    if (stack == 0){
-                        Log.d("TermDisplay****", "stack is 0");
-                        handler.postDelayed(task, time);
-                    }
                 }
             }
         }
@@ -1176,15 +1088,6 @@ b1:         if (state == State.CONNECTED && count > before) {
         }
     }
 
-
-    /**
-    TimerTask task = new TimerTask() {
-        @Override
-        public void run() {
-            changeDisplay();
-        }
-    };**/
-
     private Handler handler = new Handler();
     private final Runnable task = new Runnable() {
         @Override
@@ -1194,12 +1097,75 @@ b1:         if (state == State.CONNECTED && count > before) {
         }
     };
 
-    /**
-    class MyTask implements Runnable{
-        @Override
-        public void run() {
-            changeDisplay();
-            //moveToSavedCursor();
+    private void addList(String str){
+        if (str.matches("[\\x20-\\x7f\\x0a\\x0d]")){
+
+            if (isOutOfScreen) {
+                inputEditText.setFocusable(true);
+                inputEditText.setFocusableInTouchMode(true);
+                inputEditText.requestFocus();
+                termDisplay.setTopRow(termDisplay.getCurrRow() - termDisplay.getCursorY());
+            }
+            if (termDisplay.getCursorX() > getSelectLineText().length()) {
+                termDisplay.setCursorX(getSelectLineText().length());
+            }
+            char inputStr = str.charAt(0);
+            if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
+                Log.d("termDisplay****", "set");
+                if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) {
+                    termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                } else {
+                    if (inputStr != LF) {
+                        termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                    } else { //LF
+                        if (!getSelectLineText().contains("\n")) {
+                            termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                        }
+                    }
+                }
+                moveCursorX(1);
+            } else { //insert
+                Log.d("termDisplay****", "insert");
+                if (inputStr != LF) { //LFじゃない
+                    termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                    if (termDisplay.getCursorX() + 1 < displayRowSize) {
+                        isOverWriting = true;
+                        moveCursorX(1);
+                    } else {
+                        isOverWriting = false;
+                    }
+
+                } else { //LF
+                    if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && !getSelectLineText().contains("\n")) {
+                        if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
+                            termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                        }
+                    }
+                }
+            }
+
+            Log.d(TAG, "ASCII code/ " + str);
+            if (inputStr == LF) {
+                termDisplay.setCursorX(0);
+                if (termDisplay.getCursorY() + 1 >= displayColumnSize) {
+                    scrollDown();
+                }
+                if (termDisplay.getCursorY() < displayColumnSize) {
+                    moveCursorY(1);
+                }
+            }
+
+            if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n") && !isOverWriting) {
+                termDisplay.setCursorX(0);
+                if (inputEditText.getLineCount() >= displayColumnSize) {
+                    scrollDown();
+                }
+
+                if (termDisplay.getCursorY() + 1 < displayColumnSize) {
+                    moveCursorY(1);
+                }
+            }
+            isOverWriting = false;
         }
-    }**/
+    }
 }
