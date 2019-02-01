@@ -442,7 +442,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                         termDisplay.setTopRow(termDisplay.getCurrRow()-termDisplay.getCursorY());
                         if (stack == 0){
                             Log.d("TermDisplay****", "out of screen");
-                            changeDisplay();
+                            //changeDisplay();
                         }
                     }
                     if (termDisplay.getCursorX() > getSelectLineText().length()) {
@@ -483,7 +483,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                         }
                         if (stack == 0){
                             Log.d("TermDisplay****", "insert");
-                            changeDisplay();
+                            //changeDisplay();
                         }
                     }
 
@@ -508,7 +508,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                             moveCursorY(1);
                         }
                     }
-                    //handler.postDelayed(task, time);
+                    handler.postDelayed(task, time);
                     isOverWriting = false;
                 }
             }
@@ -517,7 +517,8 @@ b1:         if (state == State.CONNECTED && count > before) {
                     isEditing = false;
                     if (stack == 0){
                         Log.d("TermDisplay****", "not ascii");
-                        changeDisplay();
+                        //changeDisplay();
+                        //handler.postDelayed(task, time);
                     }
                     isEditing = true;
                 }
@@ -586,7 +587,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                     String[] strings = data.split("", -1);
 
                     //timer.cancel();
-                    //handler.removeCallbacks(task);
+                    handler.removeCallbacks(task);
                     /**
                     if (timer != null){
                         timer.cancel();
@@ -832,16 +833,7 @@ b1:         if (state == State.CONNECTED && count > before) {
 
                     if (stack == 0){
                         Log.d("TermDisplay****", "stack is 0");
-                        changeDisplay();
-                        //timer = new Timer();
-                        //timer.schedule(task, time);
-                        /**
-                        if (timer == null){
-                            timer = new Timer();
-                            timer.schedule(task, time);
-                        }**/
-                        //handler.postDelayed(task, time);
-
+                        handler.postDelayed(task, time);
                     }
                 }
             }
@@ -1191,7 +1183,7 @@ b1:         if (state == State.CONNECTED && count > before) {
         public void run() {
             changeDisplay();
         }
-    };
+    };**/
 
     private Handler handler = new Handler();
     private final Runnable task = new Runnable() {
@@ -1202,6 +1194,7 @@ b1:         if (state == State.CONNECTED && count > before) {
         }
     };
 
+    /**
     class MyTask implements Runnable{
         @Override
         public void run() {
