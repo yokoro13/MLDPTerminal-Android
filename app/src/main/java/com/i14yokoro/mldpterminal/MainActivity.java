@@ -75,7 +75,6 @@ public class MainActivity extends AppCompatActivity{
     private String clear = "";
     private int h1;
 
-    private Editable editable;
     private EscapeSequence escapeSequence;
     private TermDisplay termDisplay;
 
@@ -101,7 +100,7 @@ public class MainActivity extends AppCompatActivity{
 
     private int stack = 0;
 
-    private int time = 1;
+    private int time = 3;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -437,7 +436,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                     isEditing = false;
                     if (stack == 0){
                         Log.d("TermDisplay****", "not ascii");
-                        changeDisplay();
+                        //changeDisplay();
                     }
                     isEditing = true;
                 }
@@ -530,14 +529,9 @@ b1:         if (state == State.CONNECTED && count > before) {
                                 break;
                             case KeyHexString.KEY_LF:
                                 Log.d("debug****", "KEY_LF");
-                                editable = inputEditText.getText();
                                 isNotSending = true;
-                                editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), "\n");
+                                addList("\n");
                                 isNotSending = false;
-                                if (stack == 0){
-                                    Log.d("TermDisplay****", "KEY_LF");
-                                    changeDisplay();
-                                }
                                 escapeState = EscapeState.NONE;
                                 escapeMoveFlag = false;
                                 break;
@@ -718,8 +712,6 @@ b1:         if (state == State.CONNECTED && count > before) {
                                         break;
                                     }
                                 }
-
-                                editable = inputEditText.getText();
                                 escapeState = EscapeState.NONE;
 
                                 if(cnt <= data.length()) {
@@ -729,8 +721,6 @@ b1:         if (state == State.CONNECTED && count > before) {
 
                                     isNotSending = true;
                                     addList(strings[cnt]);
-                                    //termDisplay.setTextItem(strings[cnt].charAt(0), termDisplay.getDefaultColor());
-                                    //editable.replace(termDisplay.getCursorX(), termDisplay.getCursorX(), strings[cnt]);
                                     isNotSending = false;
                                     escapeMoveFlag = false;
                                 }
