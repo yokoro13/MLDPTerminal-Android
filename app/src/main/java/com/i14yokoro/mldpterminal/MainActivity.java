@@ -21,9 +21,6 @@ import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.Html;
-import android.text.Selection;
-import android.text.SpanWatcher;
-import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -94,12 +91,11 @@ public class MainActivity extends AppCompatActivity{
     private boolean isDisplaying = false; //画面更新中はtrue
     private boolean isSending = false; //RNにデータを送信しているときtrue
     private boolean isOverWriting = false; //文字を上書きするときtrue
-    private boolean isReceiving = false; //RNからデータを受信したらtrue
-
-    private boolean isOutOfScreen = false;
+    private boolean isOutOfScreen = false; //カーソルが画面外か
 
     private int stack = 0;
 
+    private Handler handler = new Handler();
     private int time = 3;
 
     @SuppressLint("ClickableViewAccessibility")
@@ -445,25 +441,6 @@ b1:         if (state == State.CONNECTED && count > before) {
         }
     };
 
-    final SpanWatcher watcher = new SpanWatcher() {
-        @Override
-        public void onSpanAdded(final Spannable text, final Object what, final int start, final int end) {
-        }
-
-        @Override
-        public void onSpanRemoved(final Spannable text, final Object what, final int start, final int end) {
-        }
-
-        @Override
-        public void onSpanChanged(final Spannable text, final Object what, final int ostart, final int oend, final int nstart, final int nend) {
-            if (what == Selection.SELECTION_START) {
-                moveToSavedCursor();
-            } else if (what == Selection.SELECTION_END) {
-                moveToSavedCursor();
-            }
-        }
-    };
-
     //通すActionを記述
     private static IntentFilter bleServiceIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
@@ -495,147 +472,150 @@ b1:         if (state == State.CONNECTED && count > before) {
                 //Log.d(TAG, "Received intent ACTION_BLE_DATA_RECEIVED");
                 String data = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA);
 
+
+                if (data == null) {
+                    return;
+                }
+
                 int cnt = 1;
-
                 Log.d("debug****", "data" + data);
-                if (data != null) {
-                    String[] strings = data.split("", -1);
 
-                    //timer.cancel();
-                    handler.removeCallbacks(task);
-                    stack += strings.length-2;
-                    Log.d("stack***", "stackLength" + stack);
-                    byte[] utf = data.getBytes(StandardCharsets.UTF_8);
-                    isReceiving = true;
-                    for (byte b : utf) {
-                        switch (b) {
-                            case KeyHexString.KEY_BS:
-                                moveCursorX(-1);
-                                escapeState = EscapeState.NONE;
-                                escapeMoveFlag = false;
-                                break;
-                            case KeyHexString.KEY_HT:
-                                if (termDisplay.getCursorX() + (8-termDisplay.getCursorX()%8) < displayRowSize){
-                                    escapeSequence.moveRight(8 - termDisplay.getCursorX()%8);
-                                } else {
-                                    moveCursorX(displayRowSize-1);
-                                }
-                                escapeState = EscapeState.NONE;
-                                escapeMoveFlag = false;
-                                break;
-                            case KeyHexString.KEY_DEL:
-                                escapeState = EscapeState.NONE;
-                                escapeMoveFlag = false;
-                                break;
-                            case KeyHexString.KEY_LF:
-                                Log.d("debug****", "KEY_LF");
-                                isNotSending = true;
-                                addList("\n");
-                                isNotSending = false;
-                                escapeState = EscapeState.NONE;
-                                escapeMoveFlag = false;
-                                break;
-                            case KeyHexString.KEY_CR:
-                                Log.d("debug****", "KEY_CR");
-                                termDisplay.setCursorX(0);
-                                break;
-                            case KeyHexString.KEY_ESC:
-                                Log.d(TAG, "receive esc");
-                                escapeState = EscapeState.ESCAPE;
-                                escapeMoveFlag = false;
-                                break;
-                            case KeyHexString.KEY_SQUARE_LEFT:
-                                Log.d(TAG, "receive square");
-                                if (escapeState == EscapeState.ESCAPE) {
-                                    escapeState = EscapeState.SQUARE;
-                                    break;
-                                } else {
-                                    escapeState = EscapeState.NONE;
-                                }
-                                escapeMoveFlag = false;
-                            default:
+                String[] strings = data.split("", -1);
 
-                                if (escapeState == EscapeState.SQUARE && strings[cnt].matches("[0-9]")) {
-                                    Log.d(TAG, "move flag is true");
-                                    escapeMoveNum += strings[cnt];
-                                    clear += strings[cnt];
-                                    if (Integer.parseInt(escapeMoveNum) > 1000 || Integer.parseInt(clear) > 1000) {
-                                        escapeMoveNum = "1000";
-                                        clear = "1000";
-                                    }
-                                    escapeMoveFlag = true;
-                                    break;
+                //timer.cancel();
+                handler.removeCallbacks(task);
+                stack += strings.length-2;
+                Log.d("stack***", "stackLength" + stack);
+                byte[] utf = data.getBytes(StandardCharsets.UTF_8);
+
+                for (byte b : utf) {
+                    switch (b) {
+                        case KeyHexString.KEY_BS:
+                            moveCursorX(-1);
+                            escapeState = EscapeState.NONE;
+                            escapeMoveFlag = false;
+                            break;
+                        case KeyHexString.KEY_HT:
+                            if (termDisplay.getCursorX() + (8-termDisplay.getCursorX()%8) < displayRowSize){
+                                escapeSequence.moveRight(8 - termDisplay.getCursorX()%8);
+                            } else {
+                                moveCursorX(displayRowSize-1);
+                            }
+                            escapeState = EscapeState.NONE;
+                            escapeMoveFlag = false;
+                            break;
+                        case KeyHexString.KEY_DEL:
+                            escapeState = EscapeState.NONE;
+                            escapeMoveFlag = false;
+                            break;
+                        case KeyHexString.KEY_LF:
+                            Log.d("debug****", "KEY_LF");
+                            isNotSending = true;
+                            addList("\n");
+                            isNotSending = false;
+                            escapeState = EscapeState.NONE;
+                            escapeMoveFlag = false;
+                            break;
+                        case KeyHexString.KEY_CR:
+                            Log.d("debug****", "KEY_CR");
+                            termDisplay.setCursorX(0);
+                            break;
+                        case KeyHexString.KEY_ESC:
+                            Log.d(TAG, "receive esc");
+                            escapeState = EscapeState.ESCAPE;
+                            escapeMoveFlag = false;
+                            break;
+                        case KeyHexString.KEY_SQUARE_LEFT:
+                            Log.d(TAG, "receive square");
+                            if (escapeState == EscapeState.ESCAPE) {
+                                escapeState = EscapeState.SQUARE;
+                                break;
+                            } else {
+                                escapeState = EscapeState.NONE;
+                            }
+                            escapeMoveFlag = false;
+                        default:
+
+                            if (escapeState == EscapeState.SQUARE && strings[cnt].matches("[0-9]")) {
+                                Log.d(TAG, "move flag is true");
+                                escapeMoveNum += strings[cnt];
+                                clear += strings[cnt];
+                                if (Integer.parseInt(escapeMoveNum) > 1000 || Integer.parseInt(clear) > 1000) {
+                                    escapeMoveNum = "1000";
+                                    clear = "1000";
                                 }
-                                if (escapeState == EscapeState.SQUARE && strings[cnt].equals(";")) {
+                                escapeMoveFlag = true;
+                                break;
+                            }
+                            if (escapeState == EscapeState.SQUARE && strings[cnt].equals(";")) {
+                                if (escapeMoveFlag) {
+                                    h1 = Integer.parseInt(escapeMoveNum);
+                                } else {
+                                    h1 = 1;
+                                }
+                                escapeMoveNum = "";
+                                clear = "";
+                                isReceivingH = true;
+                                escapeMoveFlag = false;
+                                break;
+                            }
+                            if (isReceivingH && !strings[cnt].matches("[Hf]")) {
+                                escapeMoveNum = "";
+                                clear = "";
+                                escapeMoveFlag = false;
+                                escapeState = EscapeState.NONE;
+                                break;
+                            }
+                            if (escapeState == EscapeState.SQUARE) {
+                                if (strings[cnt].matches("[A-HJKSTfm]")) {
+                                    //escapeシーケンス用
+                                    int move;
+                                    int clearNum;
                                     if (escapeMoveFlag) {
-                                        h1 = Integer.parseInt(escapeMoveNum);
+                                        move = Integer.parseInt(escapeMoveNum);
+                                        clearNum = Integer.parseInt(clear);
                                     } else {
-                                        h1 = 1;
+                                        move = 1;
+                                        clearNum = 0;
                                     }
                                     escapeMoveNum = "";
-                                    clear = "";
-                                    isReceivingH = true;
-                                    escapeMoveFlag = false;
-                                    break;
-                                }
-                                if (isReceivingH && !strings[cnt].matches("[Hf]")) {
-                                    escapeMoveNum = "";
-                                    clear = "";
+
+                                    Log.d(TAG, "moveFlag true && A-H");
+
+                                    checkSequence(b, move, clearNum);
+
                                     escapeMoveFlag = false;
                                     escapeState = EscapeState.NONE;
                                     break;
                                 }
-                                if (escapeState == EscapeState.SQUARE) {
-                                    if (strings[cnt].matches("[A-HJKSTfm]")) {
-                                        //escapeシーケンス用
-                                        int move;
-                                        int clearNum;
-                                        if (escapeMoveFlag) {
-                                            move = Integer.parseInt(escapeMoveNum);
-                                            clearNum = Integer.parseInt(clear);
-                                        } else {
-                                            move = 1;
-                                            clearNum = 0;
-                                        }
-                                        escapeMoveNum = "";
+                            }
+                            escapeState = EscapeState.NONE;
 
-                                        Log.d(TAG, "moveFlag true && A-H");
-
-                                        checkSequence(b, move, clearNum);
-
-                                        escapeMoveFlag = false;
-                                        escapeState = EscapeState.NONE;
-                                        break;
-                                    }
-                                }
-                                escapeState = EscapeState.NONE;
-
-                                if(cnt <= data.length()) {
-                                    if (strings[cnt].equals("\u0020")) {
-                                        strings[cnt] = " ";
-                                    }
-
-                                    isNotSending = true;
-                                    addList(strings[cnt]);
-                                    isNotSending = false;
-                                    escapeMoveFlag = false;
+                            if(cnt <= data.length()) {
+                                if (strings[cnt].equals("\u0020")) {
+                                    strings[cnt] = " ";
                                 }
 
-                                break;
-                        }
-                        stack--;
-                        Log.d("stack***", "stackLength" + stack);
-                        cnt++;
-                        if (stack == 0){
-                            Log.d("TermDisplay****", "stack is 0");
-                            handler.postDelayed(task, time);
-                        }
+                                isNotSending = true;
+                                addList(strings[cnt]);
+                                isNotSending = false;
+                                escapeMoveFlag = false;
+                            }
 
+                            break;
                     }
-                    isReceiving = false;
+                    stack--;
+                    Log.d("stack***", "stackLength" + stack);
+                    cnt++;
+                    if (stack == 0){
+                        Log.d("TermDisplay****", "stack is 0");
+                        handler.postDelayed(task, time);
+                    }
+
                 }
             }
         }
+
     };
 
     private void checkSequence(byte b, int move, int clearNum){
@@ -1083,7 +1063,6 @@ b1:         if (state == State.CONNECTED && count > before) {
         }
     }
 
-    private Handler handler = new Handler();
     private final Runnable task = new Runnable() {
         @Override
         public void run() {
