@@ -150,10 +150,8 @@ public class EscapeSequence {
             for (int y = getTop(); y <= getSelectRowIndex(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
                     termDisplay.changeText(x, y, '\u0000');
-                    if(y == getSelectRowIndex()){
-                        if(x == termDisplay.getCursorX()){
-                            break;
-                        }
+                    if (y == getSelectRowIndex() && x == termDisplay.getCursorX()) {
+                        break;
                     }
                 }
             }

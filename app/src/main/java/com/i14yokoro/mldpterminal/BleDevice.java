@@ -6,9 +6,9 @@ class BleDevice {
     private String address;
     private String name;
 
-    BleDevice(String a, String n) {
-        address = a;
-        name = n;
+    BleDevice(String address, String name) {
+        this.address = address;
+        this.name = name;
     }
 
     public String getAddress() {

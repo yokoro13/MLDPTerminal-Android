@@ -26,7 +26,7 @@ class DeviceListAdapter extends ArrayAdapter<BleDevice> {
         super(context, layoutResourceId);
         this.layoutResourceId = layoutResourceId;
         this.context = context;
-        bleDevices = new ArrayList<BleDevice>();
+        bleDevices = new ArrayList<>();
     }
 
     public void addDevice(BleDevice device) {
