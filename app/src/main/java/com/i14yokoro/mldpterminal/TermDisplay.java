@@ -78,19 +78,16 @@ public class TermDisplay{
         if (y > textList.size() || textList.get(y).size() >= displayRowSize){ //行の長さが最大文字数をこえる
             return;
         }
-
         if(x <= textList.get(y).size()) { //行の範囲内
-            if (getText(displayRowSize-1, y) == LF){ //一番最後
+            if (getText(displayRowSize-1, y) == LF){ //一番最後がLF
                 deleteTextItem(displayRowSize-1, y);
             }
-            if(textList.get(y).size() < displayRowSize && getText(x, y) != LF) {
+            if(getText(x, y) != LF) { //LFじゃない
                 addTextItem(y, text, color);
             } else {
-                if(getText(x, y) == LF){
-                    deleteTextItem(x, y);
-                    addTextItem(y, text, color);
-                    addTextItem(y, LF, color);
-                }
+                deleteTextItem(x, y);
+                addTextItem(y, text, color);
+                addTextItem(y, LF, color);
             }
         }
     }
