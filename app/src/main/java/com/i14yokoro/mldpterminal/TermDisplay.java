@@ -75,24 +75,21 @@ public class TermDisplay{
     }
 
     public void insertTextItem(int x, int y, char text, int color){
-        int checkLF = x - 1;
-        if(checkLF < 0){
-            checkLF = 0;
+        if (y > textList.size() || textList.get(y).size() >= displayRowSize){
+            return;
         }
-        if(y < textList.size() && x <= textList.get(y).size()) {
+
+        if(x <= textList.get(y).size()) {
             if (getRowLength(y) >= displayRowSize && getText(displayRowSize-1, y) == LF){
                 deleteTextItem(displayRowSize-1, y);
             }
-            if(textList.get(y).size() < displayRowSize && getText(checkLF, y) != LF) {
-                TextItem textItem = new TextItem(text, color);
-                textList.get(y).add(x, textItem);
+            if(textList.get(y).size() < displayRowSize && getText(x, y) != LF) {
+                addTextItem(y, text, color);
             } else {
-                if(getText(checkLF, y) == LF){
-                    deleteTextItem(checkLF, y);
-                    TextItem textItem = new TextItem(text, color);
-                    textList.get(y).add(checkLF, textItem);
-                    textItem = new TextItem(LF, color);
-                    textList.get(y).add(textItem);
+                if(getText(x, y) == LF){
+                    deleteTextItem(x, y);
+                    addTextItem(y, text, color);
+                    addTextItem(y, LF, color);
                 }
             }
         }

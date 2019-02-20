@@ -136,7 +136,6 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
-                moveToSavedCursor();
             }
         });
 
@@ -150,7 +149,6 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
-                moveToSavedCursor();
             }
         });
 
@@ -624,6 +622,8 @@ b1:         if (state == State.CONNECTED && count > before) {
                 if (move >= displayColumnSize)
                     move = displayColumnSize - 1;
                 escapeSequence.moveUp(move);
+                Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
+                Log.d("TermDisplay****", getSelectLineText());
                 escapeMoveNum = "";
                 clear = "";
                 break;
@@ -631,6 +631,8 @@ b1:         if (state == State.CONNECTED && count > before) {
                 if (move >= displayColumnSize)
                     move = displayColumnSize - 1;
                 escapeSequence.moveDown(move);
+                Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
+                Log.d("TermDisplay****", getSelectLineText());
                 escapeMoveNum = "";
                 clear = "";
                 break;
@@ -638,6 +640,8 @@ b1:         if (state == State.CONNECTED && count > before) {
                 if (move >= displayRowSize)
                     move = displayRowSize - 1;
                 escapeSequence.moveRight(move);
+                Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
+                Log.d("TermDisplay****", getSelectLineText());
                 escapeMoveNum = "";
                 clear = "";
                 break;
@@ -948,7 +952,7 @@ b1:         if (state == State.CONNECTED && count > before) {
             result = HtmlParser.toHtml(spannable);
             inputEditText.append(Html.fromHtml(result));
         }
-        Log.d("TermDisplay****", termDisplay.createDisplay() + "END");
+        //Log.d("TermDisplay****", termDisplay.createDisplay() + "END");
 
         isDisplaying = false;
         isNotSending = false;
@@ -1019,7 +1023,7 @@ b1:         if (state == State.CONNECTED && count > before) {
 
     private void scrollUp(){
         if(termDisplay.getTopRow() - 1 >= 0 ){
-            if (termDisplay.getCurrRow() >= termDisplay.getTopRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize) {
+            if (termDisplay.getCurrRow() >= termDisplay.getTopRow() && termDisplay.getCurrRow() + 1 < termDisplay.getTopRow() + displayColumnSize) {
                 inputEditText.setFocusable(true);
                 inputEditText.setFocusableInTouchMode(true);
                 inputEditText.requestFocus();

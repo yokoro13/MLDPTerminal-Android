@@ -79,6 +79,7 @@ public class EscapeSequence {
         }
     }
 
+    //TODO okasii
     private void addBlank(int n){
         int x = termDisplay.getRowLength(getSelectRowIndex())-1;
         if(x < 0){
