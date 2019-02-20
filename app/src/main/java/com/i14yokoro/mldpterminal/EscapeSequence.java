@@ -79,9 +79,8 @@ public class EscapeSequence {
         }
     }
 
-    //TODO okasii
     private void addBlank(int n){
-        int x = termDisplay.getRowLength(getSelectRowIndex())-1;
+        int x = termDisplay.getRowLength(getSelectRowIndex())-1; //現在の行の最後のindexを取得
         if(x < 0){
             x = 0;
         }

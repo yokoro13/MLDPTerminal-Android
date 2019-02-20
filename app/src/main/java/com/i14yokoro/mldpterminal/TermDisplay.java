@@ -75,12 +75,12 @@ public class TermDisplay{
     }
 
     public void insertTextItem(int x, int y, char text, int color){
-        if (y > textList.size() || textList.get(y).size() >= displayRowSize){
+        if (y > textList.size() || textList.get(y).size() >= displayRowSize){ //行の長さが最大文字数をこえる
             return;
         }
 
-        if(x <= textList.get(y).size()) {
-            if (getRowLength(y) >= displayRowSize && getText(displayRowSize-1, y) == LF){
+        if(x <= textList.get(y).size()) { //行の範囲内
+            if (getText(displayRowSize-1, y) == LF){ //一番最後
                 deleteTextItem(displayRowSize-1, y);
             }
             if(textList.get(y).size() < displayRowSize && getText(x, y) != LF) {
@@ -227,10 +227,10 @@ public class TermDisplay{
         if(y >= getTotalColumns()){
             return 0;
         }
-        if(textList.size() == 0 || textList.get(y).size() == 0){
+        if(textList.size() == 0){
             return 0;
         }
-        return this.textList.get(y).size();
+        return textList.get(y).size();
     }
 
     public String getRowText(int y){
