@@ -136,6 +136,8 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
+                moveCursorY(-1);
+                moveToSavedCursor();
             }
         });
 
@@ -149,6 +151,8 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
+                moveCursorY(1);
+                moveToSavedCursor();
             }
         });
 
@@ -163,6 +167,8 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
+                moveCursorX(1);
+                moveToSavedCursor();
             }
         });
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
@@ -176,6 +182,8 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
+                moveCursorX(-1);
+                moveToSavedCursor();
             }
         });
 
@@ -416,8 +424,6 @@ b1:         if (state == State.CONNECTED && count > before) {
             if(s.length() < 1) return;
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
 
-            Log.d(TAG, "afterTextChange");
-
             handler.removeCallbacks(task);
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending) {
                 if (!isDisplaying) {
@@ -426,14 +432,6 @@ b1:         if (state == State.CONNECTED && count > before) {
                 }
             }
             else { //ASCIIじゃなければ入力前の状態にもどす
-                if(isEditing) {
-                    isEditing = false;
-                    if (stack == 0){
-                        Log.d("TermDisplay****", "not ascii");
-                        //changeDisplay();
-                    }
-                    isEditing = true;
-                }
                 isSending = false;
             }
         }
@@ -517,6 +515,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                         case KeyHexString.KEY_CR:
                             Log.d("debug****", "KEY_CR");
                             termDisplay.setCursorX(0);
+                            moveToSavedCursor();
                             break;
                         case KeyHexString.KEY_ESC:
                             Log.d(TAG, "receive esc");
@@ -1021,6 +1020,8 @@ b1:         if (state == State.CONNECTED && count > before) {
         return length;
     }
 
+
+    //TODO 一番下の行以外にカーソルがあるとき，スクロールしたあと入力するとカーソルがおかしい位置にいく
     private void scrollUp(){
         if(termDisplay.getTopRow() - 1 >= 0 ){
             if (termDisplay.getCurrRow() >= termDisplay.getTopRow() && termDisplay.getCurrRow() + 1 < termDisplay.getTopRow() + displayColumnSize) {
@@ -1039,6 +1040,7 @@ b1:         if (state == State.CONNECTED && count > before) {
             if (stack == 0){
                 Log.d("TermDisplay****", "scroll up");
                 changeDisplay();
+                moveToSavedCursor();
             }
         }
     }
@@ -1062,6 +1064,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                 if (stack == 0){
                     Log.d("TermDisplay****", "scroll down");
                     changeDisplay();
+                    moveToSavedCursor();
                 }
             }
         }
@@ -1075,6 +1078,7 @@ b1:         if (state == State.CONNECTED && count > before) {
         }
     };
 
+    //TODO Ctrl + j がきたときにたぶんリストの内容がおかしい (改行の後ろに文字がはいっている．)
     private void addList(String str){
         if (str.matches("[\\x20-\\x7f\\x0a\\x0d]")){
 
@@ -1083,9 +1087,13 @@ b1:         if (state == State.CONNECTED && count > before) {
                 inputEditText.setFocusableInTouchMode(true);
                 inputEditText.requestFocus();
                 termDisplay.setTopRow(termDisplay.getCurrRow() - termDisplay.getCursorY());
+                moveToSavedCursor();
             }
             if (termDisplay.getCursorX() > getSelectLineText().length()) {
                 termDisplay.setCursorX(getSelectLineText().length());
+                if (getSelectLineText().contains("\n")){
+                    moveCursorX(-1);
+                }
             }
             char inputStr = str.charAt(0);
             if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
