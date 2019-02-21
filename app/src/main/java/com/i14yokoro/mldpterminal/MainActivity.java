@@ -622,7 +622,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                     move = displayColumnSize - 1;
                 escapeSequence.moveUp(move);
                 Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
-                Log.d("TermDisplay****", getSelectLineText());
+                Log.d("TermDisplay****", getSelectLineText().replace(' ', '_'));
                 escapeMoveNum = "";
                 clear = "";
                 break;
@@ -631,7 +631,8 @@ b1:         if (state == State.CONNECTED && count > before) {
                     move = displayColumnSize - 1;
                 escapeSequence.moveDown(move);
                 Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
-                Log.d("TermDisplay****", getSelectLineText());
+                String str = getSelectLineText().replace(' ', '_');
+                Log.d("TermDisplay****", getSelectLineText().replace(' ', '_'));
                 escapeMoveNum = "";
                 clear = "";
                 break;
@@ -640,7 +641,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                     move = displayRowSize - 1;
                 escapeSequence.moveRight(move);
                 Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
-                Log.d("TermDisplay****", getSelectLineText());
+                Log.d("TermDisplay****", getSelectLineText().replace(' ', '_'));
                 escapeMoveNum = "";
                 clear = "";
                 break;
@@ -1096,18 +1097,19 @@ b1:         if (state == State.CONNECTED && count > before) {
                 }
             }
             char inputStr = str.charAt(0);
-            if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) {
+            if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) { //カーソルが行の一番最後
                 Log.d("termDisplay****", "set");
-                if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) {
+                if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) { //一番したの行
                     termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
                 } else {
+                    /**
                     if (inputStr != LF) {
                         termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                    } else { //LF
+                    } else { **///LF
                         if (!getSelectLineText().contains("\n")) {
                             termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
                         }
-                    }
+                    //}
                 }
                 moveCursorX(1);
             } else { //insert

@@ -61,7 +61,7 @@ public class EscapeSequence {
             } else {
                 moveCursorY(n);
             }
-            int move = termDisplay.getCursorY() - termDisplay.getDisplaySize();//2,1のばあい
+            int move = termDisplay.getCursorY() - termDisplay.getDisplaySize();
             for (int i = 0; i <= move; i++){
                 termDisplay.addEmptyRow();
             }
@@ -86,6 +86,7 @@ public class EscapeSequence {
         }
         for (int i = 0; i < n; i++){
             termDisplay.insertTextItem(x, getSelectRowIndex(),' ', termDisplay.getDefaultColor());
+            x = termDisplay.getRowLength(getSelectRowIndex())-1;
         }
     }
 
