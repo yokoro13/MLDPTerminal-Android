@@ -74,17 +74,10 @@ public class TermDisplay{
         textList.add(items1);
     }
 
-    /**
-     * @param x     挿入する場所(もしくは，現在の行の最後のindex)
-     * @param y     現在の行番号
-     * @param text  挿入する文字
-     * @param color 色
-     */
     public void insertTextItem(int x, int y, char text, int color){
         if (y > textList.size() || textList.get(y).size() >= displayRowSize){ //行の長さが最大文字数をこえる
             return;
         }
-        Log.d("TermDisplay*****", getRowText(y).replace(' ', '_'));
         if(x <= textList.get(y).size()) { //行の範囲内
             if (getText(displayRowSize-1, y) == LF){ //一番最後がLF
                 deleteTextItem(displayRowSize-1, y);
@@ -97,7 +90,6 @@ public class TermDisplay{
                 addTextItem(y, LF, color);
             }
         }
-        Log.d("TermDisplay*****", getRowText(y).replace(' ', '_'));
     }
 
     public void changeText(int x, int y, char text){

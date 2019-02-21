@@ -136,8 +136,6 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
-                moveCursorY(-1);
-                moveToSavedCursor();
             }
         });
 
@@ -151,8 +149,6 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
-                moveCursorY(1);
-                moveToSavedCursor();
             }
         });
 
@@ -167,8 +163,6 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
-                moveCursorX(1);
-                moveToSavedCursor();
             }
         });
         findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
@@ -182,8 +176,6 @@ public class MainActivity extends AppCompatActivity{
                         moveToSavedCursor();
                     }
                 }
-                moveCursorX(-1);
-                moveToSavedCursor();
             }
         });
 
@@ -621,8 +613,6 @@ b1:         if (state == State.CONNECTED && count > before) {
                 if (move >= displayColumnSize)
                     move = displayColumnSize - 1;
                 escapeSequence.moveUp(move);
-                Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
-                Log.d("TermDisplay****", getSelectLineText().replace(' ', '_'));
                 escapeMoveNum = "";
                 clear = "";
                 break;
@@ -631,8 +621,6 @@ b1:         if (state == State.CONNECTED && count > before) {
                     move = displayColumnSize - 1;
                 escapeSequence.moveDown(move);
                 Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
-                String str = getSelectLineText().replace(' ', '_');
-                Log.d("TermDisplay****", getSelectLineText().replace(' ', '_'));
                 escapeMoveNum = "";
                 clear = "";
                 break;
@@ -640,8 +628,6 @@ b1:         if (state == State.CONNECTED && count > before) {
                 if (move >= displayRowSize)
                     move = displayRowSize - 1;
                 escapeSequence.moveRight(move);
-                Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
-                Log.d("TermDisplay****", getSelectLineText().replace(' ', '_'));
                 escapeMoveNum = "";
                 clear = "";
                 break;
@@ -1021,8 +1007,6 @@ b1:         if (state == State.CONNECTED && count > before) {
         return length;
     }
 
-
-    //TODO 一番下の行以外にカーソルがあるとき，スクロールしたあと入力するとカーソルがおかしい位置にいく
     private void scrollUp(){
         if(termDisplay.getTopRow() - 1 >= 0 ){
             if (termDisplay.getCurrRow() >= termDisplay.getTopRow() && termDisplay.getCurrRow() + 1 < termDisplay.getTopRow() + displayColumnSize) {
@@ -1079,7 +1063,6 @@ b1:         if (state == State.CONNECTED && count > before) {
         }
     };
 
-    //TODO Ctrl + j がきたときにたぶんリストの内容がおかしい (改行の後ろに文字がはいっている．)
     private void addList(String str){
         if (str.matches("[\\x20-\\x7f\\x0a\\x0d]")){
 
@@ -1102,14 +1085,9 @@ b1:         if (state == State.CONNECTED && count > before) {
                 if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) { //一番したの行
                     termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
                 } else {
-                    /**
-                    if (inputStr != LF) {
+                    if (!getSelectLineText().contains("\n")) {
                         termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                    } else { **///LF
-                        if (!getSelectLineText().contains("\n")) {
-                            termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
-                        }
-                    //}
+                    }
                 }
                 moveCursorX(1);
             } else { //insert
