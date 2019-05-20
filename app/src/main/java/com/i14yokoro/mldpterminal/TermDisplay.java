@@ -254,7 +254,6 @@ public class TermDisplay{
     }
 
     public void setDefaultColor(int defaultColor) {
-
         this.defaultColor = defaultColor;
     }
 

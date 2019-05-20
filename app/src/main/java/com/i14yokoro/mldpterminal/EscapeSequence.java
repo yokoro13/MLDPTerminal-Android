@@ -1,20 +1,35 @@
 package com.i14yokoro.mldpterminal;
 
+/**
+ * ANSIのエスケープシーケンスと同じ動作をする
+ */
 public class EscapeSequence {
     private TermDisplay termDisplay;
 
+    /**
+     * @param termDisplay 表示画面の情報
+     */
     EscapeSequence(TermDisplay termDisplay){
         this.termDisplay = termDisplay;
     }
 
+    /**
+     * @return topRow
+     */
     private int getTop(){
         return termDisplay.getTopRow();
     }
 
+    /**
+     * @param top 画面一番の行番号
+     */
     private void setTop(int top){
         termDisplay.setTopRow(top);
     }
 
+    /**
+     * @param n 移動する量
+     */
     public void moveRight(int n){
         if(termDisplay.getCursorX() + n < termDisplay.getRowLength(getSelectRowIndex())) {
             moveCursorX(n);
@@ -32,12 +47,18 @@ public class EscapeSequence {
         }
     }
 
+    /**
+     * @param n 移動する量
+     */
     public void moveLeft(int n){
         if(termDisplay.getCursorX() - n >= 0){
             moveCursorX(-n);
         }
     }
 
+    /**
+     * @param n 移動する量
+     */
     public void moveUp(int n){
 
         if(termDisplay.getCursorY() - n < 0){ //画面外にでる
@@ -53,6 +74,9 @@ public class EscapeSequence {
         }
     }
 
+    /**
+     * @param n 移動する量
+     */
     public void moveDown(int n){
 
         if(termDisplay.getCursorY() + n >= termDisplay.getDisplaySize()) { //移動先が一番下の行を超える場合
@@ -79,6 +103,9 @@ public class EscapeSequence {
         }
     }
 
+    /**
+     * @param n 追加する空白の量
+     */
     private void addBlank(int n){
         int x = termDisplay.getRowLength(getSelectRowIndex())-1; //現在の行の最後のindexを取得
         if(x < 0){
@@ -90,21 +117,34 @@ public class EscapeSequence {
         }
     }
 
+    /**
+     * @param n 移動する量
+     */
     public void moveUpToRowLead(int n){
         termDisplay.setCursorX(0);
         moveUp(n);
     }
 
+    /**
+     * @param n 移動する量
+     */
     public void moveDownToRowLead(int n){
         termDisplay.setCursorX(0);
         moveDown(n);
     }
 
+    /**
+     * @param n 移動する量
+     */
     public void moveSelection(int n){
         termDisplay.setCursorX(0);
         moveRight(n-1);
     }
 
+    /**
+     * @param n 縦に移動する量(0 < n)
+     * @param m 横に移動する量(0 < m)
+     */
     public void moveSelection(int n, int m){ //n,mは1~
         if(n < 1){
             n = 1;
@@ -124,6 +164,9 @@ public class EscapeSequence {
         moveRight(m-1);
     }
 
+    /**
+     * 画面消去
+     */
     public void clearDisplay(){
         int x = termDisplay.getCursorX();
         int i = x;
@@ -141,6 +184,9 @@ public class EscapeSequence {
         }
     }
 
+    /**
+     * @param n 画面消去の方法
+     */
     public void clearDisplay(int n){
         //一番下までスクロールして消去ぽい
         if(n == 0){ //カーソルより後ろにある画面上の文字を消す
@@ -168,6 +214,9 @@ public class EscapeSequence {
 
     }
 
+    /**
+     * 行消去
+     */
     public void clearRow(){
         int del = termDisplay.getRowLength(getSelectRowIndex()) - termDisplay.getCursorX();
         for (int x = 0; x < del; x++){
@@ -175,6 +224,9 @@ public class EscapeSequence {
         }
     }
 
+    /**
+     * @param n 行削除の方法
+     */
     public void clearRow(int n){
         if(n == 0){ //カーソル以降にある文字を消す
             clearRow();
@@ -195,17 +247,26 @@ public class EscapeSequence {
         }
     }
 
+    /**
+     * @param n 移動する量
+     */
     public void scrollNext(int n){
         if (getTop() + n > termDisplay.getTotalColumns()) return; //一番したに空白追加？？
         setTop(getTop()+n);
     }
 
+    /**
+     * @param n 移動する量
+     */
     public void scrollBack(int n){
         //一番上に空白追加で一番した削除？？？(あくまで画面上でスクロールしていると見せかけている?)
         if(getTop() - n < 0) return;
         setTop(getTop()-n);
     }
 
+    /**
+     * @param n 変化させる色
+     */
     public void selectGraphicRendition(int n){ //色
         termDisplay.setColorChange(true);
         switch (n){
@@ -248,10 +309,16 @@ public class EscapeSequence {
         return termDisplay.getCursorY() + termDisplay.getTopRow();
     }
 
+    /**
+     * @param x カーソルをx移動させる
+     */
     private void moveCursorX(int x){
         termDisplay.setCursorX(termDisplay.getCursorX() + x);
     }
 
+    /**
+     * @param y カーソルをy移動させる
+     */
     private void moveCursorY(int y){
         termDisplay.setCursorY(termDisplay.getCursorY() + y);
     }

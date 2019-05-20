@@ -11,6 +11,9 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
+/**
+ * ViewとBleDeviceのAdapter
+ */
 class DeviceListAdapter extends ArrayAdapter<BleDevice> {
 
     private ArrayList<BleDevice> bleDevices;
