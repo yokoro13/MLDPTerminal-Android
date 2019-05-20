@@ -14,20 +14,6 @@ public class EscapeSequence {
     }
 
     /**
-     * @return topRow
-     */
-    private int getTop(){
-        return termDisplay.getTopRow();
-    }
-
-    /**
-     * @param top 画面一番の行番号
-     */
-    private void setTop(int top){
-        termDisplay.setTopRow(top);
-    }
-
-    /**
      * @param n 移動する量
      */
     public void moveRight(int n){
@@ -173,10 +159,10 @@ public class EscapeSequence {
         int length;
         int displaySize = termDisplay.getDisplaySize();
         for(int y = termDisplay.getCursorY(); y < displaySize; y++){
-            length = termDisplay.getRowLength(y + getTop());
+            length = termDisplay.getRowLength(y + termDisplay.getTopRow());
             for (; i < length; i++){
-                if(termDisplay.getRowText(y + getTop()).length() > x) {
-                    termDisplay.deleteTextItem(x, y + getTop());
+                if(termDisplay.getRowText(y + termDisplay.getTopRow()).length() > x) {
+                    termDisplay.deleteTextItem(x, y + termDisplay.getTopRow());
                 }
             }
             x = 0;
@@ -194,7 +180,7 @@ public class EscapeSequence {
         }
 
         if(n == 1){ //カーソルより前にある画面上の文字を消す
-            for (int y = getTop(); y <= getSelectRowIndex(); y++){
+            for (int y = termDisplay.getTopRow(); y <= getSelectRowIndex(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
                     termDisplay.changeText(x, y, '\u0000');
                     if (y == getSelectRowIndex() && x == termDisplay.getCursorX()) {
@@ -205,7 +191,7 @@ public class EscapeSequence {
         }
 
         if(n == 2){ //全消去
-            for (int y = getTop(); y < termDisplay.getDisplaySize() + getTop(); y++){
+            for (int y = termDisplay.getTopRow(); y < termDisplay.getDisplaySize() + termDisplay.getTopRow(); y++){
                 for (int x = 0; x < termDisplay.getRowLength(y); x++){
                     termDisplay.changeTextItem(x, y, '\u0000', termDisplay.getDefaultColor());
                 }
@@ -215,21 +201,14 @@ public class EscapeSequence {
     }
 
     /**
-     * 行消去
-     */
-    public void clearRow(){
-        int del = termDisplay.getRowLength(getSelectRowIndex()) - termDisplay.getCursorX();
-        for (int x = 0; x < del; x++){
-            termDisplay.deleteTextItem(termDisplay.getCursorX(), getSelectRowIndex());
-        }
-    }
-
-    /**
      * @param n 行削除の方法
      */
     public void clearRow(int n){
         if(n == 0){ //カーソル以降にある文字を消す
-            clearRow();
+            int del = termDisplay.getRowLength(getSelectRowIndex()) - termDisplay.getCursorX();
+            for (int x = 0; x < del; x++){
+                termDisplay.deleteTextItem(termDisplay.getCursorX(), getSelectRowIndex());
+            }
         }
 
         if(n == 1){ //カーソル以前にある文字を消す
@@ -251,8 +230,8 @@ public class EscapeSequence {
      * @param n 移動する量
      */
     public void scrollNext(int n){
-        if (getTop() + n > termDisplay.getTotalColumns()) return; //一番したに空白追加？？
-        setTop(getTop()+n);
+        if (termDisplay.getTopRow() + n > termDisplay.getTotalColumns()) return; //一番したに空白追加？？
+        termDisplay.setTopRow(termDisplay.getTopRow()+n);
     }
 
     /**
@@ -260,8 +239,8 @@ public class EscapeSequence {
      */
     public void scrollBack(int n){
         //一番上に空白追加で一番した削除？？？(あくまで画面上でスクロールしていると見せかけている?)
-        if(getTop() - n < 0) return;
-        setTop(getTop()-n);
+        if(termDisplay.getTopRow() - n < 0) return;
+        termDisplay.setTopRow(termDisplay.getTopRow()-n);
     }
 
     /**
