@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean isDisplaying = false; //画面更新中はtrue
     private boolean isSending = false; //RNにデータを送信しているときtrue
     private boolean isOverWriting = false; //文字を上書きするときtrue
-    private boolean isOutOfScreen = false; //カーソルが画面外か
+    //private boolean isOutOfScreen = false; //カーソルが画面外か
 
     private int stack = 0;
 
@@ -982,21 +982,21 @@ b1:         if (state == State.CONNECTED && count > before) {
 
     private void scrollUp(){
         if(termDisplay.getTopRow() - 1 >= 0 ){
-            if (termDisplay.getCurrRow() >= termDisplay.getTopRow() && termDisplay.getCurrRow() + 1 < termDisplay.getTopRow() + displayColumnSize) {
-                inputEditText.setFocusable(true);
-                inputEditText.setFocusableInTouchMode(true);
-                inputEditText.requestFocus();
-                if (!isOutOfScreen) {
-                    moveCursorY(1);
-                }
-                isOutOfScreen = false;
-            } else {
-                inputEditText.setFocusable(false);
-                isOutOfScreen = true;
-            }
+            //表示する一番上の行を１つ上に
             termDisplay.addTopRow(-1);
+            // カーソルが画面内にある
+            if (termDisplay.getTopRow() < termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize){
+                setEditable(true);
+                moveCursorY(1);
+            } else { //画面外
+                // 0のときは表示させる
+                if (termDisplay.getTopRow() == 0){
+                    setEditable(true);
+                } else {
+                    setEditable(false);
+                }
+            }
             if (stack == 0){
-                Log.d("TermDisplay****", "scroll up");
                 changeDisplay();
                 moveToSavedCursor();
             }
@@ -1006,25 +1006,36 @@ b1:         if (state == State.CONNECTED && count > before) {
     private void scrollDown(){
         if (termDisplay.getTotalColumns() > displayColumnSize) {
             if (termDisplay.getTopRow() + displayColumnSize < termDisplay.getTotalColumns()) {
-                if (termDisplay.getCurrRow() > termDisplay.getTopRow() && termDisplay.getCurrRow() <= termDisplay.getTopRow() + displayColumnSize){
-                    inputEditText.setFocusable(true);
-                    inputEditText.setFocusableInTouchMode(true);
-                    inputEditText.requestFocus();
-                    if (!isOutOfScreen) {
-                        moveCursorY(-1);
-                    }
-                    isOutOfScreen = false;
-                } else {
-                    inputEditText.setFocusable(false);
-                    isOutOfScreen = true;
-                }
+                //表示する一番上の行を１つ下に
                 termDisplay.addTopRow(1);
+                if (termDisplay.getTopRow() <= termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize-1){
+                    setEditable(true);
+                    moveCursorY(-1);
+                } else {
+                    // 一番したのときは表示させる
+                    if (termDisplay.getCurrRow() == termDisplay.getTopRow() + displayColumnSize-1){
+                        setEditable(true);
+                    } else {
+                        setEditable(false);
+                    }
+                }
                 if (stack == 0){
-                    Log.d("TermDisplay****", "scroll down");
                     changeDisplay();
                     moveToSavedCursor();
                 }
             }
+        }
+    }
+
+    private void setEditable(boolean b){
+        if (b){
+            inputEditText.setFocusable(true);
+            inputEditText.setFocusableInTouchMode(true);
+            inputEditText.requestFocus();
+            termDisplay.setOutOfScreen(false);
+        } else {
+            inputEditText.setFocusable(false);
+            termDisplay.setOutOfScreen(true);
         }
     }
 
@@ -1036,7 +1047,7 @@ b1:         if (state == State.CONNECTED && count > before) {
     private void addList(String str){
         if (str.matches("[\\x20-\\x7f\\x0a\\x0d]")){
 
-            if (isOutOfScreen) {
+            if (termDisplay.isOutOfScreen()) {
                 inputEditText.setFocusable(true);
                 inputEditText.setFocusableInTouchMode(true);
                 inputEditText.requestFocus();
