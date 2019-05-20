@@ -26,6 +26,8 @@ public class TermDisplay{
 
     private int currRow = 0;
 
+    private boolean isOutOfScreen = false;
+
     public TermDisplay(int displayRowSize, int displayColumnSize){
         this.displayRowSize = displayRowSize;
         this.displayColumnSize = displayColumnSize;
@@ -171,14 +173,10 @@ public class TermDisplay{
 
     public void setTopRow(int topRow) {
         this.topRow = topRow;
-        Log.d("changeTop", "top :" + Integer.toString(topRow + this.cursorY));
-        //setCurrRow(topRow + this.cursorY);
     }
 
     public void addTopRow(int count){
         this.topRow = this.topRow + count;
-        Log.d("changeTop", "top :" + Integer.toString(topRow + this.cursorY));
-        //setCurrRow(topRow + this.cursorY);
     }
 
     public String createDisplay(){
@@ -274,5 +272,13 @@ public class TermDisplay{
 
     public void setCurrRow(int currRow) {
         this.currRow = currRow;
+    }
+
+    public boolean isOutOfScreen() {
+        return isOutOfScreen;
+    }
+
+    public void setOutOfScreen(boolean outOfScreen) {
+        isOutOfScreen = outOfScreen;
     }
 }
