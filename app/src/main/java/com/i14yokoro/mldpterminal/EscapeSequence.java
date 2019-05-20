@@ -20,7 +20,7 @@ public class EscapeSequence {
             moveCursorX(n);
         } else {
             int move = n;
-            int add = 0;
+            int add;
             if(termDisplay.getCursorX() + n >= termDisplay.getDisplayRowSize()){
                 add = termDisplay.getDisplayRowSize() - termDisplay.getRowLength(getSelectRowIndex());
                 move = termDisplay.getDisplayRowSize() - termDisplay.getCursorX();

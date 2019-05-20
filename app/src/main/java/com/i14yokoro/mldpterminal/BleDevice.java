@@ -19,19 +19,6 @@ class BleDevice {
         return name;
     }
 
-    @Override
-    public boolean equals(Object object) {
-        if (object instanceof BleDevice) {
-            return this.address.equals(((BleDevice) object).address);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return this.address.hashCode();
-    }
-
     @NonNull
     @Override
     public String toString(){

@@ -149,6 +149,7 @@ public class TermDisplay{
                 this.cursorY = cursorY;
             }
         }
+        Log.d("changeTop", "top :" + Integer.toString(topRow + this.cursorY));
         setCurrRow(topRow + this.cursorY);
     }
 
@@ -170,10 +171,14 @@ public class TermDisplay{
 
     public void setTopRow(int topRow) {
         this.topRow = topRow;
+        Log.d("changeTop", "top :" + Integer.toString(topRow + this.cursorY));
+        //setCurrRow(topRow + this.cursorY);
     }
 
     public void addTopRow(int count){
         this.topRow = this.topRow + count;
+        Log.d("changeTop", "top :" + Integer.toString(topRow + this.cursorY));
+        //setCurrRow(topRow + this.cursorY);
     }
 
     public String createDisplay(){

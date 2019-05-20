@@ -474,7 +474,6 @@ public class MldpBluetoothService extends Service {
                     }
                 }
             }
-            return;
         }
         @Override
         public void onScanFailed(int errorCode) {

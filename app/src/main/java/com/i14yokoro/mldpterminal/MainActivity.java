@@ -83,7 +83,6 @@ public class MainActivity extends AppCompatActivity{
     private int displayRowSize, displayColumnSize;
 
     private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
-    private boolean isEditing = true; //無限ループ防止
     private boolean isReceivingH = false; //エスケープシーケンスのHを受信したらtrue
     private boolean isMovingCursor = false; //カーソル移動中ならtrue
     private boolean isBtn_ctl = false; //CTLボタンを押したらtrue
@@ -126,83 +125,59 @@ public class MainActivity extends AppCompatActivity{
 
         inputEditText.setTextIsSelectable(false);
 
-        findViewById(R.id.btn_up).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        findViewById(R.id.btn_up).setOnClickListener(v -> {
+            if(state == State.CONNECTED) {
+                bleService.writeMLDP("\u001b" + "[A");
+                if(termDisplay.getCursorY() > 0){
+                    moveToSavedCursor();
+                }
+            }
+            escapeSequence.moveUp(1);
+            moveToSavedCursor();
+        });
 
-                if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\u001b" + "[A");
-                    if(termDisplay.getCursorY() > 0){
-                        moveToSavedCursor();
-                    }
+        findViewById(R.id.btn_down).setOnClickListener(v -> {
+
+            if(state == State.CONNECTED) {
+                bleService.writeMLDP("\u001b" + "[B");
+                if(termDisplay.getCursorY() < inputEditText.getLineCount()-1) {
+                    moveToSavedCursor();
+                }
+            }
+            escapeSequence.moveDown(1);
+            moveToSavedCursor();
+        });
+
+        findViewById(R.id.btn_right).setOnClickListener(v -> {
+            if(state == State.CONNECTED) {
+                bleService.writeMLDP("\u001b" + "[C");
+            }
+            if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
+                if (termDisplay.getCursorX() < termDisplay.getRowLength(getSelectRowIndex())) {
+                    moveToSavedCursor();
+                }
+            }
+        });
+        findViewById(R.id.btn_left).setOnClickListener(v -> {
+            if(state == State.CONNECTED) {
+                bleService.writeMLDP("\u001b" + "[D");
+            }
+            if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
+                if (termDisplay.getCursorX() > 0) {
+                    moveToSavedCursor();
                 }
             }
         });
 
-        findViewById(R.id.btn_down).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\u001b" + "[B");
-                    if(termDisplay.getCursorY() < inputEditText.getLineCount()-1) {
-                        moveToSavedCursor();
-                    }
-                }
-            }
+        findViewById(R.id.btn_esc).setOnClickListener(v -> {
+            if(state == State.CONNECTED) bleService.writeMLDP("\u001b");
         });
 
-        findViewById(R.id.btn_right).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\u001b" + "[C");
-                }
-                if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
-                    if (termDisplay.getCursorX() < termDisplay.getRowLength(getSelectRowIndex())) {
-                        moveToSavedCursor();
-                    }
-                }
-            }
-        });
-        findViewById(R.id.btn_left).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\u001b" + "[D");
-                }
-                if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
-                    if (termDisplay.getCursorX() > 0) {
-                        moveToSavedCursor();
-                    }
-                }
-            }
+        findViewById(R.id.btn_tab).setOnClickListener(view -> {
+            if (state == State.CONNECTED) bleService.writeMLDP("\u0009");
         });
 
-        findViewById(R.id.btn_esc).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(state == State.CONNECTED) {
-                    bleService.writeMLDP("\u001b");
-                }
-            }
-        });
-
-        findViewById(R.id.btn_tab).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (state == State.CONNECTED){
-                    bleService.writeMLDP("\u0009");
-                }
-            }
-        });
-
-        findViewById(R.id.btn_ctl).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                isBtn_ctl = true;
-            }
-        });
+        findViewById(R.id.btn_ctl).setOnClickListener(view -> isBtn_ctl = true);
 
         //SDK23以降はBLEをスキャンするのに位置情報が必要
         if(Build.VERSION.SDK_INT >= 23) {
@@ -251,22 +226,17 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
-        inputEditText.setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
-                    if (i == KeyEvent.KEYCODE_DEL) {
-                        if (state == State.CONNECTED) {
-                            bleService.writeMLDP("\u0008");
-                        } else {
-                            moveCursorX(-1);
-                            moveToSavedCursor();
-                        }
-                        return true;
-                    }
+        inputEditText.setOnKeyListener((view, i, keyEvent) -> {
+            if (keyEvent.getAction() == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_DEL) {
+                if (state == State.CONNECTED) {
+                    bleService.writeMLDP("\u0008");
+                } else {
+                    moveCursorX(-1);
+                    moveToSavedCursor();
                 }
-                return false;
+                return true;
             }
+            return false;
         });
     }
 
@@ -293,7 +263,7 @@ public class MainActivity extends AppCompatActivity{
             editor.putString(PREFS_NAME, bleDeviceName);
             editor.putString(PREFS_ADDRESS, bleDeviceAddress);
         }
-        editor.commit();
+        editor.apply();
     }     
 
     @Override
@@ -416,11 +386,11 @@ b1:         if (state == State.CONNECTED && count > before) {
             if(s.length() < 1) return;
             String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
 
-            handler.removeCallbacks(task);
+            handler.removeCallbacks(UpdateDisplay);
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending) {
                 if (!isDisplaying) {
                     addList(str);
-                    handler.postDelayed(task, time);
+                    handler.postDelayed(UpdateDisplay, time);
                 }
             }
             else { //ASCIIじゃなければ入力前の状態にもどす
@@ -471,7 +441,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                 String[] strings = data.split("", -1);
 
                 //timer.cancel();
-                handler.removeCallbacks(task);
+                handler.removeCallbacks(UpdateDisplay);
                 stack += strings.length-2;
                 Log.d("stack***", "stackLength" + stack);
                 byte[] utf = data.getBytes(StandardCharsets.UTF_8);
@@ -556,7 +526,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                                 break;
                             }
                             if (escapeState == EscapeState.SQUARE) {
-                                if (strings[cnt].matches("[A-HJKSTfm]")) {
+                                if (strings[cnt].matches("[A-HJKSTZfm]")) {
                                     //escapeシーケンス用
                                     int move;
                                     int clearNum;
@@ -598,7 +568,7 @@ b1:         if (state == State.CONNECTED && count > before) {
                     cnt++;
                     if (stack == 0){
                         Log.d("TermDisplay****", "stack is 0");
-                        handler.postDelayed(task, time);
+                        handler.postDelayed(UpdateDisplay, time);
                     }
 
                 }
@@ -693,6 +663,12 @@ b1:         if (state == State.CONNECTED && count > before) {
                 escapeMoveNum = "";
                 clear = "";
                 break;
+            case KeyHexString.KEY_Z:
+                //TODO 画面のサイズを送信するエスケープシーケンスの実装
+                isSending = true;
+                bleService.writeMLDP(Integer.toString(getMaxRowLength()));
+                bleService.writeMLDP(Integer.toString(getMaxColumnLength()));
+                break;
             case KeyHexString.KEY_f:
                 if (!isReceivingH) {
                     h1 = 1;
@@ -752,39 +728,36 @@ b1:         if (state == State.CONNECTED && count > before) {
     }
 
     private void updateConnectionState() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                switch (state) {
-                    case STARTING:
-                    case ENABLING:
-                    case SCANNING:
-                    case DISCONNECTED:
-                        stack = 0;
-                        setProgressBarIndeterminateVisibility(false);
-                        break;
-                    case CONNECTING:
-                        setProgressBarIndeterminateVisibility(true);
-                        break;
-                    case CONNECTED:
-                        isNotSending = true;
-                        addNewLine(LF + "connect to " + bleDeviceName);
-                        setProgressBarIndeterminateVisibility(false);
-                        //bleService.writeMLDP("MLDP\r\nApp:on\r\n");
-                        break;
-                    case DISCONNECTING:
-                        setProgressBarIndeterminateVisibility(false);
-                        isNotSending = true;
-                        addNewLine(LF + "disconnected from " + bleDeviceName);
-                        break;
-                    default:
-                        state = State.STARTING;
-                        setProgressBarIndeterminateVisibility(false);
-                        break;
-                }
-
-                invalidateOptionsMenu();
+        runOnUiThread(() -> {
+            switch (state) {
+                case STARTING:
+                case ENABLING:
+                case SCANNING:
+                case DISCONNECTED:
+                    stack = 0;
+                    setProgressBarIndeterminateVisibility(false);
+                    break;
+                case CONNECTING:
+                    setProgressBarIndeterminateVisibility(true);
+                    break;
+                case CONNECTED:
+                    isNotSending = true;
+                    addNewLine(LF + "connect to " + bleDeviceName);
+                    setProgressBarIndeterminateVisibility(false);
+                    //bleService.writeMLDP("MLDP\r\nApp:on\r\n");
+                    break;
+                case DISCONNECTING:
+                    setProgressBarIndeterminateVisibility(false);
+                    isNotSending = true;
+                    addNewLine(LF + "disconnected from " + bleDeviceName);
+                    break;
+                default:
+                    state = State.STARTING;
+                    setProgressBarIndeterminateVisibility(false);
+                    break;
             }
+
+            invalidateOptionsMenu();
         });
     }
 
@@ -1055,12 +1028,9 @@ b1:         if (state == State.CONNECTED && count > before) {
         }
     }
 
-    private final Runnable task = new Runnable() {
-        @Override
-        public void run() {
-            changeDisplay();
-            moveToSavedCursor();
-        }
+    private final Runnable UpdateDisplay = () -> {
+        changeDisplay();
+        moveToSavedCursor();
     };
 
     private void addList(String str){
@@ -1112,6 +1082,8 @@ b1:         if (state == State.CONNECTED && count > before) {
 
             Log.d(TAG, "ASCII code/ " + str);
             if (inputStr == LF) {
+                Log.d("changeTop", "top :" );
+
                 termDisplay.setCursorX(0);
                 if (termDisplay.getCursorY() + 1 >= displayColumnSize) {
                     scrollDown();
@@ -1122,12 +1094,14 @@ b1:         if (state == State.CONNECTED && count > before) {
             }
 
             if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n") && !isOverWriting) {
+                Log.d("changeTop", "top :" );
                 termDisplay.setCursorX(0);
                 if (inputEditText.getLineCount() >= displayColumnSize) {
                     scrollDown();
                 }
 
                 if (termDisplay.getCursorY() + 1 < displayColumnSize) {
+
                     moveCursorY(1);
                 }
             }

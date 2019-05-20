@@ -2,6 +2,7 @@ package com.i14yokoro.mldpterminal;
 
 import android.app.Activity;
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,8 +59,9 @@ class DeviceListAdapter extends ArrayAdapter<BleDevice> {
         return i;
     }
 
+    @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parentView) {
+    public View getView(int position, View convertView, @NonNull ViewGroup parentView) {
         ViewHolder holder;
         device = bleDevices.get(position);
 

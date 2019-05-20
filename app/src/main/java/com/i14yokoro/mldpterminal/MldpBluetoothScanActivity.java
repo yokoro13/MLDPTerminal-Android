@@ -173,12 +173,7 @@ public class MldpBluetoothScanActivity extends ListActivity {
         }
     }
 
-    private Runnable stopScan = new Runnable() {
-        @Override
-        public void run() {
-            scanStop();
-        }
-    };
+    private Runnable stopScan = this::scanStop;
 
     private void scanStop() {
         if (areScanning) {
