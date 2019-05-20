@@ -109,13 +109,9 @@ public class MainActivity extends AppCompatActivity{
         inputEditText = (EditText) findViewById(R.id.main_display);
         inputEditText.setCustomSelectionActionModeCallback(mActionModeCallback);
         inputEditText.addTextChangedListener(mInputTextWatcher);
-
         displayRowSize = getMaxRowLength();
         displayColumnSize = getMaxColumnLength();
-
         termDisplay = new TermDisplay(displayRowSize, displayColumnSize);
-
-
         Log.d(TAG, "maxRow "+Integer.toString(getMaxRowLength()) +"maxColumn" + Integer.toString(getMaxColumnLength()));
 
         escapeSequence = new EscapeSequence(termDisplay); //今のContentを渡す
@@ -137,7 +133,6 @@ public class MainActivity extends AppCompatActivity{
         });
 
         findViewById(R.id.btn_down).setOnClickListener(v -> {
-
             if(state == State.CONNECTED) {
                 bleService.writeMLDP("\u001b" + "[B");
                 if(termDisplay.getCursorY() < inputEditText.getLineCount()-1) {
@@ -583,51 +578,44 @@ b1:         if (state == State.CONNECTED && count > before) {
                 if (move >= displayColumnSize)
                     move = displayColumnSize - 1;
                 escapeSequence.moveUp(move);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_B:
                 if (move >= displayColumnSize)
                     move = displayColumnSize - 1;
                 escapeSequence.moveDown(move);
                 Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_C:
                 if (move >= displayRowSize)
                     move = displayRowSize - 1;
                 escapeSequence.moveRight(move);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_D:
                 if (move >= displayRowSize)
                     move = displayRowSize - 1;
                 escapeSequence.moveLeft(move);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_E:
                 if (move >= displayColumnSize)
                     move = displayColumnSize - 1;
                 escapeSequence.moveDownToRowLead(move);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_F:
                 if (move >= displayColumnSize)
                     move = displayColumnSize - 1;
                 escapeSequence.moveUpToRowLead(move);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_G:
                 if (move >= displayRowSize)
                     move = displayRowSize - 1;
                 escapeSequence.moveSelection(move);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_H:
                 if (!isReceivingH) {
@@ -640,28 +628,23 @@ b1:         if (state == State.CONNECTED && count > before) {
                     move = displayRowSize - 1;
                 escapeSequence.moveSelection(h1, move);
                 isReceivingH = false;
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_J:
                 escapeSequence.clearDisplay(clearNum);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_K:
                 escapeSequence.clearRow(clearNum);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_S:
                 escapeSequence.scrollNext(move);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_T:
                 escapeSequence.scrollBack(move);
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_Z:
                 //TODO 画面のサイズを送信するエスケープシーケンスの実装
@@ -680,18 +663,21 @@ b1:         if (state == State.CONNECTED && count > before) {
                     move = displayRowSize - 1;
                 escapeSequence.moveSelection(h1, move);
                 isReceivingH = false;
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             case KeyHexString.KEY_m:
                 escapeSequence.selectGraphicRendition(move);
                 inputEditText.setTextColor(termDisplay.getDefaultColor());
-                escapeMoveNum = "";
-                clear = "";
+                clearNum();
                 break;
             default:
                 break;
         }
+    }
+
+    private void clearNum(){
+        escapeMoveNum = "";
+        clear = "";
     }
 
     private boolean connectWithAddress(String address) {
@@ -1093,8 +1079,6 @@ b1:         if (state == State.CONNECTED && count > before) {
 
             Log.d(TAG, "ASCII code/ " + str);
             if (inputStr == LF) {
-                Log.d("changeTop", "top :" );
-
                 termDisplay.setCursorX(0);
                 if (termDisplay.getCursorY() + 1 >= displayColumnSize) {
                     scrollDown();
@@ -1105,7 +1089,6 @@ b1:         if (state == State.CONNECTED && count > before) {
             }
 
             if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n") && !isOverWriting) {
-                Log.d("changeTop", "top :" );
                 termDisplay.setCursorX(0);
                 if (inputEditText.getLineCount() >= displayColumnSize) {
                     scrollDown();
