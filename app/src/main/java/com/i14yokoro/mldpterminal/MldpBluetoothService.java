@@ -59,15 +59,14 @@ public class MldpBluetoothService extends Service {
     private BluetoothLeScanner bluetoothLeScanner;
     private BluetoothDevice bluetoothDevice;
     private BluetoothGatt bluetoothGatt;
-    private BluetoothGattCharacteristic mldpDataCharacteristic, transparentTxDataCharacteristic, transparentRxDataCharacteristic;
+    private BluetoothGattCharacteristic mldpDataCharacteristic, transparentRxDataCharacteristic;
 
     private int connectionAttemptCountdown = 0;
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        final IBinder binder = new LocalBinder();
-        return binder;
+        return new LocalBinder();
     }
 
     @Override
@@ -158,71 +157,14 @@ public class MldpBluetoothService extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             try {
-                mldpDataCharacteristic = transparentTxDataCharacteristic = transparentRxDataCharacteristic = null;
+                mldpDataCharacteristic = transparentRxDataCharacteristic = null;
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     List<BluetoothGattService> gattServices = gatt.getServices();
                     if (gattServices == null) {
                         Log.d(TAG, "No BLE services found");
                         return;
                     }
-                    UUID uuid;
-                    for (BluetoothGattService gattService : gattServices) {
-                        uuid = gattService.getUuid();
-                        if (uuid.equals(UUID_MLDP_PRIVATE_SERVICE) || uuid.equals(UUID_TANSPARENT_PRIVATE_SERVICE)) {
-                            List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
-                            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
-                                uuid = gattCharacteristic.getUuid();
-                                if (uuid.equals(UUID_TRANSPARENT_TX_PRIVATE_CHAR)) {
-                                    transparentTxDataCharacteristic = gattCharacteristic;
-                                    final int characteristicProperties = gattCharacteristic.getProperties();
-                                    if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_NOTIFY)) > 0) {
-                                        bluetoothGatt.setCharacteristicNotification(gattCharacteristic, true);
-                                        BluetoothGattDescriptor descriptor = gattCharacteristic.getDescriptor(UUID_CHAR_NOTIFICATION_DESCRIPTOR);
-                                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                                        descriptorWriteQueue.add(descriptor);
-                                        if(descriptorWriteQueue.size() == 1) {
-                                            bluetoothGatt.writeDescriptor(descriptor);
-                                        }
-                                    }
-                                    if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0) {
-                                        gattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                                    }
-                                    Log.d(TAG, "Found Transparent service Tx characteristics");
-                                }
-                                if (uuid.equals(UUID_TRANSPARENT_RX_PRIVATE_CHAR)) {
-                                    transparentRxDataCharacteristic = gattCharacteristic;
-                                    final int characteristicProperties = gattCharacteristic.getProperties();
-                                    if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0) {
-                                        gattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                                    }
-                                    Log.d(TAG, "Found Transparent service Rx characteristics");
-                                }
-
-                                if (uuid.equals(UUID_MLDP_DATA_PRIVATE_CHAR)) {
-                                    mldpDataCharacteristic = gattCharacteristic;
-                                    final int characteristicProperties = gattCharacteristic.getProperties();
-                                    if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_NOTIFY)) > 0) {
-                                        bluetoothGatt.setCharacteristicNotification(gattCharacteristic, true);
-                                        BluetoothGattDescriptor descriptor = gattCharacteristic.getDescriptor(UUID_CHAR_NOTIFICATION_DESCRIPTOR);
-                                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                                        descriptorWriteQueue.add(descriptor);
-                                        if(descriptorWriteQueue.size() == 1) {
-                                            bluetoothGatt.writeDescriptor(descriptor);
-                                        }
-                                    }
-                                    if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0) {
-                                        gattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                                    }
-
-                                    Log.d(TAG, "Found MLDP service and characteristics");
-                                }
-                            }
-                            break;
-                        }
-                    }
-                    if(mldpDataCharacteristic == null && (transparentTxDataCharacteristic == null || transparentRxDataCharacteristic == null)) {
-                        Log.d(TAG, "Did not find MLDP or Transparent service");
-                    }
+                    searchService(gattServices);
                 }
                 else {
                     Log.w(TAG, "Failed service discovery with status: " + status);
@@ -230,6 +172,54 @@ public class MldpBluetoothService extends Service {
             }
             catch (Exception e) {
                 Log.e(TAG, "Oops, exception caught in " + e.getStackTrace()[0].getMethodName() + ": " + e.getMessage());
+            }
+        }
+
+        private void searchService(List<BluetoothGattService> gattServices){
+            UUID uuid;
+            for (BluetoothGattService gattService : gattServices) {
+                uuid = gattService.getUuid();
+                if (uuid.equals(UUID_MLDP_PRIVATE_SERVICE) || uuid.equals(UUID_TANSPARENT_PRIVATE_SERVICE)) {
+                    List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
+                    searchCharacteristic(gattCharacteristics);
+                    break;
+                }
+            }
+            if(mldpDataCharacteristic == null || transparentRxDataCharacteristic == null) {
+                Log.d(TAG, "Did not find MLDP or Transparent service");
+            }
+        }
+
+        private void searchCharacteristic(List<BluetoothGattCharacteristic> gattCharacteristics){
+            UUID uuid;
+            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+                uuid = gattCharacteristic.getUuid();
+                if (uuid.equals(UUID_TRANSPARENT_RX_PRIVATE_CHAR)) {
+                    transparentRxDataCharacteristic = gattCharacteristic;
+                    final int characteristicProperties = gattCharacteristic.getProperties();
+                    if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0) {
+                        gattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                    }
+                    Log.d(TAG, "Found Transparent service Rx characteristics");
+                }
+                if (uuid.equals(UUID_MLDP_DATA_PRIVATE_CHAR) || uuid.equals(UUID_TRANSPARENT_TX_PRIVATE_CHAR)) {
+                    mldpDataCharacteristic = gattCharacteristic;
+                    final int characteristicProperties = gattCharacteristic.getProperties();
+                    if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_NOTIFY)) > 0) {
+                        bluetoothGatt.setCharacteristicNotification(gattCharacteristic, true);
+                        BluetoothGattDescriptor descriptor = gattCharacteristic.getDescriptor(UUID_CHAR_NOTIFICATION_DESCRIPTOR);
+                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                        descriptorWriteQueue.add(descriptor);
+                        if(descriptorWriteQueue.size() == 1) {
+                            bluetoothGatt.writeDescriptor(descriptor);
+                        }
+                    }
+                    if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0) {
+                        gattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                    }
+
+                    Log.d(TAG, "Found MLDP service and characteristics");
+                }
             }
         }
 
@@ -323,9 +313,6 @@ public class MldpBluetoothService extends Service {
             if (Build.VERSION.SDK_INT >= 21) { //Build.VERSION_CODES.LOLLIPOP) {
                 Log.d(TAG, "scan start in serviceActivity");
 
-                bluetoothLeScanner.startScan(bleScanCallback);
-            }
-            else {
                 bluetoothLeScanner.startScan(bleScanCallback);
             }
         }
@@ -429,10 +416,11 @@ public class MldpBluetoothService extends Service {
             characteristicWriteQueue.add(writeDataCharacteristic);
             if(characteristicWriteQueue.size() == 1){
                 if (!bluetoothGatt.writeCharacteristic(writeDataCharacteristic)) {
-                    Log.d(TAG, "Failed to write characteristic");
+                    Log.w(TAG, "Failed to write characteristic");
                 }
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             Log.e(TAG, "Oops, exception caught in " + e.getStackTrace()[0].getMethodName() + ": " + e.getMessage());
         }
     }
@@ -448,31 +436,6 @@ public class MldpBluetoothService extends Service {
                 intent.putExtra(INTENT_EXTRA_SERVICE_ADDRESS, result.getDevice().getAddress());
                 intent.putExtra(INTENT_EXTRA_SERVICE_NAME, result.getDevice().getName());
                 sendBroadcast(intent);
-            }
-            else {
-                byte[] scanRecord = result.getScanRecord().getBytes();
-                int i = 0;
-                while (i < scanRecord.length - 1) {
-                    if (scanRecord[i + 1] != 6 && scanRecord[i + 1] != 7) {
-                        i += scanRecord[i] + 1;
-                    } else {
-                        if (scanRecord[i] == 17) {
-                            i += 2;
-                            if (i + 15 < scanRecord.length) {
-                                for (byte b : SCAN_RECORD_MLDP_PRIVATE_SERVICE) {
-                                    if (b != scanRecord[i++]) {
-                                        return;
-                                    }
-                                }
-                                final Intent intent = new Intent(ACTION_BLE_SCAN_RESULT);
-                                intent.putExtra(INTENT_EXTRA_SERVICE_ADDRESS, result.getDevice().getAddress());
-                                intent.putExtra(INTENT_EXTRA_SERVICE_NAME, result.getDevice().getName());
-                                sendBroadcast(intent);
-                            }
-                        }
-                        break;
-                    }
-                }
             }
         }
         @Override
