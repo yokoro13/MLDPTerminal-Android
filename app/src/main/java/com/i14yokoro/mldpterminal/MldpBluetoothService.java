@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
 
-
 public class MldpBluetoothService extends Service {
 
     private final static String TAG = "debug***";
