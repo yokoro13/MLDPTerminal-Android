@@ -8,7 +8,8 @@ public class TermDisplay{
     private static final String TAG = "termDisplay**";
     private static final char LF = '\n';
 
-    private int displayRowSize, displayColumnSize;
+    private final int displayRowSize;
+    private final int displayColumnSize;
 
     private int cursorX = 0;
     private int cursorY = 0;
@@ -16,13 +17,13 @@ public class TermDisplay{
     private int displaySize = 0;
 
     private int topRow = 0;
-    private ArrayList<ArrayList<TextItem>> textList;
+    private final ArrayList<ArrayList<TextItem>> textList;
 
     private int defaultColor = 0x000000;
 
     private boolean colorChange = false;
 
-    private StringBuilder sb = new StringBuilder();
+    private final StringBuilder sb = new StringBuilder();
 
     private int currRow = 0;
 
@@ -151,7 +152,7 @@ public class TermDisplay{
                 this.cursorY = cursorY;
             }
         }
-        Log.d("changeTop", "top :" + Integer.toString(topRow + this.cursorY));
+        Log.d("changeTop", "top :" + (topRow + this.cursorY));
         setCurrRow(topRow + this.cursorY);
     }
 

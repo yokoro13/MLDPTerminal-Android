@@ -40,8 +40,6 @@ public class MldpBluetoothService extends Service {
     public final static String ACTION_BLE_DISCONNECTED = "com.i14yokoro.mldpterminal.ACTION_BLE_DISCONNECTED";
     public final static String ACTION_BLE_DATA_RECEIVED = "com.i14yokoro.mldpterminal.ACTION_BLE_DATA_RECEIVED";
 
-    private final static byte[] SCAN_RECORD_MLDP_PRIVATE_SERVICE = {0x00, 0x03, 0x00, 0x3a, 0x12, 0x08, 0x1a, 0x02, (byte) 0xdd, 0x07, (byte) 0xe6, 0x58, 0x03, 0x5b, 0x03, 0x00};
-
     private final static UUID UUID_MLDP_PRIVATE_SERVICE = UUID.fromString("00035b03-58e6-07dd-021a-08123a000300");
     private final static UUID UUID_MLDP_DATA_PRIVATE_CHAR = UUID.fromString("00035b03-58e6-07dd-021a-08123a000301");
 
@@ -53,10 +51,8 @@ public class MldpBluetoothService extends Service {
     private final Queue<BluetoothGattDescriptor> descriptorWriteQueue = new LinkedList<>();
     private final Queue<BluetoothGattCharacteristic> characteristicWriteQueue = new LinkedList<>();
 
-    private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothLeScanner bluetoothLeScanner;
-    private BluetoothDevice bluetoothDevice;
     private BluetoothGatt bluetoothGatt;
     private BluetoothGattCharacteristic mldpDataCharacteristic, transparentRxDataCharacteristic;
 
@@ -77,7 +73,7 @@ public class MldpBluetoothService extends Service {
     public void onCreate(){
         super.onCreate();
         try{
-            bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+            BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
             Log.d(TAG,"set BluetoothManager");
             if(bluetoothManager == null){
                 Log.d(TAG, "BluetoothManager is null");
@@ -337,7 +333,7 @@ public class MldpBluetoothService extends Service {
                 return false;
             }
 
-            bluetoothDevice = bluetoothAdapter.getRemoteDevice(address);
+            BluetoothDevice bluetoothDevice = bluetoothAdapter.getRemoteDevice(address);
             if (bluetoothDevice == null) {
                 Log.w(TAG, "Unable to connect because device was not found");
                 return false;

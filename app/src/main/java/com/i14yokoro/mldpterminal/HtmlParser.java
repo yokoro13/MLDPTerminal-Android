@@ -35,15 +35,15 @@ public class HtmlParser {
             ssBuilder.insert(start, "<u>");
             ssBuilder.insert(end + 3, "</u>");
         }
-        replace(ssBuilder, '\n', "<br/>");
+        replace(ssBuilder, '\n');
 
         return ssBuilder.toString();
     }
 
-    private static void replace(SpannableStringBuilder b, char oldChar, String newStr) {
+    private static void replace(SpannableStringBuilder b, char oldChar) {
         for (int i = b.length() - 1; i >= 0; i--) {
             if (b.charAt(i) == oldChar) {
-                b.replace(i, i + 1, newStr);
+                b.replace(i, i + 1, "<br/>");
             }
         }
     }

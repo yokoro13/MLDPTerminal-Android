@@ -6,8 +6,8 @@ import android.support.annotation.NonNull;
  * デバイスを表すクラス
  */
 class BleDevice {
-    private String address;
-    private String name;
+    private final String address;
+    private final String name;
 
     BleDevice(String address, String name) {
         this.address = address;

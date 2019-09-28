@@ -17,7 +17,7 @@ class KeyHexString {
     static final char KEY_Z = 0x5A;
     static final char KEY_f = 0x66;
     static final char KEY_m = 0x6D;
-    
+
     static final int KEY_DEL = 0x7f;
     static final int KEY_LF = 0x0a;
     static final int KEY_CR = 0x0d;

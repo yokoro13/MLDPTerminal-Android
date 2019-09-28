@@ -44,7 +44,7 @@ public class MldpBluetoothScanActivity extends ListActivity {
         setContentView(R.layout.scan_list_screen);//Show the screen
         setProgressBarIndeterminate(true);
         setProgressBarIndeterminateVisibility(true);
-        alwaysConnectCheckBox = (CheckBox) findViewById(R.id.alwaysConnectCheckBox);
+        alwaysConnectCheckBox = findViewById(R.id.alwaysConnectCheckBox);
 
         Intent bleServiceIntent = new Intent(this, MldpBluetoothService.class);
         this.bindService(bleServiceIntent, bleServiceConnection, BIND_AUTO_CREATE);

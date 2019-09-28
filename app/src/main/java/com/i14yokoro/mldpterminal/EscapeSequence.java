@@ -4,7 +4,7 @@ package com.i14yokoro.mldpterminal;
  * ANSIのエスケープシーケンスと同じ動作をする
  */
 public class EscapeSequence {
-    private TermDisplay termDisplay;
+    private final TermDisplay termDisplay;
 
     /**
      * @param termDisplay 表示画面の情報
@@ -161,7 +161,7 @@ public class EscapeSequence {
     /**
      * 画面消去
      */
-    public void clearDisplay(){
+    private void clearDisplay(){
         int x = termDisplay.getCursorX();
         int i = x;
         int length;
@@ -258,8 +258,7 @@ public class EscapeSequence {
         termDisplay.setColorChange(true);
         switch (n){
             case 0:
-                termDisplay.setDefaultColor(0xFF000000);
-                break;
+            case 39:
             case 30:
                 termDisplay.setDefaultColor(0xFF000000);
                 break;
@@ -283,9 +282,6 @@ public class EscapeSequence {
                 break;
             case 37:
                 termDisplay.setDefaultColor(0xFFFFFFFF);
-                break;
-            case 39:
-                termDisplay.setDefaultColor(0xFF000000);
                 break;
             default:
                 //termDisplay.setDefaultColor(0x000000);

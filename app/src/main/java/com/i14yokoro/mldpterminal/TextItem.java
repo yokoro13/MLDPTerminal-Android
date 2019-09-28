@@ -29,5 +29,4 @@ public class TextItem {
     public int getColor() {
         return color;
     }
-
 }

@@ -89,8 +89,8 @@ public class MainActivity extends AppCompatActivity{
 
     private int stack = 0;
 
-    private Handler handler = new Handler();
-    private int time = 3;
+    private final Handler handler = new Handler();
+    private final int time = 3;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -101,13 +101,13 @@ public class MainActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        inputEditText = (EditText) findViewById(R.id.main_display);
+        inputEditText = findViewById(R.id.main_display);
         inputEditText.setCustomSelectionActionModeCallback(mActionModeCallback);
         inputEditText.addTextChangedListener(mInputTextWatcher);
         displayRowSize = getMaxRowLength();
         displayColumnSize = getMaxColumnLength();
         termDisplay = new TermDisplay(displayRowSize, displayColumnSize);
-        Log.d(TAG, "maxRow "+Integer.toString(getMaxRowLength()) +"maxColumn" + Integer.toString(getMaxColumnLength()));
+        Log.d(TAG, "maxRow "+ getMaxRowLength() +"maxColumn" + getMaxColumnLength());
 
         escapeSequence = new EscapeSequence(termDisplay); //今のContentを渡す
 
@@ -207,8 +207,6 @@ public class MainActivity extends AppCompatActivity{
                         if (oldY < event.getRawY()){
                             scrollUp();
                         }
-                        break;
-                    case MotionEvent.ACTION_UP:
                         break;
                     default:
                         break;
@@ -575,7 +573,7 @@ b1:         if (state == State.CONNECTED && count > before) {
         return bleService.connect(address);
     }
 
-    private Runnable abortConnection = new Runnable() {
+    private final Runnable abortConnection = new Runnable() {
         @Override
         public void run() {
             if (state == State.CONNECTING) {
