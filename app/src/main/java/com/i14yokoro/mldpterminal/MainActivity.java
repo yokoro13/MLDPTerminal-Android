@@ -63,27 +63,22 @@ public class MainActivity extends AppCompatActivity{
     private SharedPreferences prefs;
 
     private enum State {STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING} //state
-    private enum EscapeState {NONE, ESCAPE, SQUARE}
+    private enum EscapeState {NONE, ESCAPE}
     private EscapeState escapeState = EscapeState.NONE;
 
     private State state = State.STARTING;
-
-    private String escapeMoveNum = ""; //escapeシーケンスできたString型の数字を保存
-    private String clear = "";
-    private int h1;
 
     private EscapeSequence escapeSequence;
     private TermDisplay termDisplay;
 
     private int eStart, eCount;
 
+    private StringBuilder escapeString;
     private String result = "";
     private SpannableString spannable;
 
     private int displayRowSize, displayColumnSize;
 
-    private boolean escapeMoveFlag = false; //escFlagがtrueでエスケープシーケンスがおくられて来た時true
-    private boolean isReceivingH = false; //エスケープシーケンスのHを受信したらtrue
     private boolean isMovingCursor = false; //カーソル移動中ならtrue
     private boolean isBtn_ctl = false; //CTLボタンを押したらtrue
     private boolean isNotSending = false; //RN側に送りたくないものがあるときはfalseにする
@@ -116,6 +111,7 @@ public class MainActivity extends AppCompatActivity{
 
         escapeSequence = new EscapeSequence(termDisplay); //今のContentを渡す
 
+        escapeString = new StringBuilder();
         state = State.STARTING;
         connectTimeoutHandler = new Handler();
 
@@ -417,36 +413,28 @@ b1:         if (state == State.CONNECTED && count > before) {
             }
             else if (MldpBluetoothService.ACTION_BLE_DISCONNECTED.equals(action)) {
                 Log.i(TAG, "Received intent ACTION_BLE_DISCONNECTED");
-
                 state = State.DISCONNECTED;
                 updateConnectionState();
             }
             else if (MldpBluetoothService.ACTION_BLE_DATA_RECEIVED.equals(action)) {
-                //Log.d(TAG, "Received intent ACTION_BLE_DATA_RECEIVED");
-                String data = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA);
-
-
-                if (data == null) {
+                String receivedData = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA);
+                if (receivedData == null) {
                     return;
                 }
-
                 int cnt = 1;
-                Log.d("debug****", "data" + data);
+                Log.d("debug****", "receivedData" + receivedData);
 
-                String[] strings = data.split("", -1);
+                String[] splitData = receivedData.split("", -1);
 
-                //timer.cancel();
                 handler.removeCallbacks(UpdateDisplay);
-                stack += strings.length-2;
+                stack += splitData.length-2;
                 Log.d("stack***", "stackLength" + stack);
-                byte[] utf = data.getBytes(StandardCharsets.UTF_8);
+                byte[] utf = receivedData.getBytes(StandardCharsets.UTF_8);
 
-                for (byte b : utf) {
-                    switch (b) {
+                for (byte charCode : utf) {
+                    switch (charCode) {
                         case KeyHexString.KEY_BS:
                             moveCursorX(-1);
-                            escapeState = EscapeState.NONE;
-                            escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_HT:
                             if (termDisplay.getCursorX() + (8-termDisplay.getCursorX()%8) < displayRowSize){
@@ -454,20 +442,14 @@ b1:         if (state == State.CONNECTED && count > before) {
                             } else {
                                 moveCursorX(displayRowSize-1);
                             }
-                            escapeState = EscapeState.NONE;
-                            escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_DEL:
-                            escapeState = EscapeState.NONE;
-                            escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_LF:
                             Log.d("debug****", "KEY_LF");
                             isNotSending = true;
                             addList("\n");
                             isNotSending = false;
-                            escapeState = EscapeState.NONE;
-                            escapeMoveFlag = false;
                             break;
                         case KeyHexString.KEY_CR:
                             Log.d("debug****", "KEY_CR");
@@ -477,85 +459,25 @@ b1:         if (state == State.CONNECTED && count > before) {
                         case KeyHexString.KEY_ESC:
                             Log.d(TAG, "receive esc");
                             escapeState = EscapeState.ESCAPE;
-                            escapeMoveFlag = false;
+                            escapeString.setLength(0);
                             break;
-                        case KeyHexString.KEY_SQUARE_LEFT:
-                            Log.d(TAG, "receive square");
-                            if (escapeState == EscapeState.ESCAPE) {
-                                escapeState = EscapeState.SQUARE;
-                                break;
-                            } else {
-                                escapeState = EscapeState.NONE;
-                            }
-                            escapeMoveFlag = false;
                         default:
-
-                            if (escapeState == EscapeState.SQUARE && strings[cnt].matches("[0-9]")) {
-                                Log.d(TAG, "move flag is true");
-                                escapeMoveNum += strings[cnt];
-                                clear += strings[cnt];
-                                if (Integer.parseInt(escapeMoveNum) > 1000 || Integer.parseInt(clear) > 1000) {
-                                    escapeMoveNum = "1000";
-                                    clear = "1000";
-                                }
-                                escapeMoveFlag = true;
-                                break;
-                            }
-                            if (escapeState == EscapeState.SQUARE && strings[cnt].equals(";")) {
-                                if (escapeMoveFlag) {
-                                    h1 = Integer.parseInt(escapeMoveNum);
-                                } else {
-                                    h1 = 1;
-                                }
-                                escapeMoveNum = "";
-                                clear = "";
-                                isReceivingH = true;
-                                escapeMoveFlag = false;
-                                break;
-                            }
-                            if (isReceivingH && !strings[cnt].matches("[Hf]")) {
-                                escapeMoveNum = "";
-                                clear = "";
-                                escapeMoveFlag = false;
-                                escapeState = EscapeState.NONE;
-                                break;
-                            }
-                            if (escapeState == EscapeState.SQUARE) {
-                                if (strings[cnt].matches("[A-HJKSTZfm]")) {
-                                    //escapeシーケンス用
-                                    int move;
-                                    int clearNum;
-                                    if (escapeMoveFlag) {
-                                        move = Integer.parseInt(escapeMoveNum);
-                                        clearNum = Integer.parseInt(clear);
-                                    } else {
-                                        move = 1;
-                                        clearNum = 0;
-                                    }
-                                    escapeMoveNum = "";
-
-                                    Log.d(TAG, "moveFlag true && A-H");
-
-                                    checkSequence(b, move, clearNum);
-
-                                    escapeMoveFlag = false;
+                            if (escapeState == EscapeState.ESCAPE){
+                                escapeString.append(splitData[cnt]);
+                                if (splitData[cnt].matches("[A-HJKSTZfm]")){
+                                    checkSequence();
                                     escapeState = EscapeState.NONE;
-                                    break;
+                                }
+                            } else {
+                                if (cnt <= receivedData.length()) {
+                                    if (splitData[cnt].equals("\u0020")) {
+                                        splitData[cnt] = " ";
+                                    }
+                                    isNotSending = true;
+                                    addList(splitData[cnt]);
+                                    isNotSending = false;
                                 }
                             }
-                            escapeState = EscapeState.NONE;
-
-                            if(cnt <= data.length()) {
-                                if (strings[cnt].equals("\u0020")) {
-                                    strings[cnt] = " ";
-                                }
-
-                                isNotSending = true;
-                                addList(strings[cnt]);
-                                isNotSending = false;
-                                escapeMoveFlag = false;
-                            }
-
                             break;
                     }
                     stack--;
@@ -572,79 +494,64 @@ b1:         if (state == State.CONNECTED && count > before) {
 
     };
 
-    private void checkSequence(byte b, int move, int clearNum){
-        switch (b) {
+    private void checkSequence(){
+        int escapeLength = escapeString.length();
+        char mode = escapeString.charAt(escapeLength-1);
+        int move = 1, h_move = 1;
+        int clearMode = 0;
+        int semicolon;
+
+        if (escapeLength != 2){
+            if (!(mode == 'H' || mode == 'f')){
+                move = Integer.parseInt(escapeString.substring(1, escapeLength-2));
+            } else {
+                semicolon = escapeString.indexOf(";");
+                if(semicolon != 2){
+                    move = Integer.parseInt(escapeString.substring(2, semicolon-1));
+                }
+                if (escapeString.charAt(semicolon+1) != 'H' || escapeString.charAt(semicolon+1) != 'f'){
+                    h_move = Integer.parseInt(escapeString.substring(semicolon+1, escapeLength-2));
+                }
+            }
+        }
+
+        switch (mode) {
             case KeyHexString.KEY_A:
-                if (move >= displayColumnSize)
-                    move = displayColumnSize - 1;
                 escapeSequence.moveUp(move);
-                clearNum();
                 break;
             case KeyHexString.KEY_B:
-                if (move >= displayColumnSize)
-                    move = displayColumnSize - 1;
                 escapeSequence.moveDown(move);
-                Log.d("TermDisplay****", "cursorY" + termDisplay.getCursorY());
-                clearNum();
                 break;
             case KeyHexString.KEY_C:
-                if (move >= displayRowSize)
-                    move = displayRowSize - 1;
                 escapeSequence.moveRight(move);
-                clearNum();
                 break;
             case KeyHexString.KEY_D:
-                if (move >= displayRowSize)
-                    move = displayRowSize - 1;
                 escapeSequence.moveLeft(move);
-                clearNum();
                 break;
             case KeyHexString.KEY_E:
-                if (move >= displayColumnSize)
-                    move = displayColumnSize - 1;
                 escapeSequence.moveDownToRowLead(move);
-                clearNum();
                 break;
             case KeyHexString.KEY_F:
-                if (move >= displayColumnSize)
-                    move = displayColumnSize - 1;
                 escapeSequence.moveUpToRowLead(move);
-                clearNum();
                 break;
             case KeyHexString.KEY_G:
-                if (move >= displayRowSize)
-                    move = displayRowSize - 1;
                 escapeSequence.moveSelection(move);
-                clearNum();
                 break;
             case KeyHexString.KEY_H:
-                if (!isReceivingH) {
-                    h1 = 1;
-                    move = 1;
-                }
-                if (h1 >= displayColumnSize)
-                    h1 = displayColumnSize - 1;
-                if (move >= displayRowSize)
-                    move = displayRowSize - 1;
-                escapeSequence.moveSelection(h1, move);
-                isReceivingH = false;
-                clearNum();
+            case KeyHexString.KEY_f:
+                escapeSequence.moveSelection(h_move, move);
                 break;
             case KeyHexString.KEY_J:
-                escapeSequence.clearDisplay(clearNum);
-                clearNum();
+                escapeSequence.clearDisplay(clearMode);
                 break;
             case KeyHexString.KEY_K:
-                escapeSequence.clearRow(clearNum);
-                clearNum();
+                escapeSequence.clearRow(clearMode);
                 break;
             case KeyHexString.KEY_S:
                 escapeSequence.scrollNext(move);
-                clearNum();
                 break;
             case KeyHexString.KEY_T:
                 escapeSequence.scrollBack(move);
-                clearNum();
                 break;
             case KeyHexString.KEY_Z:
                 //TODO 画面のサイズを送信するエスケープシーケンスの実装
@@ -652,32 +559,13 @@ b1:         if (state == State.CONNECTED && count > before) {
                 bleService.writeMLDP(Integer.toString(getMaxRowLength()));
                 bleService.writeMLDP(Integer.toString(getMaxColumnLength()));
                 break;
-            case KeyHexString.KEY_f:
-                if (!isReceivingH) {
-                    h1 = 1;
-                    move = 1;
-                }
-                if (h1 >= displayColumnSize)
-                    h1 = displayColumnSize - 1;
-                if (move >= displayRowSize)
-                    move = displayRowSize - 1;
-                escapeSequence.moveSelection(h1, move);
-                isReceivingH = false;
-                clearNum();
-                break;
             case KeyHexString.KEY_m:
                 escapeSequence.selectGraphicRendition(move);
                 inputEditText.setTextColor(termDisplay.getDefaultColor());
-                clearNum();
                 break;
             default:
                 break;
         }
-    }
-
-    private void clearNum(){
-        escapeMoveNum = "";
-        clear = "";
     }
 
     private boolean connectWithAddress(String address) {

@@ -17,6 +17,10 @@ public class EscapeSequence {
      * @param n 移動する量
      */
     public void moveRight(int n){
+        if (n >= termDisplay.getDisplayRowSize()) {
+            n = termDisplay.getDisplayRowSize() - 1;
+        }
+
         if(termDisplay.getCursorX() + n < termDisplay.getRowLength(getSelectRowIndex())) {
             moveCursorX(n);
         } else {
@@ -37,6 +41,10 @@ public class EscapeSequence {
      * @param n 移動する量
      */
     public void moveLeft(int n){
+        if (n >= termDisplay.getDisplayRowSize()) {
+            n = termDisplay.getDisplayRowSize() - 1;
+        }
+
         if(termDisplay.getCursorX() - n >= 0){
             moveCursorX(-n);
         }
@@ -46,6 +54,9 @@ public class EscapeSequence {
      * @param n 移動する量
      */
     public void moveUp(int n){
+        if (n >= termDisplay.getDisplayColumnSize()) {
+            n = termDisplay.getDisplayColumnSize() - 1;
+        }
 
         if(termDisplay.getCursorY() - n < 0){ //画面外にでる
             termDisplay.setCursorY(0);
@@ -64,6 +75,9 @@ public class EscapeSequence {
      * @param n 移動する量
      */
     public void moveDown(int n){
+        if (n >= termDisplay.getDisplayColumnSize()) {
+            n = termDisplay.getDisplayColumnSize() - 1;
+        }
 
         if(termDisplay.getCursorY() + n >= termDisplay.getDisplaySize()) { //移動先が一番下の行を超える場合
             if(termDisplay.getCursorY() + n >= termDisplay.getDisplayColumnSize()){ //ディスプレイサイズを超える場合
@@ -132,12 +146,6 @@ public class EscapeSequence {
      * @param m 横に移動する量(0 < m)
      */
     public void moveSelection(int n, int m){ //n,mは1~
-        if(n < 1){
-            n = 1;
-        }
-        if(m < 1){
-            m = 1;
-        }
         if(n > termDisplay.getDisplayColumnSize()){
             n = termDisplay.getDisplayColumnSize();
         }
