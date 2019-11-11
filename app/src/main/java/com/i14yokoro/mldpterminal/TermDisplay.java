@@ -1,4 +1,4 @@
-package com.i14yokoro.mldpterminal.display;
+package com.i14yokoro.mldpterminal;
 
 import android.util.Log;
 import java.util.ArrayList;
