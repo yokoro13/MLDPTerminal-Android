@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
@@ -356,10 +357,10 @@ public class MainActivity extends AppCompatActivity{
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-            strStart = start;//文字列のスタート位置
-            addStrCount = count;//追加される文字
+            eStart = start;//文字列のスタート位置
+            eCount = count;//追加される文字
 
-b1:         if (state == State.CONNECTED && count > before) {
+            if (state == State.CONNECTED && count > before) {
                 if (!isNotSending) {
                     String send = s.subSequence(start + before, start + count).toString();
                     Log.d("RNsend", send);
@@ -369,11 +370,15 @@ b1:         if (state == State.CONNECTED && count > before) {
                             byte[] sendB = {(byte) (send.getBytes()[0] & 0x1f)};
                             bleService.writeMLDP(sendB);
                             isBtn_ctl = false;
-                            break b1;
+                            sendCtl = true;
                             }
                         isBtn_ctl = false;
                     }
-                    bleService.writeMLDP(send);
+                    if (!sendCtl) {
+                        bleService.writeMLDP(send);
+                    } else {
+                        sendCtl = false;
+                    }
                 }
             }
         }
@@ -708,30 +713,31 @@ b1:         if (state == State.CONNECTED && count > before) {
     private int getMaxRowLength(){
         WindowManager wm =  (WindowManager)getSystemService(WINDOW_SERVICE);
         Display disp = null;
+        Point p = new Point();
+
         if (wm != null) {
             disp = wm.getDefaultDisplay();
         }
 
-        int dispWidth = 0;
         if (disp != null) {
-            dispWidth = disp.getWidth();
+            disp.getSize(p);
         }
-        int textWidth = getTextWidth();
-        return dispWidth/textWidth;
+
+        return p.x/getTextWidth();
     }
 
     private int getMaxColumnLength(){
         WindowManager wm =  (WindowManager)getSystemService(WINDOW_SERVICE);
         Display disp = null;
+        Point p = new Point();
         if (wm != null) {
             disp = wm.getDefaultDisplay();
         }
-        int dispHeight = 0;
         if (disp != null) {
-            dispHeight = disp.getHeight();
+            disp.getSize(p);
         }
 
-        int height = dispHeight - 100;
+        int height = p.y - 100;
         int text = (int)getTextHeight();
 
         return (height/text)-1;
