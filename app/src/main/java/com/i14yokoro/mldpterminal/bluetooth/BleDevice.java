@@ -1,4 +1,4 @@
-package com.i14yokoro.mldpterminal;
+package com.i14yokoro.mldpterminal.bluetooth;
 
 import android.support.annotation.NonNull;
 

@@ -1,4 +1,4 @@
-package com.i14yokoro.mldpterminal;
+package com.i14yokoro.mldpterminal.display;
 
 /**
  * １文字を表すクラス

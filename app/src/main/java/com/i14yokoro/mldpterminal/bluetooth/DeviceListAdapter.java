@@ -1,4 +1,4 @@
-package com.i14yokoro.mldpterminal;
+package com.i14yokoro.mldpterminal.bluetooth;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,6 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+
+import com.i14yokoro.mldpterminal.R;
+import com.i14yokoro.mldpterminal.bluetooth.BleDevice;
 
 import java.util.ArrayList;
 

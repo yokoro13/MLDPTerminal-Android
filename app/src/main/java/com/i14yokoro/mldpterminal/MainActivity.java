@@ -35,6 +35,12 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
+import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothScanActivity;
+import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothService;
+import com.i14yokoro.mldpterminal.display.EscapeSequence;
+import com.i14yokoro.mldpterminal.display.HtmlParser;
+import com.i14yokoro.mldpterminal.display.TermDisplay;
+
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends AppCompatActivity{
@@ -42,15 +48,17 @@ public class MainActivity extends AppCompatActivity{
     private static final String TAG = "debug***";
 
     private final char LF = '\n';
-    private EditText inputEditText; //ディスプレイのEditText
+    private EditText inputEditText; // ディスプレイのEditText
 
+    // PREFS用
     private static final String PREFS = "PREFS";
     private static final String PREFS_NAME = "NAME";
     private static final String PREFS_ADDRESS = "ADDR";
     private static final String PREFS_AUTO_CONNECT = "AUTO";
 
-    private static final int REQ_CODE_SCAN_ACTIVITY = 1;
-    private static final int REQ_CODE_ENABLE_BT = 2;
+
+    private static final int REQ_CODE_SCAN_ACTIVITY = 1;    // スキャンリクエスト
+    private static final int REQ_CODE_ENABLE_BT = 2;        // bluetooth許可リクエスト
 
     private static final long CONNECT_TIME = 5000; //タイムアウトする時間
     private Handler connectTimeoutHandler;
@@ -58,34 +66,36 @@ public class MainActivity extends AppCompatActivity{
 
     private String bleDeviceName, bleDeviceAddress;
 
-    private boolean bleAutoConnect;
+    private boolean bleAutoConnect; // 自動接続するかどうか
 
     private SharedPreferences prefs;
 
-    private enum State {STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING} //state
+    // bluetoothの接続状況
+    private enum State {STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING}
+    private State state = State.STARTING;
+
+    // エスケープシーケンスの受信状況
     private enum EscapeState {NONE, ESCAPE}
     private EscapeState escapeState = EscapeState.NONE;
 
-    private State state = State.STARTING;
 
-    private EscapeSequence escapeSequence;
-    private TermDisplay termDisplay;
+    private EscapeSequence escapeSequence;  // エスケープシーケンスの操作
+    private TermDisplay termDisplay;        // 画面の操作
 
-    private int eStart, eCount;
+    private int strStart, addStrCount;
 
-    private StringBuilder escapeString;
+    private StringBuilder sequenceString;     // エスケープシーケンスの文字列を保存
     private String result = "";
     private SpannableString spannable;
 
-    private int displayRowSize, displayColumnSize;
+    private int displayRowSize, displayColumnSize;  // 画面サイズ
 
-    private boolean isMovingCursor = false; //カーソル移動中ならtrue
-    private boolean isBtn_ctl = false; //CTLボタンを押したらtrue
-    private boolean isNotSending = false; //RN側に送りたくないものがあるときはfalseにする
-    private boolean isDisplaying = false; //画面更新中はtrue
-    private boolean isSending = false; //RNにデータを送信しているときtrue
-    private boolean isOverWriting = false; //文字を上書きするときtrue
-    //private boolean isOutOfScreen = false; //カーソルが画面外か
+    private boolean isMovingCursor = false;     // カーソル移動中ならtrue
+    private boolean isBtn_ctl = false;          // CTLボタンを押したらtrue
+    private boolean isNotSending = false;       // RN側に送りたくないものがあるときはfalseにする
+    private boolean isDisplaying = false;       // 画面更新中はtrue
+    private boolean isSending = false;          // RNにデータを送信しているときtrue
+    private boolean isOverWriting = false;      // 文字を上書きするときtrue
 
     private int stack = 0;
 
@@ -104,18 +114,33 @@ public class MainActivity extends AppCompatActivity{
         inputEditText = findViewById(R.id.main_display);
         inputEditText.setCustomSelectionActionModeCallback(mActionModeCallback);
         inputEditText.addTextChangedListener(mInputTextWatcher);
+        inputEditText.setTextIsSelectable(false);
+
         displayRowSize = getMaxRowLength();
         displayColumnSize = getMaxColumnLength();
         termDisplay = new TermDisplay(displayRowSize, displayColumnSize);
+
         Log.d(TAG, "maxRow "+ getMaxRowLength() +"maxColumn" + getMaxColumnLength());
 
-        escapeSequence = new EscapeSequence(termDisplay); //今のContentを渡す
+        escapeSequence = new EscapeSequence(termDisplay);
+        sequenceString = new StringBuilder();
 
-        escapeString = new StringBuilder();
-        state = State.STARTING;
         connectTimeoutHandler = new Handler();
 
-        inputEditText.setTextIsSelectable(false);
+        //SDK23以降はBLEをスキャンするのに位置情報が必要
+        if(Build.VERSION.SDK_INT >= 23) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+        }
+
+        //自動接続
+        prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        if (prefs != null) {
+            bleAutoConnect = prefs.getBoolean(PREFS_AUTO_CONNECT, false);
+            if (bleAutoConnect) {
+                bleDeviceName = prefs.getString(PREFS_NAME, null);
+                bleDeviceAddress = prefs.getString(PREFS_ADDRESS, null);
+            }
+        }
 
         findViewById(R.id.btn_up).setOnClickListener(v -> {
             if(state == State.CONNECTED) {
@@ -170,21 +195,6 @@ public class MainActivity extends AppCompatActivity{
 
         findViewById(R.id.btn_ctl).setOnClickListener(view -> isBtn_ctl = true);
 
-        //SDK23以降はBLEをスキャンするのに位置情報が必要
-        if(Build.VERSION.SDK_INT >= 23) {
-            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
-        }
-
-        //自動接続
-        prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        if (prefs != null) {
-            bleAutoConnect = prefs.getBoolean(PREFS_AUTO_CONNECT, false);
-            if (bleAutoConnect) {
-                bleDeviceName = prefs.getString(PREFS_NAME, null);
-                bleDeviceAddress = prefs.getString(PREFS_ADDRESS, null);
-            }
-        }
-
         //画面タッチされた時のイベント
         inputEditText.setOnTouchListener(new View.OnTouchListener() {
             int oldY;
@@ -194,12 +204,10 @@ public class MainActivity extends AppCompatActivity{
                     case MotionEvent.ACTION_DOWN:
                         // タップした時に ScrollViewのScrollY座標を保持
                         oldY = (int)event.getRawY();
-                        Log.d(TAG, "action down");
                         showKeyboard();
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         // 指を動かした時に、現在のscrollY座標とoldYを比較して、違いがあるならスクロール状態とみなす
-                        Log.d(TAG, "action move");
                         hideKeyboard();
                         if (oldY > event.getRawY()) {
                             scrollDown();
@@ -348,8 +356,8 @@ public class MainActivity extends AppCompatActivity{
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-            eStart = start;//文字列のスタート位置
-            eCount = count;//追加される文字
+            strStart = start;//文字列のスタート位置
+            addStrCount = count;//追加される文字
 
 b1:         if (state == State.CONNECTED && count > before) {
                 if (!isNotSending) {
@@ -373,7 +381,7 @@ b1:         if (state == State.CONNECTED && count > before) {
         @Override
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
-            String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
+            String str = s.subSequence(strStart, strStart + addStrCount).toString();//入力文字
 
             handler.removeCallbacks(UpdateDisplay);
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending) {
@@ -457,11 +465,11 @@ b1:         if (state == State.CONNECTED && count > before) {
                         case KeyHexString.KEY_ESC:
                             Log.d(TAG, "receive esc");
                             escapeState = EscapeState.ESCAPE;
-                            escapeString.setLength(0);
+                            sequenceString.setLength(0);
                             break;
                         default:
                             if (escapeState == EscapeState.ESCAPE){
-                                escapeString.append(splitData[cnt]);
+                                sequenceString.append(splitData[cnt]);
                                 if (splitData[cnt].matches("[A-HJKSTZfm]")){
                                     checkSequence();
                                     escapeState = EscapeState.NONE;
@@ -493,22 +501,22 @@ b1:         if (state == State.CONNECTED && count > before) {
     };
 
     private void checkSequence(){
-        int escapeLength = escapeString.length();
-        char mode = escapeString.charAt(escapeLength-1);
+        int sequenceLength = sequenceString.length();
+        char mode = sequenceString.charAt(sequenceLength-1);
         int move = 1, h_move = 1;
         int clearMode = 0;
         int semicolon;
 
-        if (escapeLength != 2){
+        if (sequenceLength != 2){
             if (!(mode == 'H' || mode == 'f')){
-                move = Integer.parseInt(escapeString.substring(1, escapeLength-2));
+                move = Integer.parseInt(sequenceString.substring(1, sequenceLength-2));
             } else {
-                semicolon = escapeString.indexOf(";");
+                semicolon = sequenceString.indexOf(";");
                 if(semicolon != 2){
-                    move = Integer.parseInt(escapeString.substring(2, semicolon-1));
+                    move = Integer.parseInt(sequenceString.substring(2, semicolon-1));
                 }
-                if (escapeString.charAt(semicolon+1) != 'H' || escapeString.charAt(semicolon+1) != 'f'){
-                    h_move = Integer.parseInt(escapeString.substring(semicolon+1, escapeLength-2));
+                if (sequenceString.charAt(semicolon+1) != 'H' || sequenceString.charAt(semicolon+1) != 'f'){
+                    h_move = Integer.parseInt(sequenceString.substring(semicolon+1, sequenceLength-2));
                 }
             }
         }
@@ -853,16 +861,16 @@ b1:         if (state == State.CONNECTED && count > before) {
     }
 
     private void scrollUp(){
-        if(termDisplay.getTopRow() - 1 >= 0 ){
+        if(termDisplay.getTopRow() >= 1){
             //表示する一番上の行を１つ上に
-            termDisplay.addTopRow(-1);
+            termDisplay.moveTopRow(-1);
             // カーソルが画面内にある
-            if (termDisplay.getTopRow() < termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize){
+            if (termDisplay.getTopRow() < termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize-1){
                 setEditable(true);
                 moveCursorY(1);
             } else { //画面外
                 // 0のときは表示させる
-                if (termDisplay.getTopRow() == 0){
+                if (termDisplay.getTopRow() == 0 && termDisplay.getCurrRow() < displayColumnSize){
                     setEditable(true);
                 } else {
                     setEditable(false);
@@ -879,8 +887,8 @@ b1:         if (state == State.CONNECTED && count > before) {
         if (termDisplay.getTotalColumns() > displayColumnSize) {
             if (termDisplay.getTopRow() + displayColumnSize < termDisplay.getTotalColumns()) {
                 //表示する一番上の行を１つ下に
-                termDisplay.addTopRow(1);
-                if (termDisplay.getTopRow() <= termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize-1){
+                termDisplay.moveTopRow(1);
+                if (termDisplay.getTopRow() < termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize-1){
                     setEditable(true);
                     moveCursorY(-1);
                 } else {

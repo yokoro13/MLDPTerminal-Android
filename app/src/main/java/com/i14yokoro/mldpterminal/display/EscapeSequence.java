@@ -1,4 +1,4 @@
-package com.i14yokoro.mldpterminal;
+package com.i14yokoro.mldpterminal.display;
 
 /**
  * ANSIのエスケープシーケンスと同じ動作をする
@@ -9,7 +9,7 @@ public class EscapeSequence {
     /**
      * @param termDisplay 表示画面の情報
      */
-    EscapeSequence(TermDisplay termDisplay){
+    public EscapeSequence(TermDisplay termDisplay){
         this.termDisplay = termDisplay;
     }
 
