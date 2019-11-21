@@ -57,28 +57,21 @@ public class MainActivity extends AppCompatActivity{
     private static final String PREFS_ADDRESS = "ADDR";
     private static final String PREFS_AUTO_CONNECT = "AUTO";
 
+    // BLE
+    private static final int REQ_CODE_SCAN_ACTIVITY = 1;
+    private static final int REQ_CODE_ENABLE_BT = 2;
 
-    private static final int REQ_CODE_SCAN_ACTIVITY = 1;    // スキャンリクエスト
-    private static final int REQ_CODE_ENABLE_BT = 2;        // bluetooth許可リクエスト
+    // 接続状況
+    private enum State {STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING} //state
+    private State state = State.STARTING;
+
+    private String bleDeviceName, bleDeviceAddress; // 接続先の情報
 
     private static final long CONNECT_TIME = 5000; //タイムアウトする時間
     private Handler connectTimeoutHandler;
     private MldpBluetoothService bleService;
 
-    private String bleDeviceName, bleDeviceAddress;
-
-    private boolean bleAutoConnect; // 自動接続するかどうか
-
-    private SharedPreferences prefs;
-
-    // bluetoothの接続状況
-    private enum State {STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING}
-    private State state = State.STARTING;
-
-    // エスケープシーケンスの受信状況
-    private enum EscapeState {NONE, ESCAPE}
-    private EscapeState escapeState = EscapeState.NONE;
-
+    private boolean bleAutoConnect; //自動接続するか
 
     private EscapeSequence escapeSequence;  // エスケープシーケンスの操作
     private TermDisplay termDisplay;        // 画面の操作
@@ -98,10 +91,10 @@ public class MainActivity extends AppCompatActivity{
     private boolean isSending = false;          // RNにデータを送信しているときtrue
     private boolean isOverWriting = false;      // 文字を上書きするときtrue
 
-    private int stack = 0;
+    private int stack = 0;  // 処理待ちの文字数
 
     private final Handler handler = new Handler();
-    private final int time = 3;
+    private final int time = 3; //
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -477,7 +470,7 @@ public class MainActivity extends AppCompatActivity{
                                 sequenceString.append(splitData[cnt]);
                                 if (splitData[cnt].matches("[A-HJKSTZfm]")){
                                     checkSequence();
-                                    escapeState = EscapeState.NONE;
+                                    isEscapeSequence = false;
                                 }
                             } else {
                                 if (cnt <= receivedData.length()) {
@@ -498,13 +491,13 @@ public class MainActivity extends AppCompatActivity{
                         Log.d("TermDisplay****", "stack is 0");
                         handler.postDelayed(UpdateDisplay, time);
                     }
-
                 }
             }
         }
 
     };
 
+    // エスケープシーケンスの処理
     private void checkSequence(){
         int sequenceLength = sequenceString.length();
         char mode = sequenceString.charAt(sequenceLength-1);
@@ -572,13 +565,14 @@ public class MainActivity extends AppCompatActivity{
                 break;
             case KeyHexString.KEY_m:
                 escapeSequence.selectGraphicRendition(move);
-                inputEditText.setTextColor(termDisplay.getDefaultColor());
+                inputEditText.setTextColor(termDisplay.getCharColor());
                 break;
             default:
                 break;
         }
     }
 
+    // 接続
     private boolean connectWithAddress(String address) {
         state = State.CONNECTING;
         updateConnectionState();                                                                    
@@ -586,6 +580,7 @@ public class MainActivity extends AppCompatActivity{
         return bleService.connect(address);
     }
 
+    // 切断
     private final Runnable abortConnection = new Runnable() {
         @Override
         public void run() {
@@ -595,8 +590,8 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
+    // 周りにあるBLEをスキャン
     private void startScan() {
-
         if(bleService != null) {
             bleService.disconnect();
             state = State.DISCONNECTING;
@@ -612,6 +607,7 @@ public class MainActivity extends AppCompatActivity{
         startActivityForResult(bleScanActivityIntent, REQ_CODE_SCAN_ACTIVITY);
     }
 
+    // bluetoothの接続状況を更新
     private void updateConnectionState() {
         runOnUiThread(() -> {
             switch (state) {
@@ -646,6 +642,7 @@ public class MainActivity extends AppCompatActivity{
         });
     }
 
+    // 別Activityからの処理結果をうけとる
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == REQ_CODE_ENABLE_BT) {
             if (resultCode == Activity.RESULT_OK) {
@@ -680,6 +677,7 @@ public class MainActivity extends AppCompatActivity{
         super.onActivityResult(requestCode, resultCode, intent);
     }
 
+    // bluetoothのserviceを使う
     private final ServiceConnection bleServiceConnection = new ServiceConnection() {
 
         @Override
@@ -700,6 +698,7 @@ public class MainActivity extends AppCompatActivity{
         }
     };
 
+    // 新しい行を追加
     private void addNewLine(String newText){
         for(int i = 0; i < newText.length(); i++){
             isNotSending = true;
@@ -710,6 +709,7 @@ public class MainActivity extends AppCompatActivity{
         isNotSending = false;
     }
 
+    // １行に収まる文字数を返す
     private int getMaxRowLength(){
         WindowManager wm =  (WindowManager)getSystemService(WINDOW_SERVICE);
         Display disp = null;
@@ -726,6 +726,7 @@ public class MainActivity extends AppCompatActivity{
         return p.x/getTextWidth();
     }
 
+    // １列に収まる文字数を返す
     private int getMaxColumnLength(){
         WindowManager wm =  (WindowManager)getSystemService(WINDOW_SERVICE);
         Display disp = null;
@@ -743,6 +744,7 @@ public class MainActivity extends AppCompatActivity{
         return (height/text)-1;
     }
 
+    // テキストの文字の横幅を返す
     private int getTextWidth(){
         // TypefaceがMonospace 「" "」の幅を取得
         Paint paint = new Paint();
@@ -751,6 +753,7 @@ public class MainActivity extends AppCompatActivity{
         return (int)paint.measureText(" ");
     }
 
+    // テキストの文字の高さを返す
     private float getTextHeight(){
         Paint paint = new Paint();
         paint.setTextSize(inputEditText.getTextSize());
@@ -759,7 +762,7 @@ public class MainActivity extends AppCompatActivity{
         return Math.abs(fontMetrics.top) + Math.abs(fontMetrics.bottom);
     }
 
-    //選択中の行番号を返す
+    // 選択中の行番号を返す
     private int getSelectRowIndex() {
         if(termDisplay.getCursorY() + termDisplay.getTopRow() <= 0){
             return 0;
@@ -767,6 +770,7 @@ public class MainActivity extends AppCompatActivity{
         return termDisplay.getCursorY() + termDisplay.getTopRow();
     }
 
+    // キーボードを表示させる
     private void showKeyboard() {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         View v = getCurrentFocus();
@@ -776,6 +780,7 @@ public class MainActivity extends AppCompatActivity{
             }
     }
 
+    //　キーボードを隠す
     private void hideKeyboard() {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         View v = getCurrentFocus();
@@ -785,6 +790,7 @@ public class MainActivity extends AppCompatActivity{
             }
     }
 
+    // ディスプレイに文字を表示する
     private void changeDisplay(){
         isDisplaying = true;
         isNotSending = true;
@@ -797,30 +803,32 @@ public class MainActivity extends AppCompatActivity{
             result = HtmlParser.toHtml(spannable);
             inputEditText.append(Html.fromHtml(result));
         }
-        //Log.d("TermDisplay****", termDisplay.createDisplay() + "END");
-
         isDisplaying = false;
         isNotSending = false;
     }
 
-    private String getSelectLineText(){
+    // 現在の行のテキストを返す
+    private String getSelectRowText(){
         return termDisplay.getRowText(getSelectRowIndex());
     }
 
+    // カーソルを横方向にx移動させる
     private void moveCursorX(int x){
         termDisplay.setCursorX(termDisplay.getCursorX() + x);
     }
 
+    // カーソルを縦方向にy移動させる
     private void moveCursorY(int y){
         termDisplay.setCursorY(termDisplay.getCursorY() + y);
     }
 
+    // カーソルを保持している座標に移動させる
     private void moveToSavedCursor(){
         if(!isMovingCursor) {
             isMovingCursor = true;
 
             int cursor;
-            cursor = getRowLength(termDisplay.getCursorX(), termDisplay.getCursorY());
+            cursor = getCursorPosition(termDisplay.getCursorX(), termDisplay.getCursorY());
 
             Log.d("debug***", "cursor" + cursor);
             if (cursor >= 0) {
@@ -830,7 +838,8 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    private int getRowLength(int x, int y){
+    // カーソルの座標からポジションを返す
+    private int getCursorPosition(int x, int y){
         int length = 0;
         int rowLength = termDisplay.getRowLength(termDisplay.getTopRow() + y);
         String rowText = termDisplay.getRowText(termDisplay.getTopRow() + y);
@@ -866,35 +875,40 @@ public class MainActivity extends AppCompatActivity{
         return length;
     }
 
+    // 画面を上にスクロールする
     private void scrollUp(){
-        if(termDisplay.getTopRow() >= 1){
-            //表示する一番上の行を１つ上に
-            termDisplay.moveTopRow(-1);
-            // カーソルが画面内にある
-            if (termDisplay.getTopRow() < termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize-1){
-                setEditable(true);
-                moveCursorY(1);
-            } else { //画面外
-                // 0のときは表示させる
-                if (termDisplay.getTopRow() == 0 && termDisplay.getCurrRow() < displayColumnSize){
+        if (termDisplay.getTotalColumns() > displayColumnSize) {
+            if (termDisplay.getTopRow() - 1 >= 0) {
+                //表示する一番上の行を１つ上に
+                termDisplay.moveTopRow(-1);
+                // カーソルが画面内にある
+                if (termDisplay.getTopRow() <= termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize) {
                     setEditable(true);
-                } else {
-                    setEditable(false);
+                    moveCursorY(1);
+                } else { //画面外
+                    // 0のときは表示させる
+                    if (termDisplay.getTopRow() == 0) {
+                        setEditable(true);
+                    } else {
+                        setEditable(false);
+                    }
                 }
-            }
-            if (stack == 0){
-                changeDisplay();
-                moveToSavedCursor();
+                if (stack == 0) {
+                    changeDisplay();
+                    moveToSavedCursor();
+                }
             }
         }
     }
 
+    // 画面を下にスクロールする
     private void scrollDown(){
         if (termDisplay.getTotalColumns() > displayColumnSize) {
+            // 一番下の行までしか表示させない
             if (termDisplay.getTopRow() + displayColumnSize < termDisplay.getTotalColumns()) {
                 //表示する一番上の行を１つ下に
                 termDisplay.moveTopRow(1);
-                if (termDisplay.getTopRow() < termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize-1){
+                if (termDisplay.getTopRow() < termDisplay.getCurrRow() && termDisplay.getCurrRow() <= termDisplay.getTopRow() + displayColumnSize-1){
                     setEditable(true);
                     moveCursorY(-1);
                 } else {
@@ -913,6 +927,7 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
+    // 画面に書き込めなくする
     private void setEditable(boolean b){
         if (b){
             inputEditText.setFocusable(true);
@@ -925,11 +940,13 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
+    // 画面更新を非同期で行う
     private final Runnable UpdateDisplay = () -> {
         changeDisplay();
         moveToSavedCursor();
     };
 
+    // strをリストに格納
     private void addList(String str){
         if (str.matches("[\\x20-\\x7f\\x0a\\x0d]")){
 
@@ -940,9 +957,9 @@ public class MainActivity extends AppCompatActivity{
                 termDisplay.setTopRow(termDisplay.getCurrRow() - termDisplay.getCursorY());
                 moveToSavedCursor();
             }
-            if (termDisplay.getCursorX() > getSelectLineText().length()) {
-                termDisplay.setCursorX(getSelectLineText().length());
-                if (getSelectLineText().contains("\n")){
+            if (termDisplay.getCursorX() > getSelectRowText().length()) {
+                termDisplay.setCursorX(getSelectRowText().length());
+                if (getSelectRowText().contains("\n")){
                     moveCursorX(-1);
                 }
             }
@@ -950,17 +967,17 @@ public class MainActivity extends AppCompatActivity{
             if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) { //カーソルが行の一番最後
                 Log.d("termDisplay****", "set");
                 if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) { //一番したの行
-                    termDisplay.setTextItem(inputStr, termDisplay.getDefaultColor());
+                    termDisplay.setTextItem(inputStr, termDisplay.getCharColor());
                 } else {
-                    if (!getSelectLineText().contains("\n")) {
-                        termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                    if (!getSelectRowText().contains("\n")) {
+                        termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getCharColor());
                     }
                 }
                 moveCursorX(1);
             } else { //insert
                 Log.d("termDisplay****", "insert");
                 if (inputStr != LF) { //LFじゃない
-                    termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                    termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getCharColor());
                     if (termDisplay.getCursorX() + 1 < displayRowSize) {
                         isOverWriting = true;
                         moveCursorX(1);
@@ -969,9 +986,9 @@ public class MainActivity extends AppCompatActivity{
                     }
 
                 } else { //LF
-                    if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && !getSelectLineText().contains("\n")) {
+                    if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && !getSelectRowText().contains("\n")) {
                         if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
-                            termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getDefaultColor());
+                            termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getCharColor());
                         }
                     }
                 }
@@ -988,7 +1005,7 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
 
-            if (getSelectLineText().length() >= displayRowSize && !getSelectLineText().contains("\n") && !isOverWriting) {
+            if (getSelectRowText().length() >= displayRowSize && !getSelectRowText().contains("\n") && !isOverWriting) {
                 termDisplay.setCursorX(0);
                 if (inputEditText.getLineCount() >= displayColumnSize) {
                     scrollDown();

@@ -23,7 +23,7 @@ public class TermDisplay{
     private final ArrayList<ArrayList<TextItem>> textList;
 
     // 文字色(RGB)
-    private int defaultColor = 0x000000;
+    private int charColor = 0x000000;
 
     // 文字色を変えるエスケープシーケンスを受信したら true
     private boolean colorChange = false;
@@ -321,12 +321,12 @@ public class TermDisplay{
         this.displaySize = displaySize;
     }
 
-    public int getDefaultColor() {
-        return defaultColor;
+    public int getCharColor() {
+        return charColor;
     }
 
-    public void setDefaultColor(int defaultColor) {
-        this.defaultColor = defaultColor;
+    public void setCharColor(int defaultColor) {
+        this.charColor = defaultColor;
     }
 
     public void setColorChange(boolean colorChange){
