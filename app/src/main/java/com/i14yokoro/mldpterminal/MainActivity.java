@@ -116,8 +116,8 @@ public class MainActivity extends AppCompatActivity{
 
         Log.d(TAG, "maxRow "+ getMaxRowLength() +"maxColumn" + getMaxColumnLength());
 
-        escapeSequence = new EscapeSequence(termDisplay);
-        sequenceString = new StringBuilder();
+        termBuffer = new TerminalBuffer(screenRowSize, screenColumnSize);
+        escapeSequence = new EscapeSequence(termBuffer); //今のContentを渡す
 
         connectTimeoutHandler = new Handler();
 
@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_up).setOnClickListener(v -> {
             if(state == State.CONNECTED) {
                 bleService.writeMLDP("\u001b" + "[A");
-                if(termDisplay.getCursorY() > 0){
+                if(termBuffer.getCursorY() > 0){
                     moveToSavedCursor();
                 }
             }
@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity{
         findViewById(R.id.btn_down).setOnClickListener(v -> {
             if(state == State.CONNECTED) {
                 bleService.writeMLDP("\u001b" + "[B");
-                if(termDisplay.getCursorY() < inputEditText.getLineCount()-1) {
+                if(termBuffer.getCursorY() < inputEditText.getLineCount()-1) {
                     moveToSavedCursor();
                 }
             }
@@ -162,8 +162,8 @@ public class MainActivity extends AppCompatActivity{
             if(state == State.CONNECTED) {
                 bleService.writeMLDP("\u001b" + "[C");
             }
-            if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
-                if (termDisplay.getCursorX() < termDisplay.getRowLength(getSelectRowIndex())) {
+            if (getSelectRowIndex() == termBuffer.getTotalColumns()-1) {
+                if (termBuffer.getCursorX() < termBuffer.getRowLength(getSelectRowIndex())) {
                     moveToSavedCursor();
                 }
             }
@@ -172,8 +172,8 @@ public class MainActivity extends AppCompatActivity{
             if(state == State.CONNECTED) {
                 bleService.writeMLDP("\u001b" + "[D");
             }
-            if (getSelectRowIndex() == termDisplay.getTotalColumns()-1) {
-                if (termDisplay.getCursorX() > 0) {
+            if (getSelectRowIndex() == termBuffer.getTotalColumns()-1) {
+                if (termBuffer.getCursorX() > 0) {
                     moveToSavedCursor();
                 }
             }
@@ -189,6 +189,21 @@ public class MainActivity extends AppCompatActivity{
 
         findViewById(R.id.btn_ctl).setOnClickListener(view -> isBtn_ctl = true);
 
+        //SDK23以降はBLEをスキャンするのに位置情報が必要
+        if(Build.VERSION.SDK_INT >= 23) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+        }
+
+        //自動接続
+        prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        if (prefs != null) {
+            bleAutoConnect = prefs.getBoolean(PREFS_AUTO_CONNECT, false);
+            if (bleAutoConnect) {
+                bleDeviceName = prefs.getString(PREFS_NAME, null);
+                bleDeviceAddress = prefs.getString(PREFS_ADDRESS, null);
+            }
+        }
+
         //画面タッチされた時のイベント
         inputEditText.setOnTouchListener(new View.OnTouchListener() {
             int oldY;
@@ -198,10 +213,12 @@ public class MainActivity extends AppCompatActivity{
                     case MotionEvent.ACTION_DOWN:
                         // タップした時に ScrollViewのScrollY座標を保持
                         oldY = (int)event.getRawY();
+                        Log.d(TAG, "action down");
                         showKeyboard();
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         // 指を動かした時に、現在のscrollY座標とoldYを比較して、違いがあるならスクロール状態とみなす
+                        Log.d(TAG, "action move");
                         hideKeyboard();
                         if (oldY > event.getRawY()) {
                             scrollDown();
@@ -379,7 +396,7 @@ public class MainActivity extends AppCompatActivity{
         @Override
         public void afterTextChanged(Editable s) {
             if(s.length() < 1) return;
-            String str = s.subSequence(strStart, strStart + addStrCount).toString();//入力文字
+            String str = s.subSequence(eStart, eStart + eCount).toString();//入力文字
 
             handler.removeCallbacks(UpdateDisplay);
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]") && !isSending) {
@@ -437,39 +454,39 @@ public class MainActivity extends AppCompatActivity{
 
                 for (byte charCode : utf) {
                     switch (charCode) {
-                        case KeyHexString.KEY_BS:
+                        case 0x08:   // KEY_BS
                             moveCursorX(-1);
                             break;
-                        case KeyHexString.KEY_HT:
-                            if (termDisplay.getCursorX() + (8-termDisplay.getCursorX()%8) < displayRowSize){
-                                escapeSequence.moveRight(8 - termDisplay.getCursorX()%8);
+                        case 0x09:   // KEY_HT
+                            if (termBuffer.getCursorX() + (8- termBuffer.getCursorX()%8) < screenRowSize){
+                                escapeSequence.moveRight(8 - termBuffer.getCursorX()%8);
                             } else {
-                                moveCursorX(displayRowSize-1);
+                                moveCursorX(screenRowSize -1);
                             }
                             break;
-                        case KeyHexString.KEY_DEL:
+                        case 0x7f:   // KEY_DEL
                             break;
-                        case KeyHexString.KEY_LF:
+                        case 0x0a:   // KEY_LF
                             Log.d("debug****", "KEY_LF");
                             isNotSending = true;
                             addList("\n");
                             isNotSending = false;
                             break;
-                        case KeyHexString.KEY_CR:
+                        case 0x0d:   // KEY_CR
                             Log.d("debug****", "KEY_CR");
-                            termDisplay.setCursorX(0);
+                            termBuffer.setCursorX(0);
                             moveToSavedCursor();
                             break;
-                        case KeyHexString.KEY_ESC:
+                        case 0x1b:  // KEY_ESC
                             Log.d(TAG, "receive esc");
-                            escapeState = EscapeState.ESCAPE;
-                            sequenceString.setLength(0);
+                            isEscapeSequence = true;
+                            escapeString.setLength(0);
                             break;
                         default:
-                            if (escapeState == EscapeState.ESCAPE){
-                                sequenceString.append(splitData[cnt]);
+                            if (isEscapeSequence){
+                                escapeString.append(splitData[cnt]);
                                 if (splitData[cnt].matches("[A-HJKSTZfm]")){
-                                    checkSequence();
+                                    checkEscapeSequence();
                                     isEscapeSequence = false;
                                 }
                             } else {
@@ -498,74 +515,73 @@ public class MainActivity extends AppCompatActivity{
     };
 
     // エスケープシーケンスの処理
-    private void checkSequence(){
-        int sequenceLength = sequenceString.length();
-        char mode = sequenceString.charAt(sequenceLength-1);
+    private void checkEscapeSequence(){
+        int length = escapeString.length();
+        char mode = escapeString.charAt(length-1);
         int move = 1, h_move = 1;
-        int clearMode = 0;
-        int semicolon;
+        int semicolonPos;
 
-        if (sequenceLength != 2){
+        if (length != 2){
             if (!(mode == 'H' || mode == 'f')){
-                move = Integer.parseInt(sequenceString.substring(1, sequenceLength-2));
+                move = Integer.parseInt(escapeString.substring(1, length-2));
             } else {
-                semicolon = sequenceString.indexOf(";");
-                if(semicolon != 2){
-                    move = Integer.parseInt(sequenceString.substring(2, semicolon-1));
+                semicolonPos = escapeString.indexOf(";");
+                if(semicolonPos != 2){
+                    move = Integer.parseInt(escapeString.substring(2, semicolonPos-1));
                 }
-                if (sequenceString.charAt(semicolon+1) != 'H' || sequenceString.charAt(semicolon+1) != 'f'){
-                    h_move = Integer.parseInt(sequenceString.substring(semicolon+1, sequenceLength-2));
+                if (escapeString.charAt(semicolonPos+1) != 'H' || escapeString.charAt(semicolonPos+1) != 'f'){
+                    h_move = Integer.parseInt(escapeString.substring(semicolonPos+1, length-2));
                 }
             }
         }
 
         switch (mode) {
-            case KeyHexString.KEY_A:
+            case 'A':
                 escapeSequence.moveUp(move);
                 break;
-            case KeyHexString.KEY_B:
+            case 'B':
                 escapeSequence.moveDown(move);
                 break;
-            case KeyHexString.KEY_C:
+            case 'C':
                 escapeSequence.moveRight(move);
                 break;
-            case KeyHexString.KEY_D:
+            case 'D':
                 escapeSequence.moveLeft(move);
                 break;
-            case KeyHexString.KEY_E:
+            case 'E':
                 escapeSequence.moveDownToRowLead(move);
                 break;
-            case KeyHexString.KEY_F:
+            case 'F':
                 escapeSequence.moveUpToRowLead(move);
                 break;
-            case KeyHexString.KEY_G:
-                escapeSequence.moveSelection(move);
+            case 'G':
+                escapeSequence.moveCursor(move);
                 break;
-            case KeyHexString.KEY_H:
-            case KeyHexString.KEY_f:
-                escapeSequence.moveSelection(h_move, move);
+            case 'H':
+            case 'f':
+                escapeSequence.moveCursor(h_move, move);
                 break;
-            case KeyHexString.KEY_J:
-                escapeSequence.clearDisplay(clearMode);
+            case 'J':
+                escapeSequence.clearDisplay(move);
                 break;
-            case KeyHexString.KEY_K:
-                escapeSequence.clearRow(clearMode);
+            case 'K':
+                escapeSequence.clearRow(move);
                 break;
-            case KeyHexString.KEY_S:
+            case 'S':
                 escapeSequence.scrollNext(move);
                 break;
-            case KeyHexString.KEY_T:
+            case 'T':
                 escapeSequence.scrollBack(move);
                 break;
-            case KeyHexString.KEY_Z:
+            case 'Z':
                 //TODO 画面のサイズを送信するエスケープシーケンスの実装
                 isSending = true;
                 bleService.writeMLDP(Integer.toString(getMaxRowLength()));
                 bleService.writeMLDP(Integer.toString(getMaxColumnLength()));
                 break;
-            case KeyHexString.KEY_m:
+            case 'm':
                 escapeSequence.selectGraphicRendition(move);
-                inputEditText.setTextColor(termDisplay.getCharColor());
+                inputEditText.setTextColor(termBuffer.getCharColor());
                 break;
             default:
                 break;
@@ -705,7 +721,7 @@ public class MainActivity extends AppCompatActivity{
             inputEditText.append(Character.toString(newText.charAt(i)));
         }
         inputEditText.append("\n");
-        termDisplay.setCursorX(0);
+        termBuffer.setCursorX(0);
         isNotSending = false;
     }
 
@@ -764,10 +780,10 @@ public class MainActivity extends AppCompatActivity{
 
     // 選択中の行番号を返す
     private int getSelectRowIndex() {
-        if(termDisplay.getCursorY() + termDisplay.getTopRow() <= 0){
+        if(termBuffer.getCursorY() + termBuffer.getTopRow() <= 0){
             return 0;
         }
-        return termDisplay.getCursorY() + termDisplay.getTopRow();
+        return termBuffer.getCursorY() + termBuffer.getTopRow();
     }
 
     // キーボードを表示させる
@@ -796,11 +812,11 @@ public class MainActivity extends AppCompatActivity{
         isNotSending = true;
 
         inputEditText.getText().clear();
-        if (!termDisplay.isColorChange()){
-            inputEditText.append(termDisplay.createDisplay());
+        if (!termBuffer.isColorChange()){
+            inputEditText.append(termBuffer.createDisplay());
         } else {
-            spannable = new SpannableString(termDisplay.createDisplay());
-            result = HtmlParser.toHtml(spannable);
+            spannable = new SpannableString(termBuffer.createDisplay());
+            result = HtmlParser.INSTANCE.toHtml(spannable);
             inputEditText.append(Html.fromHtml(result));
         }
         isDisplaying = false;
@@ -809,17 +825,17 @@ public class MainActivity extends AppCompatActivity{
 
     // 現在の行のテキストを返す
     private String getSelectRowText(){
-        return termDisplay.getRowText(getSelectRowIndex());
+        return termBuffer.getRowText(getSelectRowIndex());
     }
 
     // カーソルを横方向にx移動させる
     private void moveCursorX(int x){
-        termDisplay.setCursorX(termDisplay.getCursorX() + x);
+        termBuffer.setCursorX(termBuffer.getCursorX() + x);
     }
 
     // カーソルを縦方向にy移動させる
     private void moveCursorY(int y){
-        termDisplay.setCursorY(termDisplay.getCursorY() + y);
+        termBuffer.setCursorY(termBuffer.getCursorY() + y);
     }
 
     // カーソルを保持している座標に移動させる
@@ -828,7 +844,7 @@ public class MainActivity extends AppCompatActivity{
             isMovingCursor = true;
 
             int cursor;
-            cursor = getCursorPosition(termDisplay.getCursorX(), termDisplay.getCursorY());
+            cursor = getCursorPosition(termBuffer.getCursorX(), termBuffer.getCursorY());
 
             Log.d("debug***", "cursor" + cursor);
             if (cursor >= 0) {
@@ -841,15 +857,15 @@ public class MainActivity extends AppCompatActivity{
     // カーソルの座標からポジションを返す
     private int getCursorPosition(int x, int y){
         int length = 0;
-        int rowLength = termDisplay.getRowLength(termDisplay.getTopRow() + y);
-        String rowText = termDisplay.getRowText(termDisplay.getTopRow() + y);
+        int rowLength = termBuffer.getRowLength(termBuffer.getTopRow() + y);
+        String rowText = termBuffer.getRowText(termBuffer.getTopRow() + y);
 
         for (int i = 0; i < y; i++){
-            length = length + termDisplay.getRowLength(termDisplay.getTopRow() + i);
-            if (termDisplay.getRowLength(termDisplay.getTopRow() + i) == 0){
+            length = length + termBuffer.getRowLength(termBuffer.getTopRow() + i);
+            if (termBuffer.getRowLength(termBuffer.getTopRow() + i) == 0){
                 length++;
             } else {
-                if (!termDisplay.getRowText(termDisplay.getTopRow() + i).contains("\n")) {
+                if (!termBuffer.getRowText(termBuffer.getTopRow() + i).contains("\n")) {
                     length++;
                 }
             }
@@ -877,17 +893,17 @@ public class MainActivity extends AppCompatActivity{
 
     // 画面を上にスクロールする
     private void scrollUp(){
-        if (termDisplay.getTotalColumns() > displayColumnSize) {
-            if (termDisplay.getTopRow() - 1 >= 0) {
+        if (termBuffer.getTotalColumns() > screenColumnSize) {
+            if (termBuffer.getTopRow() - 1 >= 0) {
                 //表示する一番上の行を１つ上に
-                termDisplay.moveTopRow(-1);
+                termBuffer.moveTopRow(-1);
                 // カーソルが画面内にある
-                if (termDisplay.getTopRow() <= termDisplay.getCurrRow() && termDisplay.getCurrRow() < termDisplay.getTopRow() + displayColumnSize) {
+                if (termBuffer.getTopRow() <= termBuffer.getCurrRow() && termBuffer.getCurrRow() < termBuffer.getTopRow() + screenColumnSize) {
                     setEditable(true);
                     moveCursorY(1);
                 } else { //画面外
                     // 0のときは表示させる
-                    if (termDisplay.getTopRow() == 0) {
+                    if (termBuffer.getTopRow() == 0) {
                         setEditable(true);
                     } else {
                         setEditable(false);
@@ -903,17 +919,17 @@ public class MainActivity extends AppCompatActivity{
 
     // 画面を下にスクロールする
     private void scrollDown(){
-        if (termDisplay.getTotalColumns() > displayColumnSize) {
+        if (termBuffer.getTotalColumns() > screenColumnSize) {
             // 一番下の行までしか表示させない
-            if (termDisplay.getTopRow() + displayColumnSize < termDisplay.getTotalColumns()) {
+            if (termBuffer.getTopRow() + screenColumnSize < termBuffer.getTotalColumns()) {
                 //表示する一番上の行を１つ下に
-                termDisplay.moveTopRow(1);
-                if (termDisplay.getTopRow() < termDisplay.getCurrRow() && termDisplay.getCurrRow() <= termDisplay.getTopRow() + displayColumnSize-1){
+                termBuffer.moveTopRow(1);
+                if (termBuffer.getTopRow() < termBuffer.getCurrRow() && termBuffer.getCurrRow() <= termBuffer.getTopRow() + screenColumnSize -1){
                     setEditable(true);
                     moveCursorY(-1);
                 } else {
                     // 一番したのときは表示させる
-                    if (termDisplay.getCurrRow() == termDisplay.getTopRow() + displayColumnSize-1){
+                    if (termBuffer.getCurrRow() == termBuffer.getTopRow() + screenColumnSize -1){
                         setEditable(true);
                     } else {
                         setEditable(false);
@@ -933,10 +949,10 @@ public class MainActivity extends AppCompatActivity{
             inputEditText.setFocusable(true);
             inputEditText.setFocusableInTouchMode(true);
             inputEditText.requestFocus();
-            termDisplay.setOutOfScreen(false);
+            termBuffer.setOutOfScreen(false);
         } else {
             inputEditText.setFocusable(false);
-            termDisplay.setOutOfScreen(true);
+            termBuffer.setOutOfScreen(true);
         }
     }
 
@@ -946,39 +962,59 @@ public class MainActivity extends AppCompatActivity{
         moveToSavedCursor();
     };
 
+    private void focusable(){
+        inputEditText.setFocusable(true);
+        inputEditText.setFocusableInTouchMode(true);
+        inputEditText.requestFocus();
+
+    }
+
     // strをリストに格納
     private void addList(String str){
         if (str.matches("[\\x20-\\x7f\\x0a\\x0d]")){
 
-            if (termDisplay.isOutOfScreen()) {
-                inputEditText.setFocusable(true);
-                inputEditText.setFocusableInTouchMode(true);
-                inputEditText.requestFocus();
-                termDisplay.setTopRow(termDisplay.getCurrRow() - termDisplay.getCursorY());
+            // カーソルが画面外で入力があると入力位置に移動
+            if (termBuffer.isOutOfScreen()) {
+                focusable();
+                termBuffer.setTopRow(termBuffer.getCurrRow() - termBuffer.getCursorY());
                 moveToSavedCursor();
             }
-            if (termDisplay.getCursorX() > getSelectRowText().length()) {
-                termDisplay.setCursorX(getSelectRowText().length());
+
+            // FIXME わからん 右端で入力があったらカーソル移動させない？
+            if (termBuffer.getCursorX() > getSelectRowText().length()) {
+                termBuffer.setCursorX(getSelectRowText().length());
                 if (getSelectRowText().contains("\n")){
                     moveCursorX(-1);
                 }
             }
+
+            //
             char inputStr = str.charAt(0);
-            if (termDisplay.getCursorX() == termDisplay.getRowLength(getSelectRowIndex())) { //カーソルが行の一番最後
-                Log.d("termDisplay****", "set");
-                if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1) { //一番したの行
-                    termDisplay.setTextItem(inputStr, termDisplay.getCharColor());
+
+            // カーソルが入力文字列の右端
+            if (termBuffer.getCursorX() == termBuffer.getRowLength(getSelectRowIndex())) {
+                Log.d("termBuffer****", "set");
+
+                // 入力行が一番したの行ならそのまま入力
+                if (getSelectRowIndex() == termBuffer.getTotalColumns() - 1) {
+                    termBuffer.addText(getSelectRowIndex(), inputStr, termBuffer.getCharColor());
                 } else {
+                    // 入力行が一番下じゃないかつ改行コードがないなら文字を追加
                     if (!getSelectRowText().contains("\n")) {
-                        termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getCharColor());
+                        termBuffer.addText(getSelectRowIndex(), inputStr, termBuffer.getCharColor());
                     }
                 }
+                // カーソルを移動
                 moveCursorX(1);
             } else { //insert
-                Log.d("termDisplay****", "insert");
-                if (inputStr != LF) { //LFじゃない
-                    termDisplay.changeTextItem(termDisplay.getCursorX(), getSelectRowIndex(), inputStr, termDisplay.getCharColor());
-                    if (termDisplay.getCursorX() + 1 < displayRowSize) {
+                // カーソルが入力文字列の途中
+                Log.d("termBuffer****", "overwrite");
+                // 入力が改行じゃなければ文字を上書き
+                if (inputStr != LF) {
+                    // 上書き
+                    termBuffer.setText(termBuffer.getCursorX(), getSelectRowIndex(), inputStr);
+                    // FIXME どういうこと？
+                    if (termBuffer.getCursorX() + 1 < screenRowSize) {
                         isOverWriting = true;
                         moveCursorX(1);
                     } else {
@@ -986,33 +1022,38 @@ public class MainActivity extends AppCompatActivity{
                     }
 
                 } else { //LF
-                    if (getSelectRowIndex() == termDisplay.getTotalColumns() - 1 && !getSelectRowText().contains("\n")) {
-                        if (termDisplay.getRowLength(getSelectRowIndex()) + 1 < displayRowSize) {
-                            termDisplay.addTextItem(getSelectRowIndex(), inputStr, termDisplay.getCharColor());
+                    // 途中で行を変える場合
+                    // 入力位置が一番下で改行がなければ
+                    if (getSelectRowIndex() == termBuffer.getTotalColumns() - 1 && !getSelectRowText().contains("\n")) {
+                        // 入力後の文字数が画面サイズより小さい
+                        if (termBuffer.getRowLength(getSelectRowIndex()) + 1 < screenRowSize) {
+                            // FIXME ???? 一番最後に改行を追加(ターミナルの場合途中で改行の場合次の行にいくぽい)
+                            termBuffer.addText(getSelectRowIndex(), inputStr, termBuffer.getCharColor());
                         }
                     }
                 }
             }
 
             Log.d(TAG, "ASCII code/ " + str);
+            // スクロールの処理
             if (inputStr == LF) {
-                termDisplay.setCursorX(0);
-                if (termDisplay.getCursorY() + 1 >= displayColumnSize) {
+                termBuffer.setCursorX(0);
+                if (termBuffer.getCursorY() + 1 >= screenColumnSize) {
                     scrollDown();
                 }
-                if (termDisplay.getCursorY() < displayColumnSize) {
+                if (termBuffer.getCursorY() < screenColumnSize) {
                     moveCursorY(1);
                 }
             }
 
-            if (getSelectRowText().length() >= displayRowSize && !getSelectRowText().contains("\n") && !isOverWriting) {
-                termDisplay.setCursorX(0);
-                if (inputEditText.getLineCount() >= displayColumnSize) {
+            // 右端での入力があったときの時のスクロール
+            if (getSelectRowText().length() >= screenRowSize && !getSelectRowText().contains("\n") && !isOverWriting) {
+                termBuffer.setCursorX(0);
+                if (inputEditText.getLineCount() >= screenColumnSize) {
                     scrollDown();
                 }
 
-                if (termDisplay.getCursorY() + 1 < displayColumnSize) {
-
+                if (termBuffer.getCursorY() + 1 < screenColumnSize) {
                     moveCursorY(1);
                 }
             }
