@@ -8,28 +8,27 @@ import java.lang.StringBuilder
  * @param screenColumnSize : 画面の縦幅
  */
 
-class TerminalBuffer(private val screenRowSize: Int, private val screenColumnSize: Int){
+class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
+    private val NULL = '\u0000'
+    private val LF = '\n'
+
     var charColor: Int = 0x00000000    // 文字色(RGB)
     var isColorChange = false
-    private val textBuffer: ArrayList<ArrayList<TextItem>> = ArrayList()
+    private var textBuffer: ArrayList<TerminalRow> = ArrayList()
 
     var topRow = 0      // 一番上の行
-    var bottomRow = 0
-
-    // 行が８０を超える場合に使用
-    var rowOffset = 0 // textBuffer[y].size > 80 -> getRowLength(y-1)/screenRowSize + 1
 
     var currentRow = 0
 
     var isOutOfScreen = false    // カーソルが画面の外にあれば true
 
-    private var screenArray = Array(screenColumnSize) {Array(screenRowSize){' '}}
+    private var screenBuilder = StringBuilder()
 
     // カーソルの座標
     var cursorX = 0
         set(cursorX){
             field = if(cursorX >= screenRowSize){
-                screenRowSize -1
+                screenRowSize - 1
             } else {
                 if(cursorX < 0){
                         0
@@ -55,57 +54,47 @@ class TerminalBuffer(private val screenRowSize: Int, private val screenColumnSiz
 
     val totalColumns: Int
         get() {
-            var total = 0
-            for (y in 0 until textBuffer.size){
-                total += usedLine(y)
-            }
-            return total
+            return textBuffer.size
         }
 
-    fun display(): Array<Array<Char>>{
-        var dx = 0
-        var dy = 0
+    val displayedLines: Int
+        get() {
+            return if(totalColumns - topRow >= screenColumnSize){
+                screenColumnSize
+            } else {
+                totalColumns - topRow
+            }
+        }
+
+    fun display(): String{
+        screenBuilder.setLength(0)
         for (y in topRow until topRow+screenColumnSize){
             if (y >= totalColumns){
                 for (x in 0 until screenRowSize){
-                    screenArray[dy][x] = ' '
+                    screenBuilder.append(' ')
                 }
-                dy++
             } else {
-                for (x in 0 until getRowLength(y) + (screenRowSize - (getRowLength(y) % screenRowSize))) {
-                    if (x < getRowLength(y) || textBuffer[y][x].text != '\n') {
-                        screenArray[dy][dx] = textBuffer[y][x].text
+                for (x in 0 until screenRowSize) {
+                    if (x < getRowLength(y) || textBuffer[y].text[x] != '\n') {
+                        screenBuilder.append(textBuffer[y].text[x])
                     } else {
-                        screenArray[dy][dx] = ' '
-                    }
-                    dx++
-                    if (dx == screenRowSize) {
-                        dx = 0
-                        dy++
-                    }
-                    if (dy == screenColumnSize) {
-                        break
+                        screenBuilder.append(' ')
                     }
                 }
             }
         }
-        return screenArray
+        return screenBuilder.toString()
     }
-
 
     fun moveTopRow(n: Int){
         topRow += n
-    }
-
-    private fun usedLine(y: Int): Int{
-        return (getRowLength(y) - 1) / screenRowSize + 1
     }
 
     /**
      * 新しい行を追加する.
      */
     fun addRow(){
-        textBuffer.add(ArrayList())
+        textBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, false))
     }
 
     /**
@@ -115,7 +104,11 @@ class TerminalBuffer(private val screenRowSize: Int, private val screenColumnSiz
      * @param color : 文字色
      */
     fun addText(y: Int, text: Char, color: Int){
-        textBuffer[y].add(TextItem(text, color))
+        textBuffer[y].text[cursorX] = text
+        textBuffer[y].color[cursorX] = color
+        if(cursorX == screenColumnSize){
+            textBuffer[y].lineWrap = true
+        }
     }
 
     /**
@@ -126,7 +119,7 @@ class TerminalBuffer(private val screenRowSize: Int, private val screenColumnSiz
      * @param text : 入力文字
      */
     fun setText(x: Int, y: Int, text: Char){
-        textBuffer[y][x].text = text
+        textBuffer[y].text[x] = text
     }
 
     /**
@@ -137,18 +130,9 @@ class TerminalBuffer(private val screenRowSize: Int, private val screenColumnSiz
      * @param color : 文字色
      */
     fun setColor(x: Int, y: Int, color: Int){
-        textBuffer[y][x].color = color
+        textBuffer[y].color[x] = color
     }
 
-    /**
-     * y 行目 x 番目の文字をリストから消す．
-     *
-     * @param x : 現在の行の x 番目
-     * @param y : y 行目
-     */
-    fun removeText(x: Int, y: Int){
-        textBuffer[y].removeAt(x)
-    }
 
     /**
      * y 行目のテキストを返す．
@@ -158,8 +142,8 @@ class TerminalBuffer(private val screenRowSize: Int, private val screenColumnSiz
      */
     fun getRowText(y: Int): String{
         val sb = StringBuilder()
-        for (x in 0 until textBuffer[y].size){
-            sb.append(textBuffer[y][x])
+        for (x in 0 until textBuffer[y].text.indexOf(NULL)){
+            sb.append(textBuffer[y].text[x])
         }
         return sb.toString()
     }
@@ -171,10 +155,47 @@ class TerminalBuffer(private val screenRowSize: Int, private val screenColumnSiz
      * @return
      */
     fun getRowLength(y: Int): Int{
-        return textBuffer[y].size
+        return if (textBuffer[y].text.indexOf(LF) != -1){
+            textBuffer[y].text.indexOf(LF)
+        } else {
+            screenRowSize
+        }
+    }
+
+    fun resize(){
+        var dx = 0
+        var dy = 0
+        val newTextBuffer: ArrayList<TerminalRow> = ArrayList()
+        newTextBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, false))
+        for (y in 0 until textBuffer.size){
+            for (x in 0 until screenRowSize){
+                newTextBuffer[y].text[x] = textBuffer[dy].text[dx]
+                if(textBuffer[dy].text[dx] == LF){
+                    break
+                }
+                dx++
+                if (dx == getRowLength(y)){
+                    dx = 0
+                    dy++
+                    if(dy == textBuffer.size){
+                        break
+                    }
+                }
+            }
+            if(dy == textBuffer.size){
+                break
+            }
+            if (newTextBuffer[y].text.indexOf(LF) == -1) {
+                newTextBuffer[y].lineWrap = true
+            }
+            newTextBuffer.add(TerminalRow(Array(screenRowSize) { NULL }, Array(screenRowSize) { 0 }, false))
+
+        }
+        textBuffer.clear()
+        textBuffer = newTextBuffer
     }
 
     init {
-        textBuffer.add(ArrayList())
+        textBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, false))
     }
 }

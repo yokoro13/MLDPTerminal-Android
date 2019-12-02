@@ -81,11 +81,10 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      */
     private fun clearDisplay() {
         val curr = currentRow
-        val displaySize = termBuffer.displaySize
         for (x in termBuffer.cursorX until termBuffer.getRowLength(curr)){
             termBuffer.setText(x, curr, ' ')
         }
-        for (y in termBuffer.cursorY until displaySize) {
+        for (y in termBuffer.cursorY until termBuffer.displayedLines) {
             for (x in 0 until termBuffer.getRowLength(y)){
                 termBuffer.setText(x, y, ' ')
             }
@@ -113,7 +112,7 @@ internal constructor(private val termBuffer: TerminalBuffer) {
         }
 
         if (n == 2) { //全消去
-            for (y in termBuffer.topRow until termBuffer.displaySize + termBuffer.topRow) {
+            for (y in termBuffer.topRow until termBuffer.displayedLines + termBuffer.topRow) {
                 for (x in 0 until termBuffer.getRowLength(y)) {
                     termBuffer.setText(x, y, ' ')
                 }
