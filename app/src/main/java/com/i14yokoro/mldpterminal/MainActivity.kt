@@ -75,7 +75,6 @@ class MainActivity : AppCompatActivity() {
     private var isNotSending = false   // RN側に送りたくないものがあるときはfalseにする
     private var isDisplaying = false   // 画面更新中はtrue
     private var isSending = false      // RNにデータを送信しているときtrue
-    private var isOverWriting = false  // 文字を上書きするときtrue
     private var sendCtl = false        // コントロールキーを使った制御信号を送るとtrue
     private var isEscapeSequence = false   // エスケープシーケンスを受信するとtrue
     //private boolean isOutOfScreen = false;    //カーソルが画面外か
@@ -326,18 +325,16 @@ class MainActivity : AppCompatActivity() {
         }
 
     // 選択中の行番号を返す
-    private val selectRowIndex: Int
-        get() = if (termBuffer.cursorY + termBuffer.topRow <= 0) {
-            0
-        } else termBuffer.cursorY + termBuffer.topRow
+    private val currentRow: Int
+        get() = termBuffer.currentRow
 
     // 現在の行のテキストを返す
-    private val selectRowText: String
-        get() = termBuffer.getRowText(selectRowIndex)
+    private val currentRowText: String
+        get() = termBuffer.getRowText(currentRow)
 
     // 画面更新を非同期で行う
     private val updateDisplay = {
-        changeDisplay()
+        display()
         moveToSavedCursor()
     }
 
@@ -396,8 +393,8 @@ class MainActivity : AppCompatActivity() {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[C")
             }
-            if (selectRowIndex == termBuffer.totalColumns - 1) {
-                if (termBuffer.cursorX < termBuffer.getRowLength(selectRowIndex)) {
+            if (currentRow == termBuffer.totalColumns - 1) {
+                if (termBuffer.cursorX < termBuffer.getRowLength(currentRow)) {
                     moveToSavedCursor()
                 }
             }
@@ -406,7 +403,7 @@ class MainActivity : AppCompatActivity() {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[D")
             }
-            if (selectRowIndex == termBuffer.totalColumns - 1) {
+            if (currentRow == termBuffer.totalColumns - 1) {
                 if (termBuffer.cursorX > 0) {
                     moveToSavedCursor()
                 }
@@ -501,7 +498,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        addNewLine("onDestroy")
         unbindService(bleServiceConnection)
         bleService = null
     }
@@ -538,7 +534,6 @@ class MainActivity : AppCompatActivity() {
                 state = State.DISCONNECTING
                 updateConnectionState()
                 bleService!!.disconnect()
-                //unbindService(bleServiceConnection);
                 return true
             }
         }
@@ -702,7 +697,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ディスプレイに文字を表示する
-    private fun changeDisplay() {
+    private fun display() {
         isDisplaying = true
         isNotSending = true
 
@@ -762,7 +757,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 if (stack == 0) {
-                    changeDisplay()
+                    display()
                     moveToSavedCursor()
                 }
             }
@@ -788,7 +783,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 if (stack == 0) {
-                    changeDisplay()
+                    display()
                     moveToSavedCursor()
                 }
             }
@@ -830,86 +825,37 @@ class MainActivity : AppCompatActivity() {
                 moveToSavedCursor()
             }
 
-            // FIXME わからん 右端で入力があったらカーソル移動させない？
-            if (termBuffer.cursorX > selectRowText.length) {
-                termBuffer.cursorX = selectRowText.length
-                if (selectRowText.contains("\n")) {
-                    moveCursorX(-1)
+            // 入力行の長さを超えた場所は空白をつめる
+            if (termBuffer.cursorX >= currentRowText.length) {
+                for (x in currentRowText.length until termBuffer.cursorX){
+                    termBuffer.setText(termBuffer.cursorX, currentRow, ' ')
+                    termBuffer.setColor(termBuffer.cursorX, currentRow, termBuffer.charColor)
                 }
             }
 
-            //
+            // addList
             val inputStr = str[0]
 
-            // カーソルが入力文字列の右端
-            if (termBuffer.cursorX == termBuffer.getRowLength(selectRowIndex)) {
-                Log.d("termBuffer****", "set")
-
-                // 入力行が一番したの行ならそのまま入力
-                if (selectRowIndex == termBuffer.totalColumns - 1) {
-                    termBuffer.addText(selectRowIndex, inputStr, termBuffer.charColor)
-                } else {
-                    // 入力行が一番下じゃないかつ改行コードがないなら文字を追加
-                    if (!selectRowText.contains("\n")) {
-                        termBuffer.addText(selectRowIndex, inputStr, termBuffer.charColor)
-                    }
-                }
-                // カーソルを移動
+            if (inputStr != LF) {
+                // 上書き
+                termBuffer.setText(termBuffer.cursorX, currentRow, inputStr)
+                termBuffer.setColor(termBuffer.cursorX, currentRow, termBuffer.charColor)
                 moveCursorX(1)
-            } else { //insert
-                // カーソルが入力文字列の途中
-                Log.d("termBuffer****", "overwrite")
-                // 入力が改行じゃなければ文字を上書き
-                if (inputStr != LF) {
-                    // 上書き
-                    termBuffer.setText(termBuffer.cursorX, selectRowIndex, inputStr)
-                    // FIXME どういうこと？
-                    if (termBuffer.cursorX + 1 < screenRowSize) {
-                        isOverWriting = true
-                        moveCursorX(1)
-                    } else {
-                        isOverWriting = false
-                    }
-
-                } else { //LF
-                    // 途中で行を変える場合
-                    // 入力位置が一番下で改行がなければ
-                    if (selectRowIndex == termBuffer.totalColumns - 1 && !selectRowText.contains("\n")) {
-                        // 入力後の文字数が画面サイズより小さい
-                        if (termBuffer.getRowLength(selectRowIndex) + 1 < screenRowSize) {
-                            // FIXME ???? 一番最後に改行を追加(ターミナルの場合途中で改行の場合次の行にいくぽい)
-                            termBuffer.addText(selectRowIndex, inputStr, termBuffer.charColor)
-                        }
-                    }
-                }
             }
-
-            Log.d(TAG, "ASCII code/ $str")
-
-            // スクロールの処理
-            if (inputStr == LF) {
+            
+            // LFか右端での入力があったときの時のスクロール
+            if (inputStr == LF || currentRowText.length >= screenRowSize) {
                 termBuffer.cursorX = 0
-                if (termBuffer.cursorY + 1 >= screenColumnSize) {
+                termBuffer.incrementCurrentRow()
+
+                // スクロールの処理
+                if (termBuffer.cursorY + 1 == screenColumnSize) {
                     scrollDown()
-                }
-                if (termBuffer.cursorY < screenColumnSize) {
+                } else {
                     moveCursorY(1)
                 }
             }
 
-            // 右端での入力があったときの時のスクロール
-            if (selectRowText.length >= screenRowSize && !selectRowText.contains("\n") && !isOverWriting) {
-                termBuffer.cursorX = 0
-                if (inputEditText.lineCount >= screenColumnSize) {
-                    scrollDown()
-                }
-
-                if (termBuffer.cursorY + 1 < screenColumnSize) {
-                    moveCursorY(1)
-                }
-            }
-
-            isOverWriting = false
         }
     }
 
