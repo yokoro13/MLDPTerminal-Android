@@ -84,7 +84,11 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
     }
 
     fun moveTopRow(n: Int){
-        topRow += n
+        if(topRow + n < 0){
+            topRow = 0
+        } else {
+            topRow += n
+        }
     }
 
     fun incrementCurrentRow(){

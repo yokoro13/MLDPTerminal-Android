@@ -156,7 +156,7 @@ class MainActivity : AppCompatActivity() {
             handler.removeCallbacks(updateDisplay)
             if (str.matches("[\\x20-\\x7f\\x0a\\x0d]".toRegex()) && !isSending) {
                 if (!isDisplaying) {
-                    addList(str)
+                    inputProcess(str)
                     handler.postDelayed(updateDisplay, time.toLong())
                 }
             } else { //ASCIIじゃなければ入力前の状態にもどす
@@ -210,7 +210,7 @@ class MainActivity : AppCompatActivity() {
                             -> {
                                 Log.d("debug****", "KEY_LF")
                                 isNotSending = true
-                                addList("\n")
+                                inputProcess("\n")
                                 isNotSending = false
                             }
                             0x0d.toByte()    // KEY_CR
@@ -237,7 +237,7 @@ class MainActivity : AppCompatActivity() {
                                         splitData[cnt] = " "
                                     }
                                     isNotSending = true
-                                    addList(splitData[cnt])
+                                    inputProcess(splitData[cnt])
                                     isNotSending = false
                                 }
                             }
@@ -623,14 +623,12 @@ class MainActivity : AppCompatActivity() {
                     stack = 0
                 }
                 State.CONNECTED -> {
-                    isNotSending = true
-                    addNewLine(LF + "connect to " + bleDeviceName)
+                    printNotSendingText(LF + "connect to " + bleDeviceName)
                 }
                 State.DISCONNECTING -> {
-                    isNotSending = true
-                    addNewLine(LF + "disconnected from " + bleDeviceName)
+                    printNotSendingText(LF + "disconnected from " + bleDeviceName)
                 }
-                State.CONNECTING -> TODO()
+                State.CONNECTING -> {}
             }//bleService.writeMLDP("MLDP\r\nApp:on\r\n");
 
             invalidateOptionsMenu()
@@ -670,9 +668,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 新しい行を追加
-    private fun addNewLine(newText: String) {
-        for (element in newText) {
-            isNotSending = true
+    private fun printNotSendingText(text: String) {
+        isNotSending = true
+        for (element in text) {
             inputEditText.append(element.toString())
         }
         inputEditText.append("\n")
@@ -741,25 +739,18 @@ class MainActivity : AppCompatActivity() {
     // 画面を上にスクロールする
     private fun scrollUp() {
         if (termBuffer.totalColumns > screenColumnSize) {
-            if (termBuffer.topRow - 1 >= 0) {
-                //表示する一番上の行を１つ上に
-                termBuffer.moveTopRow(-1)
-                // カーソルが画面内にある
-                if (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow < termBuffer.topRow + screenColumnSize) {
-                    setEditable(true)
-                    moveCursorY(1)
-                } else { //画面外
-                    // 0のときは表示させる
-                    if (termBuffer.topRow == 0) {
-                        setEditable(true)
-                    } else {
-                        setEditable(false)
-                    }
-                }
-                if (stack == 0) {
-                    display()
-                    moveToSavedCursor()
-                }
+            //表示する一番上の行を１つ上に
+            termBuffer.moveTopRow(-1)
+            // カーソルが画面内にある
+            if (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow < termBuffer.topRow + screenColumnSize - 1) {
+                setEditable(true)
+                moveCursorY(1)
+            } else { //画面外
+                setEditable(false)
+            }
+            if (stack == 0) {
+                display()
+                moveToSavedCursor()
             }
         }
     }
@@ -775,12 +766,7 @@ class MainActivity : AppCompatActivity() {
                     setEditable(true)
                     moveCursorY(-1)
                 } else {
-                    // 一番したのときは表示させる
-                    if (termBuffer.currentRow == termBuffer.topRow + screenColumnSize - 1) {
-                        setEditable(true)
-                    } else {
-                        setEditable(false)
-                    }
+                    setEditable(false)
                 }
                 if (stack == 0) {
                     display()
@@ -815,7 +801,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // strをリストに格納
-    private fun addList(str: String) {
+    private fun inputProcess(str: String) {
         if (str.matches("[\\x20-\\x7f\\x0a\\x0d]".toRegex())) {
 
             // カーソルが画面外で入力があると入力位置に移動
@@ -833,7 +819,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // addList
+            // inputProcess
             val inputStr = str[0]
 
             if (inputStr != LF) {
