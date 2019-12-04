@@ -19,9 +19,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.StrictMode
+import android.support.v4.text.HtmlCompat
 import android.support.v7.app.AppCompatActivity
 import android.text.Editable
-import android.text.Html
 import android.text.SpannableString
 import android.text.TextWatcher
 import android.util.Log
@@ -196,12 +196,12 @@ class MainActivity : AppCompatActivity() {
                     for (charCode in utf) {
                         when (charCode) {
                             0x08.toByte()   // KEY_BS
-                            -> moveCursorX(-1)
+                            -> termBuffer.cursorX--
                             0x09.toByte()    // KEY_HT
                             -> if (termBuffer.cursorX + (8 - termBuffer.cursorX % 8) < screenRowSize) {
                                 escapeSequence.moveRight(8 - termBuffer.cursorX % 8)
                             } else {
-                                moveCursorX(screenRowSize - 1)
+                                termBuffer.cursorX += (screenRowSize-1)
                             }
                             0x7f.toByte()    // KEY_DEL
                             -> {
@@ -370,9 +370,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_up).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[A")
-                if (termBuffer.cursorY > 0) {
-                    moveToSavedCursor()
-                }
+                moveToSavedCursor()
             }
             escapeSequence.moveUp(1)
             moveToSavedCursor()
@@ -381,9 +379,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_down).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[B")
-                if (termBuffer.cursorY < inputEditText.lineCount - 1) {
-                    moveToSavedCursor()
-                }
+                moveToSavedCursor()
             }
             escapeSequence.moveDown(1)
             moveToSavedCursor()
@@ -393,27 +389,17 @@ class MainActivity : AppCompatActivity() {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[C")
             }
-            if (currentRow == termBuffer.totalColumns - 1) {
-                if (termBuffer.cursorX < termBuffer.getRowLength(currentRow)) {
-                    moveToSavedCursor()
-                }
-            }
+            moveToSavedCursor()
         }
         findViewById<View>(R.id.btn_left).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[D")
             }
-            if (currentRow == termBuffer.totalColumns - 1) {
-                if (termBuffer.cursorX > 0) {
-                    moveToSavedCursor()
-                }
-            }
+            moveToSavedCursor()
         }
 
         findViewById<View>(R.id.btn_esc).setOnClickListener { if (state == State.CONNECTED) bleService!!.writeMLDP("\u001b") }
-
         findViewById<View>(R.id.btn_tab).setOnClickListener { if (state == State.CONNECTED) bleService!!.writeMLDP("\u0009") }
-
         findViewById<View>(R.id.btn_ctl).setOnClickListener { btnCtl = true }
 
         //SDK23以降はBLEをスキャンするのに位置情報が必要
@@ -464,7 +450,7 @@ class MainActivity : AppCompatActivity() {
                 if (state == State.CONNECTED) {
                     bleService!!.writeMLDP("\u0008")
                 } else {
-                    moveCursorX(-1)
+                    termBuffer.cursorX--
                     moveToSavedCursor()
                 }
                 return@setOnKeyListener true
@@ -701,24 +687,12 @@ class MainActivity : AppCompatActivity() {
 
         inputEditText.text.clear()
         if (!termBuffer.isColorChange) {
-            inputEditText.append(termBuffer.display())
+            inputEditText.append(termBuffer.makeScreenString())
         } else {
-            spannable = SpannableString(termBuffer.display())
-            result = HtmlParser.toHtml(spannable)
-            inputEditText.append(Html.fromHtml(result))
+            inputEditText.append(HtmlCompat.fromHtml(termBuffer.makeScreenString(), HtmlCompat.FROM_HTML_MODE_COMPACT))
         }
         isDisplaying = false
         isNotSending = false
-    }
-
-    // カーソルを横方向にx移動させる
-    private fun moveCursorX(x: Int) {
-        termBuffer.cursorX = termBuffer.cursorX + x
-    }
-
-    // カーソルを縦方向にy移動させる
-    private fun moveCursorY(y: Int) {
-        termBuffer.cursorY = termBuffer.cursorY + y
     }
 
     // カーソルを保持している座標に移動させる
@@ -744,7 +718,7 @@ class MainActivity : AppCompatActivity() {
             // カーソルが画面内にある
             if (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow < termBuffer.topRow + screenColumnSize - 1) {
                 setEditable(true)
-                moveCursorY(1)
+                termBuffer.cursorY++
             } else { //画面外
                 setEditable(false)
             }
@@ -764,7 +738,7 @@ class MainActivity : AppCompatActivity() {
                 termBuffer.moveTopRow(1)
                 if (termBuffer.topRow < termBuffer.currentRow && termBuffer.currentRow <= termBuffer.topRow + screenColumnSize - 1) {
                     setEditable(true)
-                    moveCursorY(-1)
+                    termBuffer.cursorY--
                 } else {
                     setEditable(false)
                 }
@@ -826,19 +800,23 @@ class MainActivity : AppCompatActivity() {
                 // 上書き
                 termBuffer.setText(termBuffer.cursorX, currentRow, inputStr)
                 termBuffer.setColor(termBuffer.cursorX, currentRow, termBuffer.charColor)
-                moveCursorX(1)
+                termBuffer.cursorX++
             }
             
-            // LFか右端での入力があったときの時のスクロール
+            // LFか右端での入力があったときの時
             if (inputStr == LF || currentRowText.length >= screenRowSize) {
                 termBuffer.cursorX = 0
                 termBuffer.incrementCurrentRow()
+
+                if(currentRow == termBuffer.totalColumns){
+                    termBuffer.addRow()
+                }
 
                 // スクロールの処理
                 if (termBuffer.cursorY + 1 == screenColumnSize) {
                     scrollDown()
                 } else {
-                    moveCursorY(1)
+                    termBuffer.cursorY++
                 }
             }
 

@@ -63,7 +63,7 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
             }
         }
 
-    fun display(): String{
+    fun makeScreenString(): String{
         screenBuilder.setLength(0)
         for (y in topRow until topRow+screenColumnSize){
             if (y >= totalColumns){
@@ -102,20 +102,8 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
     /**
      * 新しい行を追加する.
      */
-    fun addRow(y: Int){
-        textBuffer.add(y, TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, false))
-    }
-
-    /**
-     * リストに文字を記録する.
-     *
-     * @param text : 入力文字
-     * @param color : 文字色
-     */
-    fun addText(y: Int, text: Char, color: Int){
-        textBuffer[y].text[cursorX] = text
-        textBuffer[y].color[cursorX] = color
-
+    fun addRow(){
+        textBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, false))
     }
 
     /**
@@ -177,7 +165,7 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
         var oldX = 0
         var oldY = 0
         var newY = 0  // newTextBuffer の index
-        var lineWarp = false
+        var lineWarp: Boolean
         val newTextBuffer: ArrayList<TerminalRow> = ArrayList()
         newTextBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, false))
 
@@ -196,8 +184,14 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
                     }
                     oldY++
                 }
-
+                if (oldY == textBuffer.size){
+                    break
+                }
             }
+            if (oldY == textBuffer.size){
+                break
+            }
+            newY++
             lineWarp = oldX != getRowLength(oldY)
             newTextBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, lineWarp))
         }
