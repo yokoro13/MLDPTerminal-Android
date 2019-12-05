@@ -3,7 +3,7 @@ package com.i14yokoro.mldpterminal.bluetooth
 /**
  * デバイスを表すクラス
  */
-internal class BleDevice(val address: String, val name: String) {
+internal class BleDevice(val address: String?, val name: String?) {
 
     override fun toString(): String {
         return "Name: $name   --address: $address"

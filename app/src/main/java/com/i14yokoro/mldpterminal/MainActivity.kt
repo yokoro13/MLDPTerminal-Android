@@ -694,7 +694,6 @@ class MainActivity : AppCompatActivity() {
 
         inputEditText.text.clear()
 
-        // TODO 後ろのスペースが反映されない
         if (!termBuffer.isColorChange) {
             inputEditText.append(termBuffer.makeScreenString())
         } else {
