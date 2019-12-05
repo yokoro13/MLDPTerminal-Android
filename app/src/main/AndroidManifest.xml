@@ -26,13 +26,14 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.i14yokoro.mldpterminal.MldpBluetoothScanActivity"
+            android:name="com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothScanActivity"
             android:screenOrientation="portrait" />
         <service
-            android:name="com.i14yokoro.mldpterminal.MldpBluetoothService" />
+            android:name="com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothService" />
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
+        <service android:name=".bluetooth.MldpBluetoothService" />
     </application>
 
 </manifest>

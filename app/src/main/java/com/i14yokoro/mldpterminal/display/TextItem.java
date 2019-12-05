@@ -1,4 +1,4 @@
-package com.i14yokoro.mldpterminal;
+package com.i14yokoro.mldpterminal.display;
 
 /**
  * １文字を表すクラス
@@ -29,5 +29,4 @@ public class TextItem {
     public int getColor() {
         return color;
     }
-
 }

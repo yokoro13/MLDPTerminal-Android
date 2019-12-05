@@ -1,4 +1,4 @@
-package com.i14yokoro.mldpterminal;
+package com.i14yokoro.mldpterminal.display;
 
 import android.graphics.Typeface;
 import android.text.Spannable;
@@ -35,15 +35,15 @@ public class HtmlParser {
             ssBuilder.insert(start, "<u>");
             ssBuilder.insert(end + 3, "</u>");
         }
-        replace(ssBuilder, '\n', "<br/>");
+        replace(ssBuilder);
 
         return ssBuilder.toString();
     }
 
-    private static void replace(SpannableStringBuilder b, char oldChar, String newStr) {
+    private static void replace(SpannableStringBuilder b) {
         for (int i = b.length() - 1; i >= 0; i--) {
-            if (b.charAt(i) == oldChar) {
-                b.replace(i, i + 1, newStr);
+            if (b.charAt(i) == '\n') {
+                b.replace(i, i + 1, "<br/>");
             }
         }
     }

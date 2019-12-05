@@ -1,4 +1,4 @@
-package com.i14yokoro.mldpterminal;
+package com.i14yokoro.mldpterminal.bluetooth;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,6 +9,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import com.i14yokoro.mldpterminal.R;
+import com.i14yokoro.mldpterminal.bluetooth.BleDevice;
+
 import java.util.ArrayList;
 
 /**
@@ -16,10 +19,9 @@ import java.util.ArrayList;
  */
 class DeviceListAdapter extends ArrayAdapter<BleDevice> {
 
-    private ArrayList<BleDevice> bleDevices;
-    private int layoutResourceId;
-    private Context context;
-    private BleDevice device;
+    private final ArrayList<BleDevice> bleDevices;
+    private final int layoutResourceId;
+    private final Context context;
 
     private class ViewHolder{
         TextView textViewAddress;
@@ -66,14 +68,14 @@ class DeviceListAdapter extends ArrayAdapter<BleDevice> {
     @Override
     public View getView(int position, View convertView, @NonNull ViewGroup parentView) {
         ViewHolder holder;
-        device = bleDevices.get(position);
+        BleDevice device = bleDevices.get(position);
 
         if (convertView == null) {
             LayoutInflater inflater = ((Activity) context).getLayoutInflater();
             convertView = inflater.inflate(layoutResourceId, parentView, false);
             holder = new ViewHolder();
-            holder.textViewAddress = (TextView) convertView.findViewById(R.id.device_address);
-            holder.textViewName = (TextView) convertView.findViewById(R.id.device_name);
+            holder.textViewAddress = convertView.findViewById(R.id.device_address);
+            holder.textViewName = convertView.findViewById(R.id.device_name);
             convertView.setTag(holder);
 
         }else {

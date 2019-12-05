@@ -1,4 +1,21 @@
-package com.i14yokoro.mldpterminal;
+/*
+ * Copyright (C) 2015 Microchip Technology Inc. and its subsidiaries.  You may use this software and any derivatives
+ * exclusively with Microchip products.
+ *
+ * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS".  NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS
+ * SOFTWARE, INCLUDING ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A PARTICULAR
+ * PURPOSE, OR ITS INTERACTION WITH MICROCHIP PRODUCTS, COMBINATION WITH ANY OTHER PRODUCTS, OR USE IN ANY APPLICATION.
+ *
+ * IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE,
+ * COST OR EXPENSE OF ANY KIND WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS BEEN ADVISED OF
+ * THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE.  TO THE FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON
+ * ALL CLAIMS IN ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY, THAT YOU HAVE PAID
+ * DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
+ *
+ * MICROCHIP PROVIDES THIS SOFTWARE CONDITIONALLY UPON YOUR ACCEPTANCE OF THESE TERMS.
+ */
+
+package com.i14yokoro.mldpterminal.bluetooth;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
@@ -34,13 +51,11 @@ public class MldpBluetoothService extends Service {
     public static final String INTENT_EXTRA_SERVICE_NAME = "BLE_SERVICE_DEVICE_NAME";
     public static final String INTENT_EXTRA_SERVICE_DATA = "BLE_SERVICE_DATA";
 
-    public final static String ACTION_BLE_REQ_ENABLE_BT = "com.i14yokoro.mldpterminal.ACTION_BLE_REQ_ENABLE_BT";
-    public final static String ACTION_BLE_SCAN_RESULT = "com.i14yokoro.mldpterminal.ACTION_BLE_SCAN_RESULT";
-    public final static String ACTION_BLE_CONNECTED = "com.i14yokoro.mldpterminal.ACTION_BLE_CONNECTED";
-    public final static String ACTION_BLE_DISCONNECTED = "com.i14yokoro.mldpterminal.ACTION_BLE_DISCONNECTED";
-    public final static String ACTION_BLE_DATA_RECEIVED = "com.i14yokoro.mldpterminal.ACTION_BLE_DATA_RECEIVED";
-
-    private final static byte[] SCAN_RECORD_MLDP_PRIVATE_SERVICE = {0x00, 0x03, 0x00, 0x3a, 0x12, 0x08, 0x1a, 0x02, (byte) 0xdd, 0x07, (byte) 0xe6, 0x58, 0x03, 0x5b, 0x03, 0x00};
+    public final static String ACTION_BLE_REQ_ENABLE_BT = "ACTION_BLE_REQ_ENABLE_BT";
+    public final static String ACTION_BLE_SCAN_RESULT = "ACTION_BLE_SCAN_RESULT";
+    public final static String ACTION_BLE_CONNECTED = "ACTION_BLE_CONNECTED";
+    public final static String ACTION_BLE_DISCONNECTED = "ACTION_BLE_DISCONNECTED";
+    public final static String ACTION_BLE_DATA_RECEIVED = "ACTION_BLE_DATA_RECEIVED";
 
     private final static UUID UUID_MLDP_PRIVATE_SERVICE = UUID.fromString("00035b03-58e6-07dd-021a-08123a000300");
     private final static UUID UUID_MLDP_DATA_PRIVATE_CHAR = UUID.fromString("00035b03-58e6-07dd-021a-08123a000301");
@@ -53,10 +68,8 @@ public class MldpBluetoothService extends Service {
     private final Queue<BluetoothGattDescriptor> descriptorWriteQueue = new LinkedList<>();
     private final Queue<BluetoothGattCharacteristic> characteristicWriteQueue = new LinkedList<>();
 
-    private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothLeScanner bluetoothLeScanner;
-    private BluetoothDevice bluetoothDevice;
     private BluetoothGatt bluetoothGatt;
     private BluetoothGattCharacteristic mldpDataCharacteristic, transparentRxDataCharacteristic;
 
@@ -77,7 +90,7 @@ public class MldpBluetoothService extends Service {
     public void onCreate(){
         super.onCreate();
         try{
-            bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+            BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
             Log.d(TAG,"set BluetoothManager");
             if(bluetoothManager == null){
                 Log.d(TAG, "BluetoothManager is null");
@@ -110,7 +123,7 @@ public class MldpBluetoothService extends Service {
     }
 
     public class LocalBinder extends Binder{
-        MldpBluetoothService getService(){
+        public MldpBluetoothService getService(){
             return MldpBluetoothService.this;
         }
     }
@@ -330,6 +343,7 @@ public class MldpBluetoothService extends Service {
         }
     }
 
+    // 接続処理
     public boolean connect(final String address) {
         try {
             if (bluetoothAdapter == null || address == null) {
@@ -337,7 +351,7 @@ public class MldpBluetoothService extends Service {
                 return false;
             }
 
-            bluetoothDevice = bluetoothAdapter.getRemoteDevice(address);
+            BluetoothDevice bluetoothDevice = bluetoothAdapter.getRemoteDevice(address);
             if (bluetoothDevice == null) {
                 Log.w(TAG, "Unable to connect because device was not found");
                 return false;
@@ -356,6 +370,7 @@ public class MldpBluetoothService extends Service {
         }
     }
 
+    // 切断処理
     public void disconnect() {
         try {
             if (bluetoothAdapter == null || bluetoothGatt == null) {
@@ -397,7 +412,7 @@ public class MldpBluetoothService extends Service {
         }
     }
 
-    //byre型の送信
+    // byte型の送信
     public void writeMLDP(byte[] byteValues) {
         try {
             BluetoothGattCharacteristic writeDataCharacteristic;
