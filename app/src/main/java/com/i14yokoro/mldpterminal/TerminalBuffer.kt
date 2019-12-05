@@ -68,15 +68,24 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
         for (y in topRow until topRow+screenColumnSize){
             if (y >= totalColumns){
                 for (x in 0 until screenRowSize){
-                    screenBuilder.append(' ')
+                    if (x+1 == screenRowSize && y+1 != topRow+screenColumnSize){
+                        screenBuilder.append('\n')
+                    } else {
+                        screenBuilder.append(' ')
+                    }
                 }
             } else {
                 for (x in 0 until screenRowSize) {
                     if (x < getRowLength(y)) {
                         screenBuilder.append(textBuffer[y].text[x])
                     } else {
-                        screenBuilder.append(' ')
+                        if (x+1 == screenRowSize && y+1 != topRow+screenColumnSize){
+                            screenBuilder.append('\n')
+                        } else {
+                            screenBuilder.append(' ')
+                        }
                     }
+
                 }
             }
         }
@@ -92,11 +101,7 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
     }
 
     fun incrementCurrentRow(){
-        currentRow = if(currentRow < screenRowSize){
-            currentRow++
-        } else {
-            currentRow
-        }
+        currentRow++
     }
 
     /**
@@ -127,7 +132,6 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
     fun setColor(x: Int, y: Int, color: Int){
         textBuffer[y].color[x] = color
     }
-
 
     /**
      * y 行目のテキストを返す．
