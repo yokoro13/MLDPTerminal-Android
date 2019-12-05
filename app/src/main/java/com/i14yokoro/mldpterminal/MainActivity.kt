@@ -64,8 +64,6 @@ class MainActivity : AppCompatActivity() {
     private var eCount: Int = 0
 
     private lateinit var escapeString: StringBuilder // 受信したエスケープシーケンスを格納
-    private var result = ""
-    private lateinit var spannable: SpannableString
 
     private var screenRowSize: Int = 0
     private var screenColumnSize: Int = 0

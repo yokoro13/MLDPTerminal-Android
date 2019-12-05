@@ -40,12 +40,12 @@ import android.widget.ListView
 import com.i14yokoro.mldpterminal.R
 
 class MldpBluetoothScanActivity : ListActivity() {
-    private var scanStopHandler: Handler? = null
+    private lateinit var scanStopHandler: Handler
+    private lateinit var alwaysConnectCheckBox: CheckBox
 
     private var bleService: MldpBluetoothService? = null
     private var bleDeviceListAdapter: DeviceListAdapter? = null
     private var areScanning: Boolean = false
-    private var alwaysConnectCheckBox: CheckBox? = null
 
     private val bleServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, service: IBinder) {
@@ -76,7 +76,6 @@ class MldpBluetoothScanActivity : ListActivity() {
 
     private val stopScan = Runnable { this.scanStop() }
 
-
     public override fun onCreate(savedInstanceState: Bundle?) {
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS)
         super.onCreate(savedInstanceState)
@@ -106,7 +105,7 @@ class MldpBluetoothScanActivity : ListActivity() {
     override fun onPause() {
         super.onPause()
         if (bleService != null) {
-            scanStopHandler!!.removeCallbacks(stopScan)
+            scanStopHandler.removeCallbacks(stopScan)
             scanStop()
         }
         unregisterReceiver(bleServiceReceiver)
@@ -140,10 +139,10 @@ class MldpBluetoothScanActivity : ListActivity() {
 
     override fun onListItemClick(l: ListView, v: View, position: Int, id: Long) {
         val device = bleDeviceListAdapter!!.getDevice(position)
-        scanStopHandler!!.removeCallbacks(stopScan)
+        scanStopHandler.removeCallbacks(stopScan)
         scanStop()
         val intent = Intent()
-        intent.putExtra(INTENT_EXTRA_SCAN_AUTO_CONNECT, alwaysConnectCheckBox!!.isChecked)
+        intent.putExtra(INTENT_EXTRA_SCAN_AUTO_CONNECT, alwaysConnectCheckBox.isChecked)
         intent.putExtra(INTENT_EXTRA_SCAN_NAME, device.name)
         intent.putExtra(INTENT_EXTRA_SCAN_ADDRESS, device.address)
         setResult(Activity.RESULT_OK, intent)
@@ -158,7 +157,7 @@ class MldpBluetoothScanActivity : ListActivity() {
                 setProgressBarIndeterminateVisibility(true)
                 invalidateOptionsMenu()
                 bleService!!.scanStart()
-                scanStopHandler!!.postDelayed(stopScan, SCAN_TIME)
+                scanStopHandler.postDelayed(stopScan, SCAN_TIME)
             } else {
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 startActivityForResult(enableBtIntent, REQ_CODE_ENABLE_BT)
