@@ -162,6 +162,7 @@ class MainActivity : AppCompatActivity() {
             } else { //ASCIIじゃなければ入力前の状態にもどす
                 isSending = false
             }
+
         }
     }
 
@@ -372,7 +373,10 @@ class MainActivity : AppCompatActivity() {
                 bleService!!.writeMLDP("\u001b" + "[A")
                 moveToSavedCursor()
             }
-            escapeSequence.moveUp(1)
+            if (cursorIsInScreen()) {
+                escapeSequence.moveUp(1)
+                termBuffer.currentRow--
+            }
             moveToSavedCursor()
         }
 
@@ -381,7 +385,10 @@ class MainActivity : AppCompatActivity() {
                 bleService!!.writeMLDP("\u001b" + "[B")
                 moveToSavedCursor()
             }
-            escapeSequence.moveDown(1)
+            if (cursorIsInScreen()) {
+                escapeSequence.moveDown(1)
+                termBuffer.currentRow++
+            }
             moveToSavedCursor()
         }
 
@@ -686,11 +693,14 @@ class MainActivity : AppCompatActivity() {
         isNotSending = true
 
         inputEditText.text.clear()
+
+        // TODO 後ろのスペースが反映されない
         if (!termBuffer.isColorChange) {
             inputEditText.append(termBuffer.makeScreenString())
         } else {
             inputEditText.append(HtmlCompat.fromHtml(termBuffer.makeScreenString(), HtmlCompat.FROM_HTML_MODE_COMPACT))
         }
+
         isDisplaying = false
         isNotSending = false
     }
@@ -716,9 +726,10 @@ class MainActivity : AppCompatActivity() {
             //表示する一番上の行を１つ上に
             termBuffer.moveTopRow(-1)
             // カーソルが画面内にある
-            if (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow < termBuffer.topRow + screenColumnSize - 1) {
+            if (cursorIsInScreen()) {
                 setEditable(true)
-                termBuffer.cursorY++
+                // termBuffer.cursorY++
+                termBuffer.cursorY = termBuffer.currentRow - termBuffer.topRow
             } else { //画面外
                 setEditable(false)
             }
@@ -736,9 +747,9 @@ class MainActivity : AppCompatActivity() {
             if (termBuffer.topRow + screenColumnSize < termBuffer.totalColumns) {
                 //表示する一番上の行を１つ下に
                 termBuffer.moveTopRow(1)
-                if (termBuffer.topRow < termBuffer.currentRow && termBuffer.currentRow <= termBuffer.topRow + screenColumnSize - 1) {
+                if (cursorIsInScreen()) {
                     setEditable(true)
-                    termBuffer.cursorY--
+                    termBuffer.cursorY = termBuffer.currentRow - termBuffer.topRow
                 } else {
                     setEditable(false)
                 }
@@ -748,6 +759,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun cursorIsInScreen(): Boolean{
+        return (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow <= termBuffer.topRow + screenColumnSize - 1)
     }
 
     // 画面の編集許可
@@ -793,7 +808,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // inputProcess
+            // input
             val inputStr = str[0]
 
             if (inputStr != LF) {
@@ -815,11 +830,10 @@ class MainActivity : AppCompatActivity() {
                 // スクロールの処理
                 if (termBuffer.cursorY + 1 == screenColumnSize) {
                     scrollDown()
-                } else {
-                    termBuffer.cursorY++
                 }
-            }
+                termBuffer.cursorY++
 
+            }
         }
     }
 
