@@ -7,7 +7,6 @@ import java.lang.StringBuilder
  * @param screenRowSize : 画面の横幅
  * @param screenColumnSize : 画面の縦幅
  */
-
 class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
     private var textBuffer: ArrayList<TerminalRow> = ArrayList()
 
