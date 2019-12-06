@@ -115,7 +115,7 @@ class MldpBluetoothService : Service() {
                     break
                 }
             }
-            if (mldpDataCharacteristic == null || transparentRxDataCharacteristic == null) {
+            if (mldpDataCharacteristic == null) {
                 Log.d(TAG, "Did not find MLDP or Transparent service")
             }
         }
@@ -356,31 +356,15 @@ class MldpBluetoothService : Service() {
 
     // MLDPに文字列を送信
     fun writeMLDP(string: String) {
-        try {
-            val writeDataCharacteristic: BluetoothGattCharacteristic? = if (mldpDataCharacteristic != null) {
-                mldpDataCharacteristic
-            } else {
-                transparentRxDataCharacteristic
-            }
-            if (bluetoothAdapter == null || bluetoothGatt == null || writeDataCharacteristic == null) {
-                Log.w(TAG, "Write attempted with Bluetooth uninitialized or not connected")
-                return
-            }
-            writeDataCharacteristic.setValue(string)
-            characteristicWriteQueue.add(writeDataCharacteristic)
-            if (characteristicWriteQueue.size == 1) {
-                if (!bluetoothGatt!!.writeCharacteristic(writeDataCharacteristic)) {
-                    Log.w(TAG, "Failed to write characteristic")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Oops, exception caught in " + e.stackTrace[0].methodName + ": " + e.message)
-        }
-
+        writeData(string)
     }
 
     // byte型の送信
     fun writeMLDP(byteValues: ByteArray) {
+        writeData(byteValues)
+    }
+
+    private fun writeData(data: Any){
         try {
             val writeDataCharacteristic: BluetoothGattCharacteristic? = if (mldpDataCharacteristic != null) {
                 mldpDataCharacteristic
@@ -391,7 +375,13 @@ class MldpBluetoothService : Service() {
                 Log.w(TAG, "Write attempted with Bluetooth uninitialized or not connected")
                 return
             }
-            writeDataCharacteristic.value = byteValues
+            if(data is ByteArray) {
+                writeDataCharacteristic.value = data
+            } else {
+                if(data is String) {
+                    writeDataCharacteristic.setValue(data)
+                }
+            }
             characteristicWriteQueue.add(writeDataCharacteristic)
             if (characteristicWriteQueue.size == 1) {
                 if (!bluetoothGatt!!.writeCharacteristic(writeDataCharacteristic)) {
@@ -401,7 +391,6 @@ class MldpBluetoothService : Service() {
         } catch (e: Exception) {
             Log.e(TAG, "Oops, exception caught in " + e.stackTrace[0].methodName + ": " + e.message)
         }
-
     }
 
     companion object {

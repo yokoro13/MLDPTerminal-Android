@@ -64,6 +64,8 @@ class MainActivity : AppCompatActivity() {
     private var eCount: Int = 0
 
     private lateinit var escapeString: StringBuilder // 受信したエスケープシーケンスを格納
+    private var result = ""
+    private lateinit var spannable: SpannableString
 
     private var screenRowSize: Int = 0
     private var screenColumnSize: Int = 0
@@ -169,10 +171,10 @@ class MainActivity : AppCompatActivity() {
             when (intent.action) {
                 MldpBluetoothService.ACTION_BLE_CONNECTED -> {
                     connectTimeoutHandler.removeCallbacks(abortConnection)
-                    Log.i(TAG, "Received intent  ACTION_BLE_CONNECTED")
+                    Log.i(TAG, "Received intent ACTION_BLE_CONNECTED")
                     state = State.CONNECTED
                     updateConnectionState()
-
+                    Handler().postDelayed({  bleService!!.writeMLDP("MLDP\r\nApp:on\r\n") }, 500)
                 }
                 MldpBluetoothService.ACTION_BLE_DISCONNECTED -> {
                     Log.i(TAG, "Received intent ACTION_BLE_DISCONNECTED")
@@ -369,11 +371,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_up).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[A")
-                moveToSavedCursor()
-            }
-            if (cursorIsInScreen()) {
+            } else {
                 escapeSequence.moveUp(1)
-                termBuffer.currentRow--
             }
             moveToSavedCursor()
         }
@@ -381,11 +380,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_down).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[B")
-                moveToSavedCursor()
-            }
-            if (cursorIsInScreen()) {
+            } else {
                 escapeSequence.moveDown(1)
-                termBuffer.currentRow++
             }
             moveToSavedCursor()
         }
@@ -393,12 +389,16 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_right).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[C")
+            } else {
+                escapeSequence.moveRight(1)
             }
             moveToSavedCursor()
         }
         findViewById<View>(R.id.btn_left).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[D")
+            } else {
+                escapeSequence.moveLeft(1)
             }
             moveToSavedCursor()
         }
@@ -541,6 +541,7 @@ class MainActivity : AppCompatActivity() {
 
         if (length != 2) {
             if (!(mode == 'H' || mode == 'f')) {
+                // FIXME okasii
                 move = Integer.parseInt(escapeString.substring(1, length - 2))
             } else {
                 semicolonPos = escapeString.indexOf(";")
@@ -579,6 +580,7 @@ class MainActivity : AppCompatActivity() {
             else -> {
             }
         }
+        escapeString.clear()
     }
 
     // 接続
@@ -725,7 +727,6 @@ class MainActivity : AppCompatActivity() {
             // カーソルが画面内にある
             if (cursorIsInScreen()) {
                 setEditable(true)
-                // termBuffer.cursorY++
                 termBuffer.cursorY = termBuffer.currentRow - termBuffer.topRow
             } else { //画面外
                 setEditable(false)
