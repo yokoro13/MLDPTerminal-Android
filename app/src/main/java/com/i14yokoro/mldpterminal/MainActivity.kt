@@ -64,8 +64,6 @@ class MainActivity : AppCompatActivity() {
     private var eCount: Int = 0
 
     private lateinit var escapeString: StringBuilder // 受信したエスケープシーケンスを格納
-    private var result = ""
-    private lateinit var spannable: SpannableString
 
     private var screenRowSize: Int = 0
     private var screenColumnSize: Int = 0
@@ -254,6 +252,58 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    // エスケープシーケンスの処理
+    private fun checkEscapeSequence() {
+        val esStr = escapeString.toString()
+
+        val length = esStr.length
+        val mode = esStr[length - 1]
+        var move = 1
+        var hMove = 1
+        val semicolonPos: Int
+
+        if (length != 2) {
+            if (mode != 'H') {
+                move = Integer.parseInt(esStr.substring(1, length - 1))
+            } else {
+                semicolonPos = esStr.indexOf(";")
+                if (semicolonPos != 1) {
+                    move = Integer.parseInt(esStr.substring(1, semicolonPos))
+                }
+                if (esStr[semicolonPos + 1] != 'H' || esStr[semicolonPos + 1] != 'f') {
+                    hMove = Integer.parseInt(esStr.substring(semicolonPos + 1, length - 1))
+                }
+            }
+        }
+
+        when (mode) {
+            'A' -> escapeSequence.moveUp(move-1)
+            'B' -> escapeSequence.moveDown(move-1)
+            'C' -> escapeSequence.moveRight(move-1)
+            'D' -> escapeSequence.moveLeft(move-1)
+            'E' -> escapeSequence.moveDownToRowLead(move-1)
+            'F' -> escapeSequence.moveUpToRowLead(move-1)
+            'G' -> escapeSequence.moveCursor(move-1)
+            'H', 'f' -> escapeSequence.moveCursor(move-1, hMove-1)
+            'J' -> escapeSequence.clearDisplay(move)
+            'K' -> escapeSequence.clearRow(move)
+            'S' -> escapeSequence.scrollNext(move)
+            'T' -> escapeSequence.scrollBack(move)
+            'Z' -> {
+                isSending = true
+                bleService!!.writeMLDP(maxRowLength.toString())
+                bleService!!.writeMLDP(maxColumnLength.toString())
+            }
+            'm' -> {
+                escapeSequence.selectGraphicRendition(move)
+                inputEditText.setTextColor(termBuffer.charColor)
+            }
+            else -> {
+            }
+        }
+        escapeString.clear()
     }
 
     // 切断
@@ -531,58 +581,6 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    // エスケープシーケンスの処理
-    private fun checkEscapeSequence() {
-        val length = escapeString.length
-        val mode = escapeString[length - 1]
-        var move = 1
-        var hMove = 1
-        val semicolonPos: Int
-
-        if (length != 2) {
-            if (!(mode == 'H' || mode == 'f')) {
-                // FIXME okasii
-                move = Integer.parseInt(escapeString.substring(1, length - 2))
-            } else {
-                semicolonPos = escapeString.indexOf(";")
-                if (semicolonPos != 2) {
-                    move = Integer.parseInt(escapeString.substring(2, semicolonPos - 1))
-                }
-                if (escapeString[semicolonPos + 1] != 'H' || escapeString[semicolonPos + 1] != 'f') {
-                    hMove = Integer.parseInt(escapeString.substring(semicolonPos + 1, length - 2))
-                }
-            }
-        }
-
-        when (mode) {
-            'A' -> escapeSequence.moveUp(move)
-            'B' -> escapeSequence.moveDown(move)
-            'C' -> escapeSequence.moveRight(move)
-            'D' -> escapeSequence.moveLeft(move)
-            'E' -> escapeSequence.moveDownToRowLead(move)
-            'F' -> escapeSequence.moveUpToRowLead(move)
-            'G' -> escapeSequence.moveCursor(move)
-            'H', 'f' -> escapeSequence.moveCursor(hMove, move)
-            'J' -> escapeSequence.clearDisplay(move)
-            'K' -> escapeSequence.clearRow(move)
-            'S' -> escapeSequence.scrollNext(move)
-            'T' -> escapeSequence.scrollBack(move)
-            'Z' -> {
-                //TODO 画面のサイズを送信するエスケープシーケンスの実装
-                isSending = true
-                bleService!!.writeMLDP(maxRowLength.toString())
-                bleService!!.writeMLDP(maxColumnLength.toString())
-            }
-            'm' -> {
-                escapeSequence.selectGraphicRendition(move)
-                inputEditText.setTextColor(termBuffer.charColor)
-            }
-            else -> {
-            }
-        }
-        escapeString.clear()
-    }
-
     // 接続
     private fun connectWithAddress(address: String): Boolean {
         state = State.CONNECTING
@@ -622,7 +620,7 @@ class MainActivity : AppCompatActivity() {
                     printNotSendingText(LF + "disconnected from " + bleDeviceName)
                 }
                 State.CONNECTING -> {}
-            }//bleService.writeMLDP("MLDP\r\nApp:on\r\n");
+            }
 
             invalidateOptionsMenu()
         }
