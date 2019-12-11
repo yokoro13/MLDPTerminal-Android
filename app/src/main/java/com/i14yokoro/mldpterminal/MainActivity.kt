@@ -67,13 +67,12 @@ class MainActivity : AppCompatActivity() {
     private var screenRowSize: Int = 0
     private var screenColumnSize: Int = 0
 
-    private var isMovingCursor = false // カーソル移動中ならtrue
-    private var btnCtl = false      // CTLボタンを押したらtrue
-    private var isNotSending = false   // RN側に送りたくないものがあるときはfalseにする
-    private var isDisplaying = false   // 画面更新中はtrue
-    private var isSending = false      // RNにデータを送信しているときtrue
-    private var sendCtl = false        // コントロールキーを使った制御信号を送るとtrue
-    private var isEscapeSequence = false   // エスケープシーケンスを受信するとtrue
+    private var isMovingCursor = false      // カーソル移動中ならtrue
+    private var btnCtl = false              // CTLボタンを押したらtrue
+    private var isNotSending = false        // RN側に送りたくないものがあるときはfalseにする
+    private var isDisplaying = false        // 画面更新中はtrue
+    private var isSending = false           // RNにデータを送信しているときtrue
+    private var isEscapeSequence = false    // エスケープシーケンスを受信するとtrue
 
     private var stack = 0  // 処理待ちの文字数
 
@@ -119,11 +118,11 @@ class MainActivity : AppCompatActivity() {
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
             eStart = start//文字列のスタート位置
             eCount = count//追加される文字
+            var sendCtl = false
 
             if (state == State.CONNECTED && count > before) {
                 if (!isNotSending) {
                     val send = s.subSequence(start + before, start + count).toString()
-                    Log.d("RNsend", send)
                     isSending = true
                     if (btnCtl) {
                         if (send.matches("[\\x5f-\\x7e]".toRegex())) {
@@ -136,8 +135,6 @@ class MainActivity : AppCompatActivity() {
                     }
                     if (!sendCtl) {
                         bleService!!.writeMLDP(send)
-                    } else {
-                        sendCtl = false
                     }
                 }
             }
@@ -405,8 +402,7 @@ class MainActivity : AppCompatActivity() {
         screenRowSize = maxRowLength
         screenColumnSize = maxColumnLength
         termBuffer = TerminalBuffer(screenRowSize, screenColumnSize)
-        escapeSequence = EscapeSequence(termBuffer) //今のContentを渡す
-        Log.d(TAG, "maxRow " + maxRowLength + "maxColumn" + maxColumnLength)
+        escapeSequence = EscapeSequence(termBuffer)
 
         escapeString = StringBuilder()
         state = State.STARTING
