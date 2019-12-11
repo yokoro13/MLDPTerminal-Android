@@ -22,7 +22,6 @@ import android.os.StrictMode
 import android.support.v4.text.HtmlCompat
 import android.support.v7.app.AppCompatActivity
 import android.text.Editable
-import android.text.SpannableString
 import android.text.TextWatcher
 import android.util.Log
 import android.view.ActionMode
@@ -75,7 +74,6 @@ class MainActivity : AppCompatActivity() {
     private var isSending = false      // RNにデータを送信しているときtrue
     private var sendCtl = false        // コントロールキーを使った制御信号を送るとtrue
     private var isEscapeSequence = false   // エスケープシーケンスを受信するとtrue
-    //private boolean isOutOfScreen = false;    //カーソルが画面外か
 
     private var stack = 0  // 処理待ちの文字数
 
@@ -152,12 +150,12 @@ class MainActivity : AppCompatActivity() {
             val str = s.subSequence(eStart, eStart + eCount).toString()//入力文字
 
             handler.removeCallbacks(updateDisplay)
-            if (str.matches("[\\x20-\\x7f\\x0a\\x0d]".toRegex()) && !isSending) {
+            if (!isSending) {
                 if (!isDisplaying) {
                     inputProcess(str)
                     handler.postDelayed(updateDisplay, time.toLong())
                 }
-            } else { //ASCIIじゃなければ入力前の状態にもどす
+            } else {
                 isSending = false
             }
 
@@ -190,11 +188,11 @@ class MainActivity : AppCompatActivity() {
                     handler.removeCallbacks(updateDisplay)
                     stack += splitData.size - 2
                     Log.d("stack***", "stackLength$stack")
-                    val utf = receivedData.toByteArray(StandardCharsets.UTF_8)
+                    val utfArray = receivedData.toByteArray(StandardCharsets.UTF_8)
 
-                    for (charCode in utf) {
+                    for (charCode in utfArray) {
                         when (charCode) {
-                            0x08.toByte()   // KEY_BS
+                            0x08.toByte()    // KEY_BS
                             -> termBuffer.cursorX--
                             0x09.toByte()    // KEY_HT
                             -> if (termBuffer.cursorX + (8 - termBuffer.cursorX % 8) < screenRowSize) {
@@ -207,20 +205,17 @@ class MainActivity : AppCompatActivity() {
                             }
                             0x0a.toByte()    // KEY_LF
                             -> {
-                                Log.d("debug****", "KEY_LF")
                                 isNotSending = true
                                 inputProcess("\n")
                                 isNotSending = false
                             }
                             0x0d.toByte()    // KEY_CR
                             -> {
-                                Log.d("debug****", "KEY_CR")
                                 termBuffer.cursorX = 0
                                 moveToSavedCursor()
                             }
                             0x1b.toByte()   // KEY_ESC
                             -> {
-                                Log.d(TAG, "receive esc")
                                 isEscapeSequence = true
                                 escapeString.setLength(0)
                             }
@@ -279,12 +274,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         when (mode) {
-            'A' -> escapeSequence.moveUp(move-1)
-            'B' -> escapeSequence.moveDown(move-1)
-            'C' -> escapeSequence.moveRight(move-1)
-            'D' -> escapeSequence.moveLeft(move-1)
-            'E' -> escapeSequence.moveDownToRowLead(move-1)
-            'F' -> escapeSequence.moveUpToRowLead(move-1)
+            'A' -> escapeSequence.moveUp(move)
+            'B' -> escapeSequence.moveDown(move)
+            'C' -> escapeSequence.moveRight(move)
+            'D' -> escapeSequence.moveLeft(move)
+            'E' -> escapeSequence.moveDownToRowLead(move)
+            'F' -> escapeSequence.moveUpToRowLead(move)
             'G' -> escapeSequence.moveCursor(move-1)
             'H', 'f' -> escapeSequence.moveCursor(move-1, hMove-1)
             'J' -> escapeSequence.clearDisplay(move)
@@ -597,10 +592,8 @@ class MainActivity : AppCompatActivity() {
             updateConnectionState()
         }
 
-        //else {
         val bleServiceIntent = Intent(this@MainActivity, MldpBluetoothService::class.java)
         this.bindService(bleServiceIntent, bleServiceConnection, Context.BIND_AUTO_CREATE)
-        //}
 
         val bleScanActivityIntent = Intent(this@MainActivity, MldpBluetoothScanActivity::class.java)
         startActivityForResult(bleScanActivityIntent, REQ_CODE_SCAN_ACTIVITY)
