@@ -2,12 +2,14 @@
 
 Microsoft社開発のMLDPを使用したターミナルエミュレータです．
 
-MLDPに対応したBLEモジュール(RN4020等)を搭載したデバイスをFreeBSDにUSB接続することで,  
-androidからCUI操作できることを確認．  
+MLDPに対応したBLE(RN4020等)を搭載したデバイスをFreeBSDにUSB接続することでandroidからCUI操作できます
+
 android7.0以上で動作確認済み
 
 画面上側に配置してあるSCANボタンで周りに存在するBLE機器をスキャンできます.
-このターミナルエミュレータでは，こちらのサイト(https://www.mm2d.net/main/prog/c/console-02.html )に記載してあるエスケープシーケンスを実装しています
+
+このターミナルエミュレータでは，[こちらのサイト](https://www.mm2d.net/main/prog/c/console-02.html )に記載してあるエスケープシーケンスを実装しています
+
 （ESC[nmに関しては30~37, 39のみ）
 
 iOS版
