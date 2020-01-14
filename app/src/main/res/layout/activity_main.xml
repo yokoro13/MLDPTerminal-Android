@@ -16,6 +16,8 @@
         android:background="#00000000"
         android:fontFamily="monospace"
         android:gravity="top|start"
+        android:breakStrategy="simple"
+        android:hyphenationFrequency="none"
         android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
         android:paddingBottom="100px"
         android:textSize="30px"
@@ -36,49 +38,49 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="ESC" />
+            android:text="@string/esc" />
 
         <Button
             android:id="@+id/btn_tab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="TAB"/>
+            android:text="@string/tab"/>
 
         <Button
             android:id="@+id/btn_ctl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="CTL" />
+            android:text="@string/ctl" />
 
         <Button
             android:id="@+id/btn_up"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="↑" />
+            android:text="@string/arrow_up" />
 
         <Button
             android:id="@+id/btn_down"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="↓" />
+            android:text="@string/arrow_down" />
 
         <Button
             android:id="@+id/btn_left"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="←" />
+            android:text="@string/arrow_left" />
 
         <Button
             android:id="@+id/btn_right"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="→" />
+            android:text="@string/arrow_right" />
     </LinearLayout>
 
 </RelativeLayout>

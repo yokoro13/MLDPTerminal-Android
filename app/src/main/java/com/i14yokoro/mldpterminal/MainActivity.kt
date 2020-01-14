@@ -69,15 +69,18 @@ class MainActivity : AppCompatActivity() {
 
     private var isMovingCursor = false      // カーソル移動中ならtrue
     private var btnCtl = false              // CTLボタンを押したらtrue
-    private var isNotSending = false        // RN側に送りたくないものがあるときはfalseにする
+    private var isNotSending = false        // RN側に送りたくないものがあるときはtrueにする
     private var isDisplaying = false        // 画面更新中はtrue
     private var isSending = false           // RNにデータを送信しているときtrue
     private var isEscapeSequence = false    // エスケープシーケンスを受信するとtrue
 
+    private var isANSIEscapeSequence = false
+    private var isTeCEscapeSequence = false
+
     private var stack = 0  // 処理待ちの文字数
 
     private val handler = Handler()
-    private val time = 3 //
+    private val time = 5 // 受信待ち時間
 
     private val mActionModeCallback = object : ActionMode.Callback {
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
@@ -146,11 +149,11 @@ class MainActivity : AppCompatActivity() {
             }
             val str = s.subSequence(eStart, eStart + eCount).toString()//入力文字
 
-            handler.removeCallbacks(updateDisplay)
+            handler.removeCallbacks(updateScreen)
             if (!isSending) {
                 if (!isDisplaying) {
                     inputProcess(str)
-                    handler.postDelayed(updateDisplay, time.toLong())
+                    handler.postDelayed(updateScreen, time.toLong())
                 }
             } else {
                 isSending = false
@@ -178,13 +181,11 @@ class MainActivity : AppCompatActivity() {
                     val receivedData = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA)
                             ?: return
                     var cnt = 1
-                    Log.d("debug****", "receivedData$receivedData")
 
                     val splitData = receivedData.split("".toRegex()).toTypedArray()
 
-                    handler.removeCallbacks(updateDisplay)
+                    handler.removeCallbacks(updateScreen)
                     stack += splitData.size - 2
-                    Log.d("stack***", "stackLength$stack")
                     val utfArray = receivedData.toByteArray(StandardCharsets.UTF_8)
 
                     for (charCode in utfArray) {
@@ -218,10 +219,44 @@ class MainActivity : AppCompatActivity() {
                             }
                             else -> if (isEscapeSequence) {
                                 escapeString.append(splitData[cnt])
-                                if (splitData[cnt].matches("[A-HJKSTZfm]".toRegex())) {
-                                    checkEscapeSequence()
+
+                                if(splitData[cnt] == "["){
+                                    isANSIEscapeSequence = true
+                                } else if(splitData[cnt] == "?"){
+                                    isTeCEscapeSequence = true
+                                } else if(isANSIEscapeSequence){
+                                    if (splitData[cnt].matches("[A-HJKSTfm]".toRegex())) {
+                                        checkANSIEscapeSequence()
+                                        isEscapeSequence = false
+                                        isANSIEscapeSequence = false
+                                    } else {
+                                        if(!splitData[cnt].matches("[0-9;]".toRegex())){
+                                            isEscapeSequence = false
+                                            isANSIEscapeSequence = false
+                                            escapeString.clear()
+                                        }
+                                    }
+                                } else if(isTeCEscapeSequence){
+                                    if (splitData[cnt].matches("[s]".toRegex())) {
+                                        checkTeCEscapeSequence()
+                                        isEscapeSequence = false
+                                        isTeCEscapeSequence = false
+                                        escapeString.clear()
+                                    } else {
+                                        // todo when receive number
+                                        //if(!splitData[cnt].matches("[0-9;]".toRegex())){
+                                        isEscapeSequence = false
+                                        isEscapeSequence = false
+                                        escapeString.clear()
+                                        //}
+                                    }
+                                } else {
                                     isEscapeSequence = false
+                                    isANSIEscapeSequence = false
+                                    isTeCEscapeSequence = false
+                                    escapeString.clear()
                                 }
+
                             } else {
                                 if (cnt <= receivedData.length) {
                                     if (splitData[cnt] == "\u0020") {
@@ -234,11 +269,11 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                         stack--
-                        Log.d("stack***", "stackLength$stack")
                         cnt++
                         if (stack == 0) {
-                            Log.d("TermDisplay****", "stack is 0")
-                            handler.postDelayed(updateDisplay, time.toLong())
+                            if(!isDisplaying) {
+                                handler.postDelayed(updateScreen, time.toLong())
+                            }
                         }
                     }
                 }
@@ -247,7 +282,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // エスケープシーケンスの処理
-    private fun checkEscapeSequence() {
+    private fun checkANSIEscapeSequence() {
         val esStr = escapeString.toString()
 
         val length = esStr.length
@@ -277,20 +312,35 @@ class MainActivity : AppCompatActivity() {
             'D' -> escapeSequence.moveLeft(move)
             'E' -> escapeSequence.moveDownToRowLead(move)
             'F' -> escapeSequence.moveUpToRowLead(move)
-            'G' -> escapeSequence.moveCursor(move-1)
-            'H', 'f' -> escapeSequence.moveCursor(move-1, hMove-1)
-            'J' -> escapeSequence.clearDisplay(move)
-            'K' -> escapeSequence.clearRow(move)
+            'G' -> escapeSequence.moveCursor(move)
+            'H', 'f' -> escapeSequence.moveCursor(move, hMove)
+            'J' -> escapeSequence.clearDisplay(move-1)
+            'K' -> escapeSequence.clearRow(move-1)
             'S' -> escapeSequence.scrollNext(move)
             'T' -> escapeSequence.scrollBack(move)
-            'Z' -> {
-                isSending = true
-                bleService!!.writeMLDP(maxRowLength.toString())
-                bleService!!.writeMLDP(maxColumnLength.toString())
-            }
+
             'm' -> {
                 escapeSequence.selectGraphicRendition(move)
                 inputEditText.setTextColor(termBuffer.charColor)
+            }
+            else -> {
+            }
+        }
+        escapeString.clear()
+    }
+
+    // エスケープシーケンスの処理
+    private fun checkTeCEscapeSequence() {
+        val esStr = escapeString.toString()
+
+        val length = esStr.length
+        val mode = esStr[length - 1]
+
+        
+        when (mode) {
+            's' -> {
+                isSending = true
+                bleService!!.writeMLDP("\u001b?$maxRowLength,$maxColumnLength")
             }
             else -> {
             }
@@ -348,12 +398,11 @@ class MainActivity : AppCompatActivity() {
         }
 
     // テキストの文字の横幅を返す
-    private// TypefaceがMonospace 「" "」の幅を取得
-    val textWidth: Int
+    private val textWidth: Int
         get() {
             val paint = Paint()
             paint.textSize = inputEditText.textSize
-            paint.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
+            paint.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)// TypefaceがMonospace 「" "」の幅を取得
             return paint.measureText(" ").toInt()
         }
 
@@ -371,12 +420,8 @@ class MainActivity : AppCompatActivity() {
     private val currentRow: Int
         get() = termBuffer.currentRow
 
-    // 現在の行のテキストを返す
-    private val currentRowText: String
-        get() = termBuffer.getRowText(currentRow)
-
     // 画面更新を非同期で行う
-    private val updateDisplay = {
+    private val updateScreen = {
         display()
         moveToSavedCursor()
     }
@@ -412,36 +457,28 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_up).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[A")
-            } else {
-                escapeSequence.moveUp(1)
+                moveToSavedCursor()
             }
-            moveToSavedCursor()
         }
 
         findViewById<View>(R.id.btn_down).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[B")
-            } else {
-                escapeSequence.moveDown(1)
+                moveToSavedCursor()
             }
-            moveToSavedCursor()
         }
 
         findViewById<View>(R.id.btn_right).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[C")
-            } else {
-                escapeSequence.moveRight(1)
+                moveToSavedCursor()
             }
-            moveToSavedCursor()
         }
         findViewById<View>(R.id.btn_left).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[D")
-            } else {
-                escapeSequence.moveLeft(1)
+                moveToSavedCursor()
             }
-            moveToSavedCursor()
         }
 
         findViewById<View>(R.id.btn_esc).setOnClickListener { if (state == State.CONNECTED) bleService!!.writeMLDP("\u001b") }
@@ -457,8 +494,8 @@ class MainActivity : AppCompatActivity() {
         prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         bleAutoConnect = prefs.getBoolean(PREFS_AUTO_CONNECT, false)
         if (bleAutoConnect) {
-            bleDeviceName = prefs.getString(PREFS_NAME, "\u0000")
-            bleDeviceAddress = prefs.getString(PREFS_ADDRESS, "\u0000")
+            bleDeviceName = prefs.getString(PREFS_NAME, "\u0000")!!
+            bleDeviceAddress = prefs.getString(PREFS_ADDRESS, "\u0000")!!
         }
 
         //画面タッチされた時のイベント
@@ -769,9 +806,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun resize(newRowSize: Int, newColumnSize: Int) {
-        termBuffer.screenRowSize = newRowSize
-        termBuffer.screenColumnSize = newColumnSize
-        termBuffer.resize()
+        termBuffer.resize(newRowSize, newColumnSize)
     }
 
     // strをリストに格納
@@ -785,17 +820,12 @@ class MainActivity : AppCompatActivity() {
                 moveToSavedCursor()
             }
 
-            // 入力行の長さを超えた場所は空白をつめる
-            if (termBuffer.cursorX >= currentRowText.length) {
-                for (x in currentRowText.length until termBuffer.cursorX){
-                    termBuffer.setText(termBuffer.cursorX, currentRow, ' ')
-                    termBuffer.setColor(termBuffer.cursorX, currentRow, termBuffer.charColor)
-                }
-            }
-
             // input
-            val inputStr = str[0]
-
+            var inputStr = str[0]
+            if(inputStr == ' '){
+                inputStr = Typography.nbsp
+            }
+            val oldX = termBuffer.cursorX
             if (inputStr != LF) {
                 // 上書き
                 termBuffer.setText(termBuffer.cursorX, currentRow, inputStr)
@@ -804,7 +834,7 @@ class MainActivity : AppCompatActivity() {
             }
             
             // LFか右端での入力があったときの時
-            if (inputStr == LF || currentRowText.length >= screenRowSize) {
+            if (inputStr == LF || oldX+1 == screenRowSize) {
                 termBuffer.cursorX = 0
                 termBuffer.incrementCurrentRow()
 

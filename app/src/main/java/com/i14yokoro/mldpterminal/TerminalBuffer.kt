@@ -12,9 +12,25 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
 
     var charColor: Int = 0x00000000    // 文字色(RGB)
     var isColorChange = false
+    private val nonBreakingSpace = Typography.nbsp
 
     var topRow = 0      // 一番上の行
-    var currentRow = 0  // 現在入力中の行
+        set(topRow) {
+            field = if(topRow < 0){
+                0
+            } else {
+                topRow
+            }
+        }
+    // 現在入力中の行
+    var currentRow = 0
+        set(currentRow) {
+            field = if(currentRow < 0){
+                0
+            } else {
+                currentRow
+            }
+        }
 
     var isOutOfScreen = false    // カーソルが画面の外にあれば true
 
@@ -66,25 +82,10 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
         screenBuilder.setLength(0)
         for (y in topRow until topRow+screenColumnSize){
             if (y >= totalColumns){
-                for (x in 0 until screenRowSize){
-                    if (x+1 == screenRowSize && y+1 != topRow+screenColumnSize){
-                        screenBuilder.append('\n')
-                    } else {
-                        screenBuilder.append(' ')
-                    }
-                }
+                return screenBuilder.toString()
             } else {
                 for (x in 0 until screenRowSize) {
-                    if (x < getRowLength(y)) {
-                        screenBuilder.append(textBuffer[y].text[x])
-                    } else {
-                        if (x+1 == screenRowSize && y+1 != topRow+screenColumnSize){
-                            screenBuilder.append('\n')
-                        } else {
-                            screenBuilder.append(' ')
-                        }
-                    }
-
+                    screenBuilder.append(textBuffer[y].text[x])
                 }
             }
         }
@@ -106,8 +107,8 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
     /**
      * 新しい行を追加する.
      */
-    fun addRow(){
-        textBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, false))
+    fun addRow(lineWarp: Boolean = false){
+        textBuffer.add(TerminalRow(Array(screenRowSize){nonBreakingSpace}, Array(screenRowSize){0}, lineWarp))
     }
 
     /**
@@ -139,38 +140,17 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
      * @return
      */
     fun getRowText(y: Int): String{
-        val sb = StringBuilder()
-        for (x in 0 until screenRowSize){
-            if(textBuffer[y].text[x] == NULL){
-                return sb.toString()
-            }
-            sb.append(textBuffer[y].text[x])
-        }
-        return sb.toString()
+        return textBuffer[y].text.toString()
     }
 
-    /**
-     * y 行目のテキストの長さを返す．
-     *
-     * @param y : y 行目
-     * @return
-     */
-    fun getRowLength(y: Int): Int{
-
-        return if(textBuffer[y].text.indexOf(NULL) != -1) {
-            textBuffer[y].text.indexOf(NULL)
-        } else {
-            screenRowSize
-        }
-    }
-
-    fun resize(){
+    fun resize(newScreenRowSize: Int, newScreenColumnSize: Int){
         var oldX = 0
         var oldY = 0
         var newY = 0  // newTextBuffer の index
         var lineWarp: Boolean
         val newTextBuffer: ArrayList<TerminalRow> = ArrayList()
-        newTextBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, false))
+
+        newTextBuffer.add(TerminalRow(Array(newScreenRowSize){nonBreakingSpace}, Array(newScreenRowSize){0}, false))
 
         for (y in 0 until textBuffer.size){
             for (newX in 0 until screenRowSize){
@@ -178,7 +158,7 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
                 oldX++
 
                 // oldX が 行文字数に
-                if (oldX == getRowLength(oldY)){
+                if (oldX == screenRowSize){
                     // 次の行に移動
                     oldX = 0
                     if(!textBuffer[oldY].lineWrap){
@@ -195,19 +175,17 @@ class TerminalBuffer(var screenRowSize: Int, var screenColumnSize: Int){
                 break
             }
             newY++
-            lineWarp = oldX != getRowLength(oldY)
-            newTextBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, lineWarp))
+            lineWarp = oldX != screenRowSize
+            newTextBuffer.add(TerminalRow(Array(newScreenRowSize){nonBreakingSpace}, Array(newScreenRowSize){0}, lineWarp))
         }
 
         textBuffer.clear()
         textBuffer = newTextBuffer
-    }
-
-    companion object{
-        private const val NULL = '\u0000'
+        screenRowSize = newScreenRowSize
+        screenColumnSize = newScreenColumnSize
     }
 
     init {
-        textBuffer.add(TerminalRow(Array(screenRowSize){NULL}, Array(screenRowSize){0}, false))
+        textBuffer.add(TerminalRow(Array(screenRowSize){nonBreakingSpace}, Array(screenRowSize){0}, false))
     }
 }
