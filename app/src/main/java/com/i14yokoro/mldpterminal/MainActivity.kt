@@ -74,6 +74,9 @@ class MainActivity : AppCompatActivity() {
     private var isSending = false           // RNにデータを送信しているときtrue
     private var isEscapeSequence = false    // エスケープシーケンスを受信するとtrue
 
+    private var isANSIEscapeSequence = false
+    private var isTeCEscapeSequence = false
+
     private var stack = 0  // 処理待ちの文字数
 
     private val handler = Handler()
@@ -216,15 +219,44 @@ class MainActivity : AppCompatActivity() {
                             }
                             else -> if (isEscapeSequence) {
                                 escapeString.append(splitData[cnt])
-                                if (splitData[cnt].matches("[A-HJKSTZfm]".toRegex())) {
-                                    checkEscapeSequence()
-                                    isEscapeSequence = false
-                                } else {
-                                    if(!(splitData[cnt] == "[" || splitData[cnt].matches("[0-9;]".toRegex()))){
+
+                                if(splitData[cnt] == "["){
+                                    isANSIEscapeSequence = true
+                                } else if(splitData[cnt] == "?"){
+                                    isTeCEscapeSequence = true
+                                } else if(isANSIEscapeSequence){
+                                    if (splitData[cnt].matches("[A-HJKSTfm]".toRegex())) {
+                                        checkANSIEscapeSequence()
+                                        isEscapeSequence = false
+                                        isANSIEscapeSequence = false
+                                    } else {
+                                        if(!splitData[cnt].matches("[0-9;]".toRegex())){
+                                            isEscapeSequence = false
+                                            isANSIEscapeSequence = false
+                                            escapeString.clear()
+                                        }
+                                    }
+                                } else if(isTeCEscapeSequence){
+                                    if (splitData[cnt].matches("[s]".toRegex())) {
+                                        checkTeCEscapeSequence()
+                                        isEscapeSequence = false
+                                        isTeCEscapeSequence = false
+                                        escapeString.clear()
+                                    } else {
+                                        // todo when receive number
+                                        //if(!splitData[cnt].matches("[0-9;]".toRegex())){
+                                        isEscapeSequence = false
                                         isEscapeSequence = false
                                         escapeString.clear()
+                                        //}
                                     }
+                                } else {
+                                    isEscapeSequence = false
+                                    isANSIEscapeSequence = false
+                                    isTeCEscapeSequence = false
+                                    escapeString.clear()
                                 }
+
                             } else {
                                 if (cnt <= receivedData.length) {
                                     if (splitData[cnt] == "\u0020") {
@@ -250,7 +282,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // エスケープシーケンスの処理
-    private fun checkEscapeSequence() {
+    private fun checkANSIEscapeSequence() {
         val esStr = escapeString.toString()
 
         val length = esStr.length
@@ -286,14 +318,29 @@ class MainActivity : AppCompatActivity() {
             'K' -> escapeSequence.clearRow(move-1)
             'S' -> escapeSequence.scrollNext(move)
             'T' -> escapeSequence.scrollBack(move)
-            'Z' -> {
-                isSending = true
-                bleService!!.writeMLDP(maxRowLength.toString())
-                bleService!!.writeMLDP(maxColumnLength.toString())
-            }
+
             'm' -> {
                 escapeSequence.selectGraphicRendition(move)
                 inputEditText.setTextColor(termBuffer.charColor)
+            }
+            else -> {
+            }
+        }
+        escapeString.clear()
+    }
+
+    // エスケープシーケンスの処理
+    private fun checkTeCEscapeSequence() {
+        val esStr = escapeString.toString()
+
+        val length = esStr.length
+        val mode = esStr[length - 1]
+
+        
+        when (mode) {
+            's' -> {
+                isSending = true
+                bleService!!.writeMLDP("\u001b?$maxRowLength,$maxColumnLength")
             }
             else -> {
             }
@@ -372,10 +419,6 @@ class MainActivity : AppCompatActivity() {
     // 選択中の行番号を返す
     private val currentRow: Int
         get() = termBuffer.currentRow
-
-    // 現在の行のテキストを返す
-    private val currentRowText: String
-        get() = termBuffer.getRowText(currentRow)
 
     // 画面更新を非同期で行う
     private val updateScreen = {
