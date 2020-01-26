@@ -9,7 +9,7 @@
     android:fitsSystemWindows="true"
     android:id="@+id/topLayout">
 
-    <EditText
+    <com.i14yokoro.mldpterminal.TerminalView
         android:id="@+id/main_display"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

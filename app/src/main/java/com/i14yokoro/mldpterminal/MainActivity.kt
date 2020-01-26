@@ -41,9 +41,9 @@ import java.nio.charset.StandardCharsets
 import kotlin.experimental.and
 import kotlin.math.abs
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), InputListener {
 
-    private lateinit var inputEditText: EditText//ディスプレイのEditText
+    private lateinit var inputEditText: TerminalView//ディスプレイのEditText
 
     // 設定保存用
     private lateinit var prefs: SharedPreferences
@@ -81,6 +81,221 @@ class MainActivity : AppCompatActivity() {
 
     private val handler = Handler()
     private val time = 5 // 受信待ち時間
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onCreate(savedInstanceState: Bundle?) {
+
+        StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build())
+
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        inputEditText = findViewById(R.id.main_display)
+        inputEditText.customSelectionActionModeCallback = mActionModeCallback
+        inputEditText.addTextChangedListener(mInputTextWatcher)
+        inputEditText.setTextIsSelectable(false)
+
+        screenRowSize = maxRowLength
+        screenColumnSize = maxColumnLength
+        termBuffer = TerminalBuffer(screenRowSize, screenColumnSize)
+        escapeSequence = EscapeSequence(termBuffer)
+
+        escapeString = StringBuilder()
+        state = State.STARTING
+        connectTimeoutHandler = Handler()
+
+
+        findViewById<View>(R.id.btn_up).setOnClickListener {
+            if (state == State.CONNECTED) {
+                bleService!!.writeMLDP("\u001b" + "[A")
+                moveToSavedCursor()
+            }
+        }
+
+        findViewById<View>(R.id.btn_down).setOnClickListener {
+            if (state == State.CONNECTED) {
+                bleService!!.writeMLDP("\u001b" + "[B")
+                moveToSavedCursor()
+            }
+        }
+
+        findViewById<View>(R.id.btn_right).setOnClickListener {
+            if (state == State.CONNECTED) {
+                bleService!!.writeMLDP("\u001b" + "[C")
+                moveToSavedCursor()
+            }
+        }
+        findViewById<View>(R.id.btn_left).setOnClickListener {
+            if (state == State.CONNECTED) {
+                bleService!!.writeMLDP("\u001b" + "[D")
+                moveToSavedCursor()
+            }
+        }
+
+        findViewById<View>(R.id.btn_esc).setOnClickListener { if (state == State.CONNECTED) bleService!!.writeMLDP("\u001b") }
+        findViewById<View>(R.id.btn_tab).setOnClickListener { if (state == State.CONNECTED) bleService!!.writeMLDP("\u0009") }
+        findViewById<View>(R.id.btn_ctl).setOnClickListener { btnCtl = true }
+
+        //SDK23以降はBLEをスキャンするのに位置情報が必要
+        if (Build.VERSION.SDK_INT >= 23) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), 0)
+        }
+
+        //自動接続
+        prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        bleAutoConnect = prefs.getBoolean(PREFS_AUTO_CONNECT, false)
+        if (bleAutoConnect) {
+            bleDeviceName = prefs.getString(PREFS_NAME, "\u0000")!!
+            bleDeviceAddress = prefs.getString(PREFS_ADDRESS, "\u0000")!!
+        }
+
+        //画面タッチされた時のイベント
+        inputEditText.setOnTouchListener(object : View.OnTouchListener {
+            var oldY: Int = 0
+            override fun onTouch(v: View, event: MotionEvent): Boolean {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        // タップした時に ScrollViewのScrollY座標を保持
+                        oldY = event.rawY.toInt()
+                        Log.d(TAG, "action down")
+                        showKeyboard()
+                        return true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        // 指を動かした時に、現在のscrollY座標とoldYを比較して、違いがあるならスクロール状態とみなす
+                        Log.d(TAG, "action move")
+                        hideKeyboard()
+                        if (oldY > event.rawY) {
+                            scrollDown()
+                        }
+                        if (oldY < event.rawY) {
+                            scrollUp()
+                        }
+                    }
+                    else -> {
+                    }
+                }
+                return false
+            }
+        })
+
+        inputEditText.setOnKeyListener { _, i, keyEvent ->
+            if (keyEvent.action == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_DEL) {
+                if (state == State.CONNECTED) {
+                    bleService!!.writeMLDP("\u0008")
+                } else {
+                    termBuffer.cursorX--
+                    moveToSavedCursor()
+                }
+                return@setOnKeyListener true
+            }
+            false
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        registerReceiver(bleServiceReceiver, bleServiceIntentFilter())
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(bleServiceReceiver)
+    }
+
+    // デバイスデータを保存する
+    public override fun onStop() {
+        super.onStop()
+        prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+        editor.clear()
+        if (bleAutoConnect) {
+            editor.putString(PREFS_NAME, bleDeviceName)
+            editor.putString(PREFS_ADDRESS, bleDeviceAddress)
+        }
+        editor.apply()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unbindService(bleServiceConnection)
+        bleService = null
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_terminal_menu, menu)
+        if (state == State.CONNECTED) {
+            menu.findItem(R.id.menu_disconnect).isVisible = true
+            menu.findItem(R.id.menu_connect).isVisible = false
+        } else {
+            menu.findItem(R.id.menu_disconnect).isVisible = false
+            if (bleDeviceAddress != "\u0000") {
+                menu.findItem(R.id.menu_connect).isVisible = true
+            } else {
+                menu.findItem(R.id.menu_connect).isVisible = true
+            }
+        }
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.menu_scan -> {
+                startScan()
+                return true
+            }
+
+            R.id.menu_connect -> {
+                connectWithAddress(bleDeviceAddress)
+                return true
+            }
+
+            R.id.menu_disconnect -> {
+                state = State.DISCONNECTING
+                updateConnectionState()
+                bleService!!.disconnect()
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    // 別Activityからの処理結果をうけとる
+    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
+        if (requestCode == REQ_CODE_ENABLE_BT) {
+            if (resultCode == Activity.RESULT_OK) {
+                if (!bleAutoConnect || bleDeviceAddress == "\u0000") {
+                    startScan()
+                }
+            }
+            return
+        } else if (requestCode == REQ_CODE_SCAN_ACTIVITY) {
+            if (resultCode == Activity.RESULT_OK) {
+                bleDeviceAddress = intent!!.getStringExtra(MldpBluetoothScanActivity.INTENT_EXTRA_SCAN_ADDRESS)
+                bleDeviceName = intent.getStringExtra(MldpBluetoothScanActivity.INTENT_EXTRA_SCAN_NAME)
+                bleAutoConnect = intent.getBooleanExtra(MldpBluetoothScanActivity.INTENT_EXTRA_SCAN_AUTO_CONNECT, false)
+                if (bleDeviceAddress == "\u0000") {
+                    state = State.DISCONNECTED
+                    updateConnectionState()
+                } else {
+                    state = State.CONNECTING
+                    updateConnectionState()
+                    if (!connectWithAddress(bleDeviceAddress)) {
+                        Log.d(TAG, "connect is failed")
+                    }
+                }
+            } else {
+                state = State.DISCONNECTED
+                updateConnectionState()
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, intent)
+    }
+
+    override fun onKey(text: Char) {
+        Log.d("MainActivity", "text=$text")
+        // TODO something
+    }
 
     private val mActionModeCallback = object : ActionMode.Callback {
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
@@ -431,184 +646,6 @@ class MainActivity : AppCompatActivity() {
         STARTING, ENABLING, SCANNING, CONNECTING, CONNECTED, DISCONNECTED, DISCONNECTING
     } //state
 
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onCreate(savedInstanceState: Bundle?) {
-
-        StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build())
-
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        inputEditText = findViewById(R.id.main_display)
-        inputEditText.customSelectionActionModeCallback = mActionModeCallback
-        inputEditText.addTextChangedListener(mInputTextWatcher)
-        inputEditText.setTextIsSelectable(false)
-
-        screenRowSize = maxRowLength
-        screenColumnSize = maxColumnLength
-        termBuffer = TerminalBuffer(screenRowSize, screenColumnSize)
-        escapeSequence = EscapeSequence(termBuffer)
-
-        escapeString = StringBuilder()
-        state = State.STARTING
-        connectTimeoutHandler = Handler()
-
-
-        findViewById<View>(R.id.btn_up).setOnClickListener {
-            if (state == State.CONNECTED) {
-                bleService!!.writeMLDP("\u001b" + "[A")
-                moveToSavedCursor()
-            }
-        }
-
-        findViewById<View>(R.id.btn_down).setOnClickListener {
-            if (state == State.CONNECTED) {
-                bleService!!.writeMLDP("\u001b" + "[B")
-                moveToSavedCursor()
-            }
-        }
-
-        findViewById<View>(R.id.btn_right).setOnClickListener {
-            if (state == State.CONNECTED) {
-                bleService!!.writeMLDP("\u001b" + "[C")
-                moveToSavedCursor()
-            }
-        }
-        findViewById<View>(R.id.btn_left).setOnClickListener {
-            if (state == State.CONNECTED) {
-                bleService!!.writeMLDP("\u001b" + "[D")
-                moveToSavedCursor()
-            }
-        }
-
-        findViewById<View>(R.id.btn_esc).setOnClickListener { if (state == State.CONNECTED) bleService!!.writeMLDP("\u001b") }
-        findViewById<View>(R.id.btn_tab).setOnClickListener { if (state == State.CONNECTED) bleService!!.writeMLDP("\u0009") }
-        findViewById<View>(R.id.btn_ctl).setOnClickListener { btnCtl = true }
-
-        //SDK23以降はBLEをスキャンするのに位置情報が必要
-        if (Build.VERSION.SDK_INT >= 23) {
-            requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), 0)
-        }
-
-        //自動接続
-        prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        bleAutoConnect = prefs.getBoolean(PREFS_AUTO_CONNECT, false)
-        if (bleAutoConnect) {
-            bleDeviceName = prefs.getString(PREFS_NAME, "\u0000")!!
-            bleDeviceAddress = prefs.getString(PREFS_ADDRESS, "\u0000")!!
-        }
-
-        //画面タッチされた時のイベント
-        inputEditText.setOnTouchListener(object : View.OnTouchListener {
-            var oldY: Int = 0
-            override fun onTouch(v: View, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        // タップした時に ScrollViewのScrollY座標を保持
-                        oldY = event.rawY.toInt()
-                        Log.d(TAG, "action down")
-                        showKeyboard()
-                        return true
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        // 指を動かした時に、現在のscrollY座標とoldYを比較して、違いがあるならスクロール状態とみなす
-                        Log.d(TAG, "action move")
-                        hideKeyboard()
-                        if (oldY > event.rawY) {
-                            scrollDown()
-                        }
-                        if (oldY < event.rawY) {
-                            scrollUp()
-                        }
-                    }
-                    else -> {
-                    }
-                }
-                return false
-            }
-        })
-
-        inputEditText.setOnKeyListener { _, i, keyEvent ->
-            if (keyEvent.action == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_DEL) {
-                if (state == State.CONNECTED) {
-                    bleService!!.writeMLDP("\u0008")
-                } else {
-                    termBuffer.cursorX--
-                    moveToSavedCursor()
-                }
-                return@setOnKeyListener true
-            }
-            false
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        registerReceiver(bleServiceReceiver, bleServiceIntentFilter())
-    }
-
-    override fun onPause() {
-        super.onPause()
-        unregisterReceiver(bleServiceReceiver)
-    }
-
-    // デバイスデータを保存する
-    public override fun onStop() {
-        super.onStop()
-        prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val editor = prefs.edit()
-        editor.clear()
-        if (bleAutoConnect) {
-            editor.putString(PREFS_NAME, bleDeviceName)
-            editor.putString(PREFS_ADDRESS, bleDeviceAddress)
-        }
-        editor.apply()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        unbindService(bleServiceConnection)
-        bleService = null
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main_terminal_menu, menu)
-        if (state == State.CONNECTED) {
-            menu.findItem(R.id.menu_disconnect).isVisible = true
-            menu.findItem(R.id.menu_connect).isVisible = false
-        } else {
-            menu.findItem(R.id.menu_disconnect).isVisible = false
-            if (bleDeviceAddress != "\u0000") {
-                menu.findItem(R.id.menu_connect).isVisible = true
-            } else {
-                menu.findItem(R.id.menu_connect).isVisible = true
-            }
-        }
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menu_scan -> {
-                startScan()
-                return true
-            }
-
-            R.id.menu_connect -> {
-                connectWithAddress(bleDeviceAddress)
-                return true
-            }
-
-            R.id.menu_disconnect -> {
-                state = State.DISCONNECTING
-                updateConnectionState()
-                bleService!!.disconnect()
-                return true
-            }
-        }
-        return super.onOptionsItemSelected(item)
-    }
-
     // 接続
     private fun connectWithAddress(address: String): Boolean {
         state = State.CONNECTING
@@ -652,37 +689,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 別Activityからの処理結果をうけとる
-    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-        if (requestCode == REQ_CODE_ENABLE_BT) {
-            if (resultCode == Activity.RESULT_OK) {
-                if (!bleAutoConnect || bleDeviceAddress == "\u0000") {
-                    startScan()
-                }
-            }
-            return
-        } else if (requestCode == REQ_CODE_SCAN_ACTIVITY) {
-            if (resultCode == Activity.RESULT_OK) {
-                bleDeviceAddress = intent!!.getStringExtra(MldpBluetoothScanActivity.INTENT_EXTRA_SCAN_ADDRESS)
-                bleDeviceName = intent.getStringExtra(MldpBluetoothScanActivity.INTENT_EXTRA_SCAN_NAME)
-                bleAutoConnect = intent.getBooleanExtra(MldpBluetoothScanActivity.INTENT_EXTRA_SCAN_AUTO_CONNECT, false)
-                if (bleDeviceAddress == "\u0000") {
-                    state = State.DISCONNECTED
-                    updateConnectionState()
-                } else {
-                    state = State.CONNECTING
-                    updateConnectionState()
-                    if (!connectWithAddress(bleDeviceAddress)) {
-                        Log.d(TAG, "connect is failed")
-                    }
-                }
-            } else {
-                state = State.DISCONNECTED
-                updateConnectionState()
-            }
-        }
-        super.onActivityResult(requestCode, resultCode, intent)
-    }
 
     // 新しい行を追加
     private fun printNotSendingText(text: String) {
