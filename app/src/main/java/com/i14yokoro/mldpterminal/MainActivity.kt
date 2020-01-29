@@ -11,39 +11,30 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.SharedPreferences
-import android.graphics.Paint
-import android.graphics.Point
-import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.StrictMode
-import android.support.v4.text.HtmlCompat
 import android.support.v7.app.AppCompatActivity
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
-import android.view.ActionMode
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
-import android.view.MotionEvent
 import android.view.View
-import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
 
 import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothScanActivity
 import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothService
-
+import com.i14yokoro.mldpterminal.terminalview.GestureListener
+import com.i14yokoro.mldpterminal.terminalview.InputListener
+import com.i14yokoro.mldpterminal.terminalview.TerminalView
 import java.nio.charset.StandardCharsets
 import kotlin.experimental.and
-import kotlin.math.abs
 
-class MainActivity : AppCompatActivity(), InputListener {
+class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
-    private lateinit var inputEditText: TerminalView//ディスプレイのEditText
+    private lateinit var termView: TerminalView//ディスプレイのEditText
 
     // 設定保存用
     private lateinit var prefs: SharedPreferences
@@ -56,31 +47,23 @@ class MainActivity : AppCompatActivity(), InputListener {
 
     private var bleAutoConnect: Boolean = false //自動接続するか
 
-    private lateinit var escapeSequence: EscapeSequence
-    private lateinit var termBuffer: TerminalBuffer
-
-    private var eStart: Int = 0
-    private var eCount: Int = 0
-
-    private lateinit var escapeString: StringBuilder // 受信したエスケープシーケンスを格納
-
-    private var screenRowSize: Int = 0
-    private var screenColumnSize: Int = 0
-
-    private var isMovingCursor = false      // カーソル移動中ならtrue
     private var btnCtl = false              // CTLボタンを押したらtrue
-    private var isNotSending = false        // RN側に送りたくないものがあるときはtrueにする
-    private var isDisplaying = false        // 画面更新中はtrue
-    private var isSending = false           // RNにデータを送信しているときtrue
+    lateinit var termBuffer: TerminalBuffer
+
     private var isEscapeSequence = false    // エスケープシーケンスを受信するとtrue
 
     private var isANSIEscapeSequence = false
     private var isTeCEscapeSequence = false
 
+    private var isNotSending = false        // RN側に送りたくないものがあるときはtrueにする
+
     private var stack = 0  // 処理待ちの文字数
+    private val time = 5 // 受信待ち時間
+
+    private lateinit var escapeString: StringBuilder // 受信したエスケープシーケンスを格納
+
 
     private val handler = Handler()
-    private val time = 5 // 受信待ち時間
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,17 +73,12 @@ class MainActivity : AppCompatActivity(), InputListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        inputEditText = findViewById(R.id.main_display)
-        inputEditText.customSelectionActionModeCallback = mActionModeCallback
-        inputEditText.addTextChangedListener(mInputTextWatcher)
-        inputEditText.setTextIsSelectable(false)
+        termView = findViewById(R.id.main_display)
+        termBuffer = TerminalBuffer(termView.screenColumnSize, termView.screenRowSize)
 
-        screenRowSize = maxRowLength
-        screenColumnSize = maxColumnLength
-        termBuffer = TerminalBuffer(screenRowSize, screenColumnSize)
-        escapeSequence = EscapeSequence(termBuffer)
+        termView.setInputListener(this)
+        termView.setGestureListener(this)
 
-        escapeString = StringBuilder()
         state = State.STARTING
         connectTimeoutHandler = Handler()
 
@@ -108,27 +86,27 @@ class MainActivity : AppCompatActivity(), InputListener {
         findViewById<View>(R.id.btn_up).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[A")
-                moveToSavedCursor()
+                termView.invalidate()
             }
         }
 
         findViewById<View>(R.id.btn_down).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[B")
-                moveToSavedCursor()
+                termView.invalidate()
             }
         }
 
         findViewById<View>(R.id.btn_right).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[C")
-                moveToSavedCursor()
+                termView.invalidate()
             }
         }
         findViewById<View>(R.id.btn_left).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[D")
-                moveToSavedCursor()
+                termView.invalidate()
             }
         }
 
@@ -149,48 +127,20 @@ class MainActivity : AppCompatActivity(), InputListener {
             bleDeviceAddress = prefs.getString(PREFS_ADDRESS, "\u0000")!!
         }
 
-        //画面タッチされた時のイベント
-        inputEditText.setOnTouchListener(object : View.OnTouchListener {
-            var oldY: Int = 0
-            override fun onTouch(v: View, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        // タップした時に ScrollViewのScrollY座標を保持
-                        oldY = event.rawY.toInt()
-                        Log.d(TAG, "action down")
-                        showKeyboard()
-                        return true
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        // 指を動かした時に、現在のscrollY座標とoldYを比較して、違いがあるならスクロール状態とみなす
-                        Log.d(TAG, "action move")
-                        hideKeyboard()
-                        if (oldY > event.rawY) {
-                            scrollDown()
-                        }
-                        if (oldY < event.rawY) {
-                            scrollUp()
-                        }
-                    }
-                    else -> {
-                    }
-                }
-                return false
-            }
-        })
-
-        inputEditText.setOnKeyListener { _, i, keyEvent ->
+        // TODO Viewに移動
+        termView.setOnKeyListener { _, i, keyEvent ->
             if (keyEvent.action == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_DEL) {
                 if (state == State.CONNECTED) {
                     bleService!!.writeMLDP("\u0008")
                 } else {
-                    termBuffer.cursorX--
-                    moveToSavedCursor()
+                    termView.cursor.x--
+                    termView.invalidate()
                 }
                 return@setOnKeyListener true
             }
             false
         }
+
     }
 
     override fun onResume() {
@@ -293,88 +243,38 @@ class MainActivity : AppCompatActivity(), InputListener {
     }
 
     override fun onKey(text: Char) {
-        Log.d("MainActivity", "text=$text")
-        // TODO something
-    }
+        var sendCtl = false
+        val sendText = text.toString()
 
-    private val mActionModeCallback = object : ActionMode.Callback {
-        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-            menu.removeItem(android.R.id.paste)
-            menu.removeItem(android.R.id.cut)
-            menu.removeItem(android.R.id.copy)
-            menu.removeItem(android.R.id.selectAll)
-            menu.removeItem(android.R.id.addToDictionary)
-            menu.removeItem(android.R.id.startSelectingText)
-            menu.removeItem(android.R.id.selectTextMode)
-            return false
-        }
-
-        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
-            menu.removeItem(android.R.id.paste)
-            menu.removeItem(android.R.id.cut)
-            menu.removeItem(android.R.id.copy)
-            menu.removeItem(android.R.id.selectAll)
-            menu.removeItem(android.R.id.addToDictionary)
-            menu.removeItem(android.R.id.startSelectingText)
-            menu.removeItem(android.R.id.selectTextMode)
-            menu.close()
-            return false
-        }
-
-        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
-            return false
-        }
-
-        override fun onDestroyActionMode(mode: ActionMode) {
-
-        }
-    }
-
-    private val mInputTextWatcher = object : TextWatcher {
-        override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
-
-        override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-            eStart = start//文字列のスタート位置
-            eCount = count//追加される文字
-            var sendCtl = false
-
-            if (state == State.CONNECTED && count > before) {
-                if (!isNotSending) {
-                    val send = s.subSequence(start + before, start + count).toString()
-                    isSending = true
-                    if (btnCtl) {
-                        if (send.matches("[\\x5f-\\x7e]".toRegex())) {
-                            val sendB = byteArrayOf((send.toByteArray()[0] and 0x1f))
-                            bleService!!.writeMLDP(sendB)
-                            btnCtl = false
-                            sendCtl = true
-                        }
+        if (state == State.CONNECTED) {
+            if (!isNotSending) {
+                if (btnCtl) {
+                    if (text in '\u0020'..'\u007f') {
+                        val sendB = byteArrayOf((text.toByte() and 0x1f))
+                        bleService!!.writeMLDP(sendB)
                         btnCtl = false
+                        sendCtl = true
                     }
-                    if (!sendCtl) {
-                        bleService!!.writeMLDP(send)
-                    }
+                    btnCtl = false
+                }
+                if (!sendCtl) {
+                    bleService!!.writeMLDP(sendText)
                 }
             }
+            return
         }
 
-        override fun afterTextChanged(s: Editable) {
-            if (s.isEmpty()){
-                return
-            }
-            val str = s.subSequence(eStart, eStart + eCount).toString()//入力文字
+        Log.d("MainActivity", "text=$text")
+        inputProcess(text)
+        termView.invalidate()
+    }
 
-            handler.removeCallbacks(updateScreen)
-            if (!isSending) {
-                if (!isDisplaying) {
-                    inputProcess(str)
-                    handler.postDelayed(updateScreen, time.toLong())
-                }
-            } else {
-                isSending = false
-            }
+    override fun onDown() {
+        showKeyboard()
+    }
 
-        }
+    override fun onMove() {
+        hideKeyboard()
     }
 
     private val bleServiceReceiver = object : BroadcastReceiver() {
@@ -397,37 +297,37 @@ class MainActivity : AppCompatActivity(), InputListener {
                             ?: return
                     var cnt = 1
 
-                    val splitData = receivedData.split("".toRegex()).toTypedArray()
+                    // TODO Viewに移動
+                    val splitData = receivedData.toCharArray()
 
                     handler.removeCallbacks(updateScreen)
                     stack += splitData.size - 2
-                    val utfArray = receivedData.toByteArray(StandardCharsets.UTF_8)
 
-                    for (charCode in utfArray) {
-                        when (charCode) {
-                            0x08.toByte()    // KEY_BS
-                            -> termBuffer.cursorX--
-                            0x09.toByte()    // KEY_HT
-                            -> if (termBuffer.cursorX + (8 - termBuffer.cursorX % 8) < screenRowSize) {
-                                escapeSequence.moveRight(8 - termBuffer.cursorX % 8)
+                    for (char in splitData) {
+                        when (char.toInt()) {
+                            0x08  // KEY_BS
+                            -> termView.cursor.x--
+                            0x09   // KEY_HT
+                            -> if (termView.cursor.x + (4 - termView.cursor.x % 4) < termView.screenColumnSize) {
+                                termView.escapeSequence.moveRight(termView.cursor, 4 - termView.cursor.x % 4)
                             } else {
-                                termBuffer.cursorX += (screenRowSize-1)
+                                termView.cursor.x += (termView.screenColumnSize-1)
                             }
-                            0x7f.toByte()    // KEY_DEL
+                            0x7f    // KEY_DEL
                             -> {
                             }
-                            0x0a.toByte()    // KEY_LF
+                            0x0a    // KEY_LF
                             -> {
                                 isNotSending = true
-                                inputProcess("\n")
+                                inputProcess(' ')
                                 isNotSending = false
                             }
-                            0x0d.toByte()    // KEY_CR
+                            0x0d    // KEY_CR
                             -> {
-                                termBuffer.cursorX = 0
-                                moveToSavedCursor()
+                                termView.cursor.x = 0
+                                termView.invalidate()
                             }
-                            0x1b.toByte()   // KEY_ESC
+                            0x1b  // KEY_ESC
                             -> {
                                 isEscapeSequence = true
                                 escapeString.setLength(0)
@@ -435,30 +335,31 @@ class MainActivity : AppCompatActivity(), InputListener {
                             else -> if (isEscapeSequence) {
                                 escapeString.append(splitData[cnt])
 
-                                if(splitData[cnt] == "["){
+                                if(splitData[cnt] == '['){
                                     isANSIEscapeSequence = true
-                                } else if(splitData[cnt] == "?"){
+                                } else if(splitData[cnt] == '?'){
                                     isTeCEscapeSequence = true
                                 } else if(isANSIEscapeSequence){
-                                    if (splitData[cnt].matches("[A-HJKSTfm]".toRegex())) {
+                                    val data = splitData[cnt].toString()
+                                    if (data.matches("[A-HJKSTfm]".toRegex())) {
                                         checkANSIEscapeSequence()
                                         isEscapeSequence = false
                                         isANSIEscapeSequence = false
                                     } else {
-                                        if(!splitData[cnt].matches("[0-9;]".toRegex())){
+                                        if(!data.matches("[0-9;]".toRegex())){
                                             isEscapeSequence = false
                                             isANSIEscapeSequence = false
                                             escapeString.clear()
                                         }
                                     }
                                 } else if(isTeCEscapeSequence){
-                                    if (splitData[cnt].matches("[s]".toRegex())) {
+                                    if (splitData[cnt].toString().matches("[s]".toRegex())) {
                                         checkTeCEscapeSequence()
                                         isEscapeSequence = false
                                         isTeCEscapeSequence = false
                                         escapeString.clear()
                                     } else {
-                                        // todo when receive number
+                                        // when receive number
                                         //if(!splitData[cnt].matches("[0-9;]".toRegex())){
                                         isEscapeSequence = false
                                         isEscapeSequence = false
@@ -474,8 +375,8 @@ class MainActivity : AppCompatActivity(), InputListener {
 
                             } else {
                                 if (cnt <= receivedData.length) {
-                                    if (splitData[cnt] == "\u0020") {
-                                        splitData[cnt] = " "
+                                    if (splitData[cnt] == '\u0020') {
+                                        splitData[cnt] = ' '
                                     }
                                     isNotSending = true
                                     inputProcess(splitData[cnt])
@@ -486,9 +387,7 @@ class MainActivity : AppCompatActivity(), InputListener {
                         stack--
                         cnt++
                         if (stack == 0) {
-                            if(!isDisplaying) {
-                                handler.postDelayed(updateScreen, time.toLong())
-                            }
+                            handler.postDelayed(updateScreen, time.toLong())
                         }
                     }
                 }
@@ -520,30 +419,11 @@ class MainActivity : AppCompatActivity(), InputListener {
             }
         }
 
-        when (mode) {
-            'A' -> escapeSequence.moveUp(move)
-            'B' -> escapeSequence.moveDown(move)
-            'C' -> escapeSequence.moveRight(move)
-            'D' -> escapeSequence.moveLeft(move)
-            'E' -> escapeSequence.moveDownToRowLead(move)
-            'F' -> escapeSequence.moveUpToRowLead(move)
-            'G' -> escapeSequence.moveCursor(move)
-            'H', 'f' -> escapeSequence.moveCursor(move, hMove)
-            'J' -> escapeSequence.clearDisplay(move-1)
-            'K' -> escapeSequence.clearRow(move-1)
-            'S' -> escapeSequence.scrollNext(move)
-            'T' -> escapeSequence.scrollBack(move)
-
-            'm' -> {
-                escapeSequence.selectGraphicRendition(move)
-                inputEditText.setTextColor(termBuffer.charColor)
-            }
-            else -> {
-            }
-        }
+        termView.ansiEscapeSequence(mode, move, hMove)
         escapeString.clear()
     }
 
+    // TODO Viewに移動
     // エスケープシーケンスの処理
     private fun checkTeCEscapeSequence() {
         val esStr = escapeString.toString()
@@ -551,14 +431,10 @@ class MainActivity : AppCompatActivity(), InputListener {
         val length = esStr.length
         val mode = esStr[length - 1]
 
-        
-        when (mode) {
-            's' -> {
-                isSending = true
-                bleService!!.writeMLDP("\u001b?$maxRowLength,$maxColumnLength")
-            }
-            else -> {
-            }
+        if (mode == 's') {
+            bleService!!.writeMLDP("\u001b?${termView.screenColumnSize},${termView.screenRowSize}")
+        } else {
+            termView.tecEscapeSequence(mode)
         }
         escapeString.clear()
     }
@@ -587,58 +463,6 @@ class MainActivity : AppCompatActivity(), InputListener {
         override fun onServiceDisconnected(componentName: ComponentName) {
             bleService = null
         }
-    }
-
-    // １行に収まる文字数を返す
-    private val maxRowLength: Int
-        get() {
-            val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val p = Point()
-            wm.defaultDisplay.getSize(p)
-
-            return p.x / textWidth
-        }
-
-    // １列に収まる文字数を返す
-    private val maxColumnLength: Int
-        get() {
-            val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val p = Point()
-            wm.defaultDisplay.getSize(p)
-
-            val height = p.y - 100
-            val text = textHeight.toInt()
-
-            return height / text - 1
-        }
-
-    // テキストの文字の横幅を返す
-    private val textWidth: Int
-        get() {
-            val paint = Paint()
-            paint.textSize = inputEditText.textSize
-            paint.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)// TypefaceがMonospace 「" "」の幅を取得
-            return paint.measureText(" ").toInt()
-        }
-
-    // テキストの文字の高さを返す
-    private val textHeight: Float
-        get() {
-            val paint = Paint()
-            paint.textSize = inputEditText.textSize
-            paint.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
-            val fontMetrics = paint.fontMetrics
-            return abs(fontMetrics.top) + abs(fontMetrics.bottom)
-        }
-
-    // 選択中の行番号を返す
-    private val currentRow: Int
-        get() = termBuffer.currentRow
-
-    // 画面更新を非同期で行う
-    private val updateScreen = {
-        display()
-        moveToSavedCursor()
     }
 
     // 接続状況
@@ -689,16 +513,20 @@ class MainActivity : AppCompatActivity(), InputListener {
         }
     }
 
+    // TODO Viewに移動
+    // 画面更新を非同期で行う
+    private val updateScreen = {
+        termView.invalidate()
+    }
 
+    // TODO Viewに移動
     // 新しい行を追加
     private fun printNotSendingText(text: String) {
-        isNotSending = true
         for (element in text) {
-            inputEditText.append(element.toString())
+            inputProcess(element)
         }
-        inputEditText.append("\n")
-        termBuffer.cursorX = 0
-        isNotSending = false
+        inputProcess(LF)
+        termView.cursor.x = 0
     }
 
     // キーボードを表示させる
@@ -717,146 +545,49 @@ class MainActivity : AppCompatActivity(), InputListener {
             imm.hideSoftInputFromWindow(v.windowToken, 0)
     }
 
-    // ディスプレイに文字を表示する
-    private fun display() {
-        isDisplaying = true
-        isNotSending = true
-
-        inputEditText.text.clear()
-
-        if (!termBuffer.isColorChange) {
-            inputEditText.append(termBuffer.makeScreenString())
-        } else {
-            inputEditText.append(HtmlCompat.fromHtml(termBuffer.makeScreenString(), HtmlCompat.FROM_HTML_MODE_COMPACT))
-        }
-
-        isDisplaying = false
-        isNotSending = false
-    }
-
-    // カーソルを保持している座標に移動させる
-    private fun moveToSavedCursor() {
-        if (!isMovingCursor) {
-            isMovingCursor = true
-
-            val cursor: Int = termBuffer.cursorY * termBuffer.screenRowSize + termBuffer.cursorX
-
-            Log.d("debug***", "cursor$cursor")
-            if (cursor >= 0) {
-                inputEditText.setSelection(cursor)
-            }
-            isMovingCursor = false
-        }
-    }
-
-    // 画面を上にスクロールする
-    private fun scrollUp() {
-        if (termBuffer.totalColumns > screenColumnSize) {
-            //表示する一番上の行を１つ上に
-            termBuffer.moveTopRow(-1)
-            // カーソルが画面内にある
-            if (cursorIsInScreen()) {
-                setEditable(true)
-                termBuffer.cursorY = termBuffer.currentRow - termBuffer.topRow
-            } else { //画面外
-                setEditable(false)
-            }
-            if (stack == 0) {
-                display()
-                moveToSavedCursor()
-            }
-        }
-    }
-
-    // 画面を下にスクロールする
-    private fun scrollDown() {
-        if (termBuffer.totalColumns > screenColumnSize) {
-            // 一番下の行までしか表示させない
-            if (termBuffer.topRow + screenColumnSize < termBuffer.totalColumns) {
-                //表示する一番上の行を１つ下に
-                termBuffer.moveTopRow(1)
-                if (cursorIsInScreen()) {
-                    setEditable(true)
-                    termBuffer.cursorY = termBuffer.currentRow - termBuffer.topRow
-                } else {
-                    setEditable(false)
-                }
-                if (stack == 0) {
-                    display()
-                    moveToSavedCursor()
-                }
-            }
-        }
-    }
-
-    private fun cursorIsInScreen(): Boolean{
-        return (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow <= termBuffer.topRow + screenColumnSize - 1)
-    }
-
-    // 画面の編集許可
-    private fun setEditable(editable: Boolean) {
-        if (editable) {
-            focusable()
-            termBuffer.isOutOfScreen = false
-        } else {
-            inputEditText.isFocusable = false
-            termBuffer.isOutOfScreen = true
-        }
-    }
-
-    private fun focusable() {
-        inputEditText.isFocusable = true
-        inputEditText.isFocusableInTouchMode = true
-        inputEditText.requestFocus()
-
-    }
 
     private fun resize(newRowSize: Int, newColumnSize: Int) {
         termBuffer.resize(newRowSize, newColumnSize)
     }
 
     // strをリストに格納
-    private fun inputProcess(str: String) {
-        if (str.matches("[\\x20-\\x7f\\x0a\\x0d]".toRegex())) {
-
+    private fun inputProcess(input: Char) {
+        if ((input in '\u0020'..'\u007f') || input == '\u000a' || input == '\u000d'){
             // カーソルが画面外で入力があると入力位置に移動
             if (termBuffer.isOutOfScreen) {
-                focusable()
-                termBuffer.topRow = termBuffer.currentRow - termBuffer.cursorY
-                moveToSavedCursor()
+                termView.focusable()
+                termBuffer.topRow = termBuffer.currentRow - termView.cursor.y
+                termView.invalidate()
             }
 
             // input
-            var inputStr = str[0]
-            if(inputStr == ' '){
-                inputStr = Typography.nbsp
-            }
-            val oldX = termBuffer.cursorX
-            if (inputStr != LF) {
+            val oldX = termView.cursor.x
+            if (input != LF) {
                 // 上書き
-                termBuffer.setText(termBuffer.cursorX, currentRow, inputStr)
-                termBuffer.setColor(termBuffer.cursorX, currentRow, termBuffer.charColor)
-                termBuffer.cursorX++
+                termBuffer.setText(termView.cursor.x, termBuffer.currentRow, input)
+                termBuffer.setColor(termView.cursor.x, termBuffer.currentRow, termBuffer.charColor)
+                termView.cursor.x++
             }
-            
+
             // LFか右端での入力があったときの時
-            if (inputStr == LF || oldX+1 == screenRowSize) {
-                termBuffer.cursorX = 0
+            if (input == LF || oldX+1 == termView.screenColumnSize) {
+                termView.cursor.x = 0
                 termBuffer.incrementCurrentRow()
 
-                if(currentRow == termBuffer.totalColumns){
+                if(termBuffer.currentRow == termBuffer.totalLines){
                     termBuffer.addRow()
                 }
 
                 // スクロールの処理
-                if (termBuffer.cursorY + 1 == screenColumnSize) {
-                    scrollDown()
+                if (termView.cursor.y + 1 == termView.screenRowSize) {
+                    termView.scrollDown()
                 }
-                termBuffer.cursorY++
+                termView.cursor.y++
 
             }
         }
     }
+
 
     companion object {
 
