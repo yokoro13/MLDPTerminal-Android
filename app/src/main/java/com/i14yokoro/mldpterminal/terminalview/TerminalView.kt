@@ -9,6 +9,7 @@ import android.support.v4.text.HtmlCompat
 import android.text.InputType
 import android.util.AttributeSet
 import android.util.Log
+import android.util.Size
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -26,19 +27,27 @@ import kotlin.math.ceil
  * カーソル移動
  * 入力処理
  */
-class TerminalView : View, View.OnTouchListener{
+class TerminalView : View{
 
     private var inputListener: InputListener? = null
     private var gestureListener: GestureListener? = null
 
     lateinit var termBuffer: TerminalBuffer
 
-    private var terminalRenderer: TerminalRenderer = TerminalRenderer()
-    var cursor = Cursor()
-    var escapeSequence: EscapeSequence
+    var textSize: Int = 25
 
-    var screenColumnSize: Int
-    var screenRowSize: Int
+    private var terminalRenderer: TerminalRenderer = TerminalRenderer(textSize)
+    var cursor = Cursor()
+    lateinit var escapeSequence: EscapeSequence
+
+    var screenColumnSize: Int = 0
+    set(width) {
+        field = width / terminalRenderer.fontWidth
+    }
+    var screenRowSize: Int = 0
+    set(height) {
+        field = (height-100) / terminalRenderer.fontHeight - 1
+    }
 
     var oldY = 0
 
@@ -59,46 +68,9 @@ class TerminalView : View, View.OnTouchListener{
         return true
     }
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val dispatchFirst = super.dispatchKeyEvent(event)
+    override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
+        Log.e("TerminalView", "dispatch")
 
-        if (event.action == KeyEvent.ACTION_UP){
-            // 入力を通知
-            if(inputListener != null) {
-                if(event.unicodeChar.toChar() == '\n'){
-                    termBuffer.addRow()
-                    cursor.y++
-                    cursor.x = 0
-                    termBuffer.incrementCurrentRow()
-                } else {
-                    cursor.x++
-                    termBuffer.setText(cursor.x, termBuffer.currentRow, event.unicodeChar.toChar())
-                }
-                invalidate()
-                inputListener?.onKey(event.unicodeChar.toChar())
-            }
-        }
-        return dispatchFirst
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        if (!isDisplaying) {
-            isDisplaying = true
-            terminalRenderer.render(termBuffer, canvas, termBuffer.topRow, cursor.x, cursor.y)
-            isDisplaying = false
-        }
-    }
-
-
-    fun setInputListener(listener: InputListener){
-        this.inputListener = listener
-    }
-
-    fun setGestureListener(listener: GestureListener){
-        this.gestureListener = listener
-    }
-
-    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         if(gestureListener != null) {
             when (event?.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -119,9 +91,36 @@ class TerminalView : View, View.OnTouchListener{
                 }
             }
         }
-        return false
+        return super.dispatchTouchEvent(event)
     }
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val dispatchFirst = super.dispatchKeyEvent(event)
+
+        if (event.action == KeyEvent.ACTION_UP){
+            // 入力を通知
+            if(inputListener != null) {
+                inputListener?.onKey(event.unicodeChar.toChar())
+            }
+        }
+        return dispatchFirst
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        if (!isDisplaying) {
+            isDisplaying = true
+            terminalRenderer.render(termBuffer, canvas, termBuffer.topRow, cursor.x, cursor.y, cursorIsInScreen())
+            isDisplaying = false
+        }
+    }
+
+    fun setInputListener(listener: InputListener){
+        this.inputListener = listener
+    }
+
+    fun setGestureListener(listener: GestureListener){
+        this.gestureListener = listener
+    }
 
     fun scrollDown() {
         // TODO ここの処理はViewで
@@ -221,10 +220,8 @@ class TerminalView : View, View.OnTouchListener{
         }
     }
 
-    init {
-        screenColumnSize = width / terminalRenderer.fontWidth.toInt()
-        screenRowSize = height / terminalRenderer.fontLineSpacingAndAscent - 1
-        escapeSequence = EscapeSequence(termBuffer)
+    fun setDp(metrics: Float){
+        terminalRenderer.titleBar = 20 * metrics.toInt()
     }
 
     inner class Cursor{

@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.SharedPreferences
+import android.graphics.Point
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -18,10 +19,7 @@ import android.os.IBinder
 import android.os.StrictMode
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.view.KeyEvent
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
 import android.view.inputmethod.InputMethodManager
 
 import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothScanActivity
@@ -29,7 +27,6 @@ import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothService
 import com.i14yokoro.mldpterminal.terminalview.GestureListener
 import com.i14yokoro.mldpterminal.terminalview.InputListener
 import com.i14yokoro.mldpterminal.terminalview.TerminalView
-import java.nio.charset.StandardCharsets
 import kotlin.experimental.and
 
 class MainActivity : AppCompatActivity(), InputListener, GestureListener {
@@ -60,8 +57,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     private var stack = 0  // 処理待ちの文字数
     private val time = 5 // 受信待ち時間
 
-    private lateinit var escapeString: StringBuilder // 受信したエスケープシーケンスを格納
-
+    private var escapeString: StringBuilder  = StringBuilder()// 受信したエスケープシーケンスを格納
 
     private val handler = Handler()
 
@@ -73,8 +69,19 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val p = Point()
+        wm.defaultDisplay.getSize(p)
+
         termView = findViewById(R.id.main_display)
+        termView.screenColumnSize = p.x
+        termView.screenRowSize = p.y
         termBuffer = TerminalBuffer(termView.screenColumnSize, termView.screenRowSize)
+        termView.termBuffer = termBuffer
+        termView.escapeSequence = EscapeSequence(termBuffer)
+
+        val metrics = resources.displayMetrics
+        termView.setDp(metrics.density)
 
         termView.setInputListener(this)
         termView.setGestureListener(this)
@@ -295,13 +302,12 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                 MldpBluetoothService.ACTION_BLE_DATA_RECEIVED -> {
                     val receivedData = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA)
                             ?: return
-                    var cnt = 1
+                    var cnt = 0
 
-                    // TODO Viewに移動
                     val splitData = receivedData.toCharArray()
 
                     handler.removeCallbacks(updateScreen)
-                    stack += splitData.size - 2
+                    stack += splitData.size
 
                     for (char in splitData) {
                         when (char.toInt()) {
@@ -319,7 +325,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                             0x0a    // KEY_LF
                             -> {
                                 isNotSending = true
-                                inputProcess(' ')
+                                inputProcess('\n')
                                 isNotSending = false
                             }
                             0x0d    // KEY_CR
@@ -345,6 +351,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                                         checkANSIEscapeSequence()
                                         isEscapeSequence = false
                                         isANSIEscapeSequence = false
+                                        escapeString.clear()
                                     } else {
                                         if(!data.matches("[0-9;]".toRegex())){
                                             isEscapeSequence = false
@@ -374,7 +381,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                                 }
 
                             } else {
-                                if (cnt <= receivedData.length) {
+                                if (cnt < receivedData.length) {
                                     if (splitData[cnt] == '\u0020') {
                                         splitData[cnt] = ' '
                                     }
@@ -420,7 +427,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         }
 
         termView.ansiEscapeSequence(mode, move, hMove)
-        escapeString.clear()
+        termView.invalidate()
     }
 
     // TODO Viewに移動
@@ -432,11 +439,11 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         val mode = esStr[length - 1]
 
         if (mode == 's') {
-            bleService!!.writeMLDP("\u001b?${termView.screenColumnSize},${termView.screenRowSize}")
+            bleService!!.writeMLDP("\u001b?${termView.screenColumnSize},${termView.screenRowSize}s")
         } else {
             termView.tecEscapeSequence(mode)
         }
-        escapeString.clear()
+        termView.invalidate()
     }
 
     // 切断
@@ -526,12 +533,16 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
             inputProcess(element)
         }
         inputProcess(LF)
-        termView.cursor.x = 0
+        termView.invalidate()
     }
 
     // キーボードを表示させる
     private fun showKeyboard() {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        termView.isFocusable = true
+        termView.isFocusableInTouchMode = true
+        termView.requestFocus()
+        Log.e("MainActivity", "show")
         val v = currentFocus
         if (v != null)
             imm.showSoftInput(v, 0)
@@ -575,6 +586,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                 termBuffer.incrementCurrentRow()
 
                 if(termBuffer.currentRow == termBuffer.totalLines){
+                    Log.e("Main", "addRow")
                     termBuffer.addRow()
                 }
 

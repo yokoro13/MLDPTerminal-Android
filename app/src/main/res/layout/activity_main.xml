@@ -9,20 +9,13 @@
     android:fitsSystemWindows="true"
     android:id="@+id/topLayout">
 
-    <com.i14yokoro.mldpterminal.TerminalView
+    <com.i14yokoro.mldpterminal.terminalview.TerminalView
         android:id="@+id/main_display"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#00000000"
-        android:fontFamily="monospace"
-        android:gravity="top|start"
-        android:breakStrategy="simple"
-        android:hyphenationFrequency="none"
-        android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
-        android:paddingBottom="100px"
-        android:textSize="30px"
-        android:textCursorDrawable="@drawable/color_cursor"
-        android:typeface="monospace" />
+        android:focusableInTouchMode="true"
+        android:paddingBottom="100px" />
 
     <LinearLayout
         android:id="@+id/linearLayout"
