@@ -1,7 +1,5 @@
 package com.i14yokoro.mldpterminal
 
-import java.lang.StringBuilder
-
 /**
  * ターミナルの画面情報を扱う
  * @param screenColumnSize : 画面の横幅
@@ -32,10 +30,6 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
             }
         }
 
-    var isOutOfScreen:Boolean = false    // カーソルが画面の外にあれば true
-
-    private var screenBuilder = StringBuilder()
-
     val totalLines: Int
         get() {
             return textBuffer.size
@@ -49,20 +43,6 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
                 totalLines
             }
         }
-
-    fun makeScreenString(): String{
-        screenBuilder.setLength(0)
-        for (y in topRow until topRow+screenRowSize){
-            if (y >= totalLines){
-                return screenBuilder.toString()
-            } else {
-                for (x in 0 until screenColumnSize) {
-                    screenBuilder.append(textBuffer[y].text[x])
-                }
-            }
-        }
-        return screenBuilder.toString()
-    }
 
     fun moveTopRow(n: Int){
         if(topRow + n < 0){
@@ -158,6 +138,6 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
     }
 
     init {
-        textBuffer.add(TerminalRow(CharArray(screenRowSize){nonBreakingSpace}, IntArray(screenColumnSize){0}, false))
+        textBuffer.add(TerminalRow(CharArray(screenColumnSize){nonBreakingSpace}, IntArray(screenColumnSize){0}, false))
     }
 }

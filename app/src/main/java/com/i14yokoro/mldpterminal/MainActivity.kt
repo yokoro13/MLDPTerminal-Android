@@ -302,14 +302,13 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                 MldpBluetoothService.ACTION_BLE_DATA_RECEIVED -> {
                     val receivedData = intent.getStringExtra(MldpBluetoothService.INTENT_EXTRA_SERVICE_DATA)
                             ?: return
-                    var cnt = 0
 
                     val splitData = receivedData.toCharArray()
 
                     handler.removeCallbacks(updateScreen)
                     stack += splitData.size
 
-                    for (char in splitData) {
+                    for ((cnt, char) in splitData.withIndex()) {
                         when (char.toInt()) {
                             0x08  // KEY_BS
                             -> termView.cursor.x--
@@ -392,7 +391,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                             }
                         }
                         stack--
-                        cnt++
                         if (stack == 0) {
                             handler.postDelayed(updateScreen, time.toLong())
                         }
@@ -565,7 +563,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     private fun inputProcess(input: Char) {
         if ((input in '\u0020'..'\u007f') || input == '\u000a' || input == '\u000d'){
             // カーソルが画面外で入力があると入力位置に移動
-            if (termBuffer.isOutOfScreen) {
+            if (termView.cursorIsInScreen()) {
                 termView.focusable()
                 termBuffer.topRow = termBuffer.currentRow - termView.cursor.y
                 termView.invalidate()

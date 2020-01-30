@@ -194,7 +194,7 @@ class TerminalView : View{
         }
     }
 
-    private fun cursorIsInScreen(): Boolean{
+    fun cursorIsInScreen(): Boolean{
         return (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow <= termBuffer.topRow + termBuffer.screenRowSize - 1)
     }
 
@@ -213,10 +213,8 @@ class TerminalView : View{
     fun setEditable(editable: Boolean) {
         if (editable) {
             focusable()
-            termBuffer.isOutOfScreen = false
         } else {
             isFocusable = false
-            termBuffer.isOutOfScreen = true
         }
     }
 
