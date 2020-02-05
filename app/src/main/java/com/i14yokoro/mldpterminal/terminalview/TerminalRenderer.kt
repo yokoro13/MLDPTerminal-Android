@@ -13,22 +13,22 @@ class TerminalRenderer(textSize: Int) {
     var titleBar: Int = 0
     var fontHeight: Int = 0
 
-    fun render(termBuffer: TerminalBuffer, canvas: Canvas, topRow: Int, x: Int, y: Int, showCursor: Boolean) {
+    fun render(termBuffer: TerminalBuffer, canvas: Canvas, topRow: Int, cursor: TerminalView.Cursor, showCursor: Boolean, pad: Int) {
         val displayRows = if (topRow + termBuffer.screenRowSize <= termBuffer.totalLines){
             topRow + termBuffer.screenRowSize
         } else {
             termBuffer.totalLines
         }
         for (row in topRow until displayRows) {
-            canvas.drawText(termBuffer.getRowText(row), 0, termBuffer.screenColumnSize, 0f,titleBar + (fontLineSpacing * (row-topRow).toFloat()), textPaint)
+            canvas.drawText(termBuffer.getRowText(row), 0, termBuffer.screenColumnSize, 0f,titleBar + (fontLineSpacing * (row-topRow).toFloat())-pad, textPaint)
         }
-        moveToSavedCursor(canvas, x, y, showCursor)
+        moveToSavedCursor(canvas, cursor, showCursor, pad)
     }
 
-    private fun moveToSavedCursor(canvas: Canvas, x: Int, y: Int, showCursor: Boolean) {
+    private fun moveToSavedCursor(canvas: Canvas, cursor: TerminalView.Cursor, showCursor: Boolean, pad: Int) {
         if(showCursor) {
-            canvas.drawRect((x) * fontWidth.toFloat(), titleBar + (fontLineSpacing * (y - 1)).toFloat(),
-                    (x + 1) * fontWidth.toFloat(), titleBar + (fontLineSpacing * y).toFloat(), textPaint)
+            canvas.drawRect((cursor.x) * fontWidth.toFloat(), titleBar + (fontLineSpacing * (cursor.y - 1))-pad.toFloat(),
+                     (cursor.x + 1) * fontWidth.toFloat(), titleBar + (fontLineSpacing * cursor.y).toFloat()-pad, textPaint)
         }
     }
 
