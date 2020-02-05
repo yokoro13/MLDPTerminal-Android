@@ -4,30 +4,20 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
-import android.content.BroadcastReceiver
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.ServiceConnection
-import android.content.SharedPreferences
+import android.content.*
 import android.graphics.Point
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.IBinder
-import android.os.StrictMode
+import android.os.*
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.*
 import android.view.inputmethod.InputMethodManager
-
 import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothScanActivity
 import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothService
 import com.i14yokoro.mldpterminal.terminalview.GestureListener
 import com.i14yokoro.mldpterminal.terminalview.InputListener
 import com.i14yokoro.mldpterminal.terminalview.TerminalView
 import kotlin.experimental.and
+
 
 class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
@@ -66,6 +56,8 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
         StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build())
 
+        window.addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN)
+        window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -74,17 +66,20 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         wm.defaultDisplay.getSize(p)
 
         termView = findViewById(R.id.main_display)
+        // FIXME よくない
         termView.screenColumnSize = p.x
         termView.screenRowSize = p.y
+
         termBuffer = TerminalBuffer(termView.screenColumnSize, termView.screenRowSize)
         termView.termBuffer = termBuffer
         termView.escapeSequence = EscapeSequence(termBuffer)
 
         val metrics = resources.displayMetrics
-        termView.setDp(metrics.density)
+        termView.setTitleBarSize(metrics.density)
 
         termView.setInputListener(this)
         termView.setGestureListener(this)
+        termView.invalidate()
 
         state = State.STARTING
         connectTimeoutHandler = Handler()
@@ -541,17 +536,13 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         termView.isFocusableInTouchMode = true
         termView.requestFocus()
         Log.e("MainActivity", "show")
-        val v = currentFocus
-        if (v != null)
-            imm.showSoftInput(v, 0)
+        imm.showSoftInput(termView, InputMethodManager.SHOW_IMPLICIT)
     }
 
     //　キーボードを隠す
     private fun hideKeyboard() {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        val v = currentFocus
-        if (v != null)
-            imm.hideSoftInputFromWindow(v.windowToken, 0)
+        imm.hideSoftInputFromWindow(termView.windowToken, 0)
     }
 
 

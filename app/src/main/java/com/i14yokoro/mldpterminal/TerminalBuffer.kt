@@ -12,6 +12,7 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
     var isColorChange = false
     private val nonBreakingSpace = Typography.nbsp
 
+    // TODO move to View
     var topRow = 0      // 一番上の行
         set(topRow) {
             field = if(topRow < 0){
@@ -20,6 +21,7 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
                 topRow
             }
         }
+    // TODO move to View
     // 現在入力中の行
     var currentRow = 0
         set(currentRow) {

@@ -16,9 +16,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name="com.i14yokoro.mldpterminal.MainActivity"
-                  android:screenOrientation="portrait"
-                  android:windowSoftInputMode="adjustResize">
+        <activity
+            android:name="com.i14yokoro.mldpterminal.MainActivity"
+            android:screenOrientation="portrait"
+            android:resizeableActivity="true"
+
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

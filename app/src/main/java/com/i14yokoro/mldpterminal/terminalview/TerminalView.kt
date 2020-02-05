@@ -2,14 +2,8 @@ package com.i14yokoro.mldpterminal.terminalview
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Typeface
-import android.os.Handler
-import android.support.v4.text.HtmlCompat
 import android.text.InputType
 import android.util.AttributeSet
-import android.util.Log
-import android.util.Size
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -18,16 +12,9 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import com.i14yokoro.mldpterminal.EscapeSequence
 import com.i14yokoro.mldpterminal.TerminalBuffer
-import java.nio.charset.StandardCharsets
-import kotlin.math.abs
-import kotlin.math.ceil
 
 
-/** TODO
- * カーソル移動
- * 入力処理
- */
-class TerminalView : View{
+class TerminalView : View {
 
     private var inputListener: InputListener? = null
     private var gestureListener: GestureListener? = null
@@ -53,9 +40,18 @@ class TerminalView : View{
 
     private var isDisplaying = false        // 画面更新中はtrue
 
-    constructor(context: Context?) : super(context)
-    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs)
-    constructor(context: Context?, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle)
+    constructor(context: Context?): super(context) {
+        isFocusable = true
+        isFocusableInTouchMode = true
+    }
+    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {
+        isFocusable = true
+        isFocusableInTouchMode = true
+    }
+    constructor(context: Context?, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle){
+        isFocusable = true
+        isFocusableInTouchMode = true
+    }
 
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
@@ -69,8 +65,6 @@ class TerminalView : View{
     }
 
     override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
-        Log.e("TerminalView", "dispatch")
-
         if(gestureListener != null) {
             when (event?.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -109,9 +103,14 @@ class TerminalView : View{
     override fun onDraw(canvas: Canvas) {
         if (!isDisplaying) {
             isDisplaying = true
-            terminalRenderer.render(termBuffer, canvas, termBuffer.topRow, cursor.x, cursor.y, cursorIsInScreen())
+            terminalRenderer.render(termBuffer, canvas, termBuffer.topRow, cursor, cursorIsInScreen(), paddingBottom)
             isDisplaying = false
         }
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        resolveSize(widthMeasureSpec, heightMeasureSpec)
     }
 
     fun setInputListener(listener: InputListener){
@@ -123,7 +122,6 @@ class TerminalView : View{
     }
 
     fun scrollDown() {
-        // TODO ここの処理はViewで
         if (termBuffer.totalLines > termBuffer.screenRowSize) {
             // 一番下の行までしか表示させない
             if (termBuffer.topRow + termBuffer.screenRowSize < termBuffer.totalLines) {
@@ -141,7 +139,6 @@ class TerminalView : View{
     }
 
     fun scrollUp() {
-        // TODO ここの処理はViewで
         if (termBuffer.totalLines > termBuffer.screenRowSize) {
             //表示する一番上の行を１つ上に
             termBuffer.moveTopRow(-1)
@@ -156,8 +153,6 @@ class TerminalView : View{
         }
     }
 
-
-    // TODO Viewに移動
     // エスケープシーケンスの処理
     fun ansiEscapeSequence(mode: Char, move: Int, hMove:Int) {
 
@@ -182,7 +177,6 @@ class TerminalView : View{
         }
     }
 
-    // TODO Viewに移動
     // エスケープシーケンスの処理
     fun tecEscapeSequence(mode: Char) {
 
@@ -197,11 +191,6 @@ class TerminalView : View{
     fun cursorIsInScreen(): Boolean{
         return (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow <= termBuffer.topRow + termBuffer.screenRowSize - 1)
     }
-
-    // TODO Viewに移動
-    // 選択中の行番号を返す
-    private val currentRow: Int
-        get() = termBuffer.currentRow
 
     fun focusable() {
         isFocusable = true
@@ -218,8 +207,8 @@ class TerminalView : View{
         }
     }
 
-    fun setDp(metrics: Float){
-        terminalRenderer.titleBar = 20 * metrics.toInt()
+    fun setTitleBarSize(metrics: Float){
+        terminalRenderer.titleBar = 20 * metrics.toInt() + paddingBottom
     }
 
     inner class Cursor{
@@ -249,5 +238,6 @@ class TerminalView : View{
                 }
             }
     }
+
 
 }
