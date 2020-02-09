@@ -41,18 +41,14 @@ class TerminalView : View {
     private var isDisplaying = false        // 画面更新中はtrue
 
     constructor(context: Context?): super(context) {
-        isFocusable = true
-        isFocusableInTouchMode = true
+        focusable()
     }
     constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {
-        isFocusable = true
-        isFocusableInTouchMode = true
+        focusable()
     }
     constructor(context: Context?, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle){
-        isFocusable = true
-        isFocusableInTouchMode = true
+        focusable()
     }
-
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         outAttrs.inputType = InputType.TYPE_NULL
@@ -93,6 +89,7 @@ class TerminalView : View {
 
         if (event.action == KeyEvent.ACTION_UP){
             // 入力を通知
+
             if(inputListener != null) {
                 inputListener?.onKey(event.unicodeChar.toChar())
             }
@@ -188,6 +185,7 @@ class TerminalView : View {
         }
     }
 
+    // FIXME currRowかtopRowがおかしい
     fun cursorIsInScreen(): Boolean{
         return (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow <= termBuffer.topRow + termBuffer.screenRowSize - 1)
     }
