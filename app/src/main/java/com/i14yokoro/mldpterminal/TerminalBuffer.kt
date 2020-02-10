@@ -1,5 +1,7 @@
 package com.i14yokoro.mldpterminal
 
+import android.util.Log
+
 /**
  * ターミナルの画面情報を扱う
  * @param screenColumnSize : 画面の横幅
@@ -10,7 +12,7 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
 
     var charColor: Int = 0x00000000    // 文字色(RGB)
     var isColorChange = false
-    private val nonBreakingSpace = Typography.nbsp
+    private val space = ' '
 
     // TODO move to View
     var topRow = 0      // 一番上の行
@@ -37,6 +39,7 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
             return textBuffer.size
         }
 
+    // TODO move to View
     val displayedLines: Int
         get() {
             return if(totalLines >= screenRowSize){
@@ -45,7 +48,7 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
                 totalLines
             }
         }
-
+    // TODO move to View
     fun moveTopRow(n: Int){
         if(topRow + n < 0){
             topRow = 0
@@ -54,15 +57,11 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
         }
     }
 
-    fun incrementCurrentRow(){
-        currentRow++
-    }
-
     /**
      * 新しい行を追加する.
      */
     fun addRow(lineWarp: Boolean = false){
-        textBuffer.add(TerminalRow(CharArray(screenColumnSize){nonBreakingSpace}, IntArray(screenColumnSize){0}, lineWarp))
+        textBuffer.add(TerminalRow(CharArray(screenColumnSize){space}, IntArray(screenColumnSize){0}, lineWarp))
     }
 
     /**
@@ -97,6 +96,10 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
         return textBuffer[y].text
     }
 
+    fun getRowStringText(y: Int): String{
+        return String(textBuffer[y].text)
+    }
+
     fun resize(newScreenColumnSize: Int, newScreenRowSize: Int){
         var oldX = 0
         var oldY = 0
@@ -104,7 +107,7 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
         var lineWarp: Boolean
         val newTextBuffer: ArrayList<TerminalRow> = ArrayList()
 
-        newTextBuffer.add(TerminalRow(CharArray(newScreenColumnSize){nonBreakingSpace}, IntArray(newScreenColumnSize){0}, false))
+        newTextBuffer.add(TerminalRow(CharArray(newScreenColumnSize){space}, IntArray(newScreenColumnSize){0}, false))
 
         for (y in 0 until textBuffer.size){
             for (newX in 0 until screenColumnSize){
@@ -130,7 +133,7 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
             }
             newY++
             lineWarp = oldX != screenColumnSize
-            newTextBuffer.add(TerminalRow(CharArray(newScreenColumnSize){nonBreakingSpace}, IntArray(newScreenColumnSize){0}, lineWarp))
+            newTextBuffer.add(TerminalRow(CharArray(newScreenColumnSize){space}, IntArray(newScreenColumnSize){0}, lineWarp))
         }
 
         textBuffer.clear()
@@ -140,6 +143,6 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
     }
 
     init {
-        textBuffer.add(TerminalRow(CharArray(screenColumnSize){nonBreakingSpace}, IntArray(screenColumnSize){0}, false))
+        textBuffer.add(TerminalRow(CharArray(screenColumnSize){space}, IntArray(screenColumnSize){0}, false))
     }
 }

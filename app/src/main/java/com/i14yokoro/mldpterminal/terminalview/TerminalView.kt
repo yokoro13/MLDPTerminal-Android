@@ -38,6 +38,9 @@ class TerminalView : View {
 
     var oldY = 0
 
+    var buttomBarPosition: Int = 0
+    var buttonBarBottom: Int = 0
+
     private var isDisplaying = false        // 画面更新中はtrue
 
     constructor(context: Context?): super(context) {

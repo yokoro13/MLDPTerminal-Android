@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.*
 import android.view.inputmethod.InputMethodManager
+import android.widget.LinearLayout
 import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothScanActivity
 import com.i14yokoro.mldpterminal.bluetooth.MldpBluetoothService
 import com.i14yokoro.mldpterminal.terminalview.GestureListener
@@ -19,6 +20,9 @@ import com.i14yokoro.mldpterminal.terminalview.TerminalView
 import kotlin.experimental.and
 
 
+/**
+ * TODO 画面保持
+ */
 class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
     private lateinit var termView: TerminalView//ディスプレイのEditText
@@ -42,14 +46,16 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     private var isANSIEscapeSequence = false
     private var isTeCEscapeSequence = false
 
-    private var isNotSending = false        // RN側に送りたくないものがあるときはtrueにする
-
     private var stack = 0  // 処理待ちの文字数
     private val time = 5 // 受信待ち時間
 
     private var escapeString: StringBuilder  = StringBuilder()// 受信したエスケープシーケンスを格納
 
     private val handler = Handler()
+
+    private lateinit var buttonBar: LinearLayout
+    private val anchor = IntArray(2)
+
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,7 +71,11 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         val p = Point()
         wm.defaultDisplay.getSize(p)
 
+        buttonBar = findViewById(R.id.linearLayout)
+
+        buttonBar.getLocationOnScreen(anchor)
         termView = findViewById(R.id.main_display)
+        termView.buttonBarBottom = anchor[1]
         // FIXME よくない
         termView.screenColumnSize = p.x
         termView.screenRowSize = p.y
@@ -84,31 +94,28 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         state = State.STARTING
         connectTimeoutHandler = Handler()
 
+        buttonBar = findViewById(R.id.linearLayout)
 
         findViewById<View>(R.id.btn_up).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[A")
-                termView.invalidate()
             }
         }
 
         findViewById<View>(R.id.btn_down).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[B")
-                termView.invalidate()
             }
         }
 
         findViewById<View>(R.id.btn_right).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[C")
-                termView.invalidate()
             }
         }
         findViewById<View>(R.id.btn_left).setOnClickListener {
             if (state == State.CONNECTED) {
                 bleService!!.writeMLDP("\u001b" + "[D")
-                termView.invalidate()
             }
         }
 
@@ -129,7 +136,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
             bleDeviceAddress = prefs.getString(PREFS_ADDRESS, "\u0000")!!
         }
 
-        // TODO Viewに移動
         termView.setOnKeyListener { _, i, keyEvent ->
             if (keyEvent.action == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_DEL) {
                 if (state == State.CONNECTED) {
@@ -249,30 +255,55 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         val sendText = text.toString()
 
         if (state == State.CONNECTED) {
-            if (!isNotSending) {
-                if (btnCtl) {
-                    if (text in '\u0020'..'\u007f') {
-                        val sendB = byteArrayOf((text.toByte() and 0x1f))
-                        bleService!!.writeMLDP(sendB)
-                        btnCtl = false
-                        sendCtl = true
-                    }
+            if (btnCtl) {
+                if (text in '\u0020'..'\u007f') {
+                    val sendB = byteArrayOf((text.toByte() and 0x1f))
+                    bleService!!.writeMLDP(sendB)
                     btnCtl = false
+                    sendCtl = true
                 }
-                if (!sendCtl) {
-                    bleService!!.writeMLDP(sendText)
-                }
+                btnCtl = false
+            }
+            if (!sendCtl) {
+                bleService!!.writeMLDP(sendText)
             }
             return
         }
 
         Log.d("MainActivity", "text=$text")
-        inputProcess(text)
-        termView.invalidate()
+        if ((text in '\u0020'..'\u007f') || text == '\u000a' || text == '\u000d'){
+
+            val oldX = termView.cursor.x
+            // input
+            if (text != LF) {
+                // 上書き
+                termBuffer.setText(termView.cursor.x, termBuffer.currentRow, text)
+                termBuffer.setColor(termView.cursor.x, termBuffer.currentRow, termBuffer.charColor)
+                termView.cursor.x++
+            }
+            Log.e("Main", "Main : content: " + termBuffer.getRowStringText(termBuffer.currentRow))
+            // LFか右端での入力があったときの時
+            if (text == LF || oldX+1 == termBuffer.screenColumnSize) {
+                termBuffer.currentRow++
+
+                if(termBuffer.currentRow == termBuffer.totalLines){
+                    Log.e("Main", "addRow")
+                    termBuffer.addRow()
+                }
+
+                termView.cursor.x = 0
+                termView.cursor.y++
+            }
+            termBuffer.topRow = termBuffer.currentRow - termView.cursor.y
+
+            Log.e("Main", "Main : curr: ${termBuffer.currentRow}, top: ${termBuffer.topRow}")
+            termView.invalidate()
+        }
     }
 
     override fun onDown() {
         showKeyboard()
+        buttonBar.getLocationOnScreen(anchor)
     }
 
     override fun onMove() {
@@ -300,39 +331,43 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
                     val splitData = receivedData.toCharArray()
 
-                    handler.removeCallbacks(updateScreen)
+                    // Log.e("Main", receivedData)
                     stack += splitData.size
 
                     for ((cnt, char) in splitData.withIndex()) {
                         when (char.toInt()) {
                             0x08  // KEY_BS
-                            -> termView.cursor.x--
+                            -> {
+                                termView.cursor.x--
+                                termView.invalidate()
+                            }
                             0x09   // KEY_HT
-                            -> if (termView.cursor.x + (4 - termView.cursor.x % 4) < termView.screenColumnSize) {
-                                termView.escapeSequence.moveRight(termView.cursor, 4 - termView.cursor.x % 4)
-                            } else {
-                                termView.cursor.x += (termView.screenColumnSize-1)
+                            -> {
+                                if (termView.cursor.x + (4 - termView.cursor.x % 4) < termView.screenColumnSize) {
+                                    termView.escapeSequence.moveRight(termView.cursor, 4 - termView.cursor.x % 4)
+                                } else {
+                                    termView.cursor.x += (termView.screenColumnSize-1)
+                                }
+                                termView.invalidate()
                             }
                             0x7f    // KEY_DEL
                             -> {
                             }
                             0x0a    // KEY_LF
                             -> {
-                                isNotSending = true
                                 inputProcess('\n')
-                                isNotSending = false
                             }
                             0x0d    // KEY_CR
                             -> {
                                 termView.cursor.x = 0
-                                termView.invalidate()
                             }
                             0x1b  // KEY_ESC
                             -> {
                                 isEscapeSequence = true
                                 escapeString.setLength(0)
                             }
-                            else -> if (isEscapeSequence) {
+                            else
+                            -> if (isEscapeSequence) {
                                 escapeString.append(splitData[cnt])
 
                                 if(splitData[cnt] == '['){
@@ -343,56 +378,48 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                                     val data = splitData[cnt].toString()
                                     if (data.matches("[A-HJKSTfm]".toRegex())) {
                                         checkANSIEscapeSequence()
-                                        isEscapeSequence = false
-                                        isANSIEscapeSequence = false
-                                        escapeString.clear()
+                                        clearEscapeSequence()
                                     } else {
                                         if(!data.matches("[0-9;]".toRegex())){
-                                            isEscapeSequence = false
-                                            isANSIEscapeSequence = false
-                                            escapeString.clear()
+                                            clearEscapeSequence()
                                         }
                                     }
                                 } else if(isTeCEscapeSequence){
                                     if (splitData[cnt].toString().matches("[s]".toRegex())) {
                                         checkTeCEscapeSequence()
-                                        isEscapeSequence = false
-                                        isTeCEscapeSequence = false
-                                        escapeString.clear()
+                                        clearEscapeSequence()
                                     } else {
                                         // when receive number
                                         //if(!splitData[cnt].matches("[0-9;]".toRegex())){
-                                        isEscapeSequence = false
-                                        isEscapeSequence = false
-                                        escapeString.clear()
+                                        clearEscapeSequence()
                                         //}
                                     }
                                 } else {
-                                    isEscapeSequence = false
-                                    isANSIEscapeSequence = false
-                                    isTeCEscapeSequence = false
-                                    escapeString.clear()
+                                    clearEscapeSequence()
                                 }
 
                             } else {
-                                if (cnt < receivedData.length) {
-                                    if (splitData[cnt] == '\u0020') {
-                                        splitData[cnt] = ' '
-                                    }
-                                    isNotSending = true
-                                    inputProcess(splitData[cnt])
-                                    isNotSending = false
+                                if (splitData[cnt] == '\u0020') {
+                                    splitData[cnt] = ' '
                                 }
+                                if(splitData[cnt] == '\u0000'){
+                                    Log.d("MainActivity", "null!")
+                                }
+                                inputProcess(splitData[cnt])
                             }
                         }
                         stack--
-                        if (stack == 0) {
-                            handler.postDelayed(updateScreen, time.toLong())
-                        }
                     }
                 }
             }
         }
+    }
+
+    private fun clearEscapeSequence(){
+        isEscapeSequence = false
+        isTeCEscapeSequence = false
+        isANSIEscapeSequence = false
+        escapeString.clear()
     }
 
     // エスケープシーケンスの処理
@@ -436,7 +463,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         } else {
             termView.tecEscapeSequence(mode)
         }
-        termView.invalidate()
     }
 
     // 切断
@@ -526,17 +552,19 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
             inputProcess(element)
         }
         inputProcess(LF)
-        termView.invalidate()
     }
 
     // キーボードを表示させる
     private fun showKeyboard() {
+        buttonBar.getLocationOnScreen(anchor)
+
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         termView.isFocusable = true
         termView.isFocusableInTouchMode = true
         termView.requestFocus()
-        Log.e("MainActivity", "show")
         imm.showSoftInput(termView, InputMethodManager.SHOW_IMPLICIT)
+
+        buttonBar.getLocationOnScreen(anchor)
     }
 
     //　キーボードを隠す
@@ -551,41 +579,35 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     }
 
     // strをリストに格納
+    // TODO ここおかしいきがする
     private fun inputProcess(input: Char) {
         if ((input in '\u0020'..'\u007f') || input == '\u000a' || input == '\u000d'){
-            // カーソルが画面外で入力があると入力位置に移動
-            if (termView.cursorIsInScreen()) {
-                termView.focusable()
-                termBuffer.topRow = termBuffer.currentRow - termView.cursor.y
-                termView.invalidate()
-            }
 
-            // input
             val oldX = termView.cursor.x
+            // input
             if (input != LF) {
                 // 上書き
                 termBuffer.setText(termView.cursor.x, termBuffer.currentRow, input)
                 termBuffer.setColor(termView.cursor.x, termBuffer.currentRow, termBuffer.charColor)
                 termView.cursor.x++
             }
-
+            Log.e("Main", "Main : content: " + termBuffer.getRowStringText(termBuffer.currentRow))
             // LFか右端での入力があったときの時
-            if (input == LF || oldX+1 == termView.screenColumnSize) {
-                termView.cursor.x = 0
-                termBuffer.incrementCurrentRow()
+            if (input == LF || oldX+1 == termBuffer.screenColumnSize) {
+                termBuffer.currentRow++
 
                 if(termBuffer.currentRow == termBuffer.totalLines){
                     Log.e("Main", "addRow")
                     termBuffer.addRow()
                 }
 
-                // スクロールの処理
-                if (termView.cursor.y + 1 == termView.screenRowSize) {
-                    termView.scrollDown()
-                }
+                termView.cursor.x = 0
                 termView.cursor.y++
-
             }
+            termBuffer.topRow = termBuffer.currentRow - termView.cursor.y
+
+            Log.e("Main", "Main : curr: ${termBuffer.currentRow}, top: ${termBuffer.topRow}")
+            termView.invalidate()
         }
     }
 
