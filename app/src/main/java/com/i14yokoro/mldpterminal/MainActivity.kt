@@ -47,11 +47,8 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     private var isTeCEscapeSequence = false
 
     private var stack = 0  // 処理待ちの文字数
-    private val time = 5 // 受信待ち時間
 
     private var escapeString: StringBuilder  = StringBuilder()// 受信したエスケープシーケンスを格納
-
-    private val handler = Handler()
 
     private lateinit var buttonBar: LinearLayout
     private val anchor = IntArray(2)
@@ -302,7 +299,9 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     }
 
     override fun onDown() {
-        showKeyboard()
+        if(termView.isFocusable) {
+            showKeyboard()
+        }
         buttonBar.getLocationOnScreen(anchor)
     }
 
@@ -540,12 +539,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     }
 
     // TODO Viewに移動
-    // 画面更新を非同期で行う
-    private val updateScreen = {
-        termView.invalidate()
-    }
-
-    // TODO Viewに移動
     // 新しい行を追加
     private fun printNotSendingText(text: String) {
         for (element in text) {
@@ -583,6 +576,13 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     private fun inputProcess(input: Char) {
         if ((input in '\u0020'..'\u007f') || input == '\u000a' || input == '\u000d'){
 
+            termBuffer.topRow = if(termBuffer.totalLines < termBuffer.screenRowSize) {
+                0
+            } else {
+                termBuffer.totalLines - termBuffer.screenRowSize
+            }
+
+
             val oldX = termView.cursor.x
             // input
             if (input != LF) {
@@ -604,7 +604,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                 termView.cursor.x = 0
                 termView.cursor.y++
             }
-            termBuffer.topRow = termBuffer.currentRow - termView.cursor.y
 
             Log.e("Main", "Main : curr: ${termBuffer.currentRow}, top: ${termBuffer.topRow}")
             termView.invalidate()
