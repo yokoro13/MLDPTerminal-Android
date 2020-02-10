@@ -129,7 +129,7 @@ class TerminalView : View {
                 termBuffer.moveTopRow(1)
                 if (cursorIsInScreen()) {
                     setEditable(true)
-                    cursor.y = termBuffer.currentRow - termBuffer.topRow
+                    cursor.y = getCurrentRow() - termBuffer.topRow
                 } else {
                     setEditable(false)
                 }
@@ -145,7 +145,7 @@ class TerminalView : View {
             // カーソルが画面内にある
             if (cursorIsInScreen()) {
                 setEditable(true)
-                cursor.y = termBuffer.currentRow - termBuffer.topRow
+                cursor.y = getCurrentRow() - termBuffer.topRow
             } else { //画面外
                 setEditable(false)
             }
@@ -190,7 +190,7 @@ class TerminalView : View {
 
     // FIXME currRowかtopRowがおかしい
     fun cursorIsInScreen(): Boolean{
-        return (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow <= termBuffer.topRow + termBuffer.screenRowSize - 1)
+        return (termBuffer.topRow <= getCurrentRow() && getCurrentRow() <= termBuffer.topRow + termBuffer.screenRowSize - 1)
     }
 
     fun focusable() {
@@ -207,6 +207,11 @@ class TerminalView : View {
             isFocusable = false
         }
     }
+
+    // TODO move to View
+    // 現在入力中の行
+
+    fun getCurrentRow() = termBuffer.topRow + cursor.y
 
     fun setTitleBarSize(metrics: Float){
         terminalRenderer.titleBar = 20 * metrics.toInt() + paddingBottom

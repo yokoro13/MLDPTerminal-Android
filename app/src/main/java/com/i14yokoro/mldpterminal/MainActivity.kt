@@ -267,35 +267,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
             return
         }
 
-        Log.d("MainActivity", "text=$text")
-        if ((text in '\u0020'..'\u007f') || text == '\u000a' || text == '\u000d'){
-
-            val oldX = termView.cursor.x
-            // input
-            if (text != LF) {
-                // 上書き
-                termBuffer.setText(termView.cursor.x, termBuffer.currentRow, text)
-                termBuffer.setColor(termView.cursor.x, termBuffer.currentRow, termBuffer.charColor)
-                termView.cursor.x++
-            }
-            Log.e("Main", "Main : content: " + termBuffer.getRowStringText(termBuffer.currentRow))
-            // LFか右端での入力があったときの時
-            if (text == LF || oldX+1 == termBuffer.screenColumnSize) {
-                termBuffer.currentRow++
-
-                if(termBuffer.currentRow == termBuffer.totalLines){
-                    Log.e("Main", "addRow")
-                    termBuffer.addRow()
-                }
-
-                termView.cursor.x = 0
-                termView.cursor.y++
-            }
-            termBuffer.topRow = termBuffer.currentRow - termView.cursor.y
-
-            Log.e("Main", "Main : curr: ${termBuffer.currentRow}, top: ${termBuffer.topRow}")
-            termView.invalidate()
-        }
+        inputProcess(text)
     }
 
     override fun onDown() {
@@ -582,30 +554,27 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                 termBuffer.totalLines - termBuffer.screenRowSize
             }
 
-
             val oldX = termView.cursor.x
             // input
             if (input != LF) {
                 // 上書き
-                termBuffer.setText(termView.cursor.x, termBuffer.currentRow, input)
-                termBuffer.setColor(termView.cursor.x, termBuffer.currentRow, termBuffer.charColor)
+                termBuffer.setText(termView.cursor.x, termView.getCurrentRow(), input)
+                termBuffer.setColor(termView.cursor.x, termView.getCurrentRow(), termBuffer.charColor)
                 termView.cursor.x++
             }
-            Log.e("Main", "Main : content: " + termBuffer.getRowStringText(termBuffer.currentRow))
+            Log.e("Main", "Main : content: " + termBuffer.getRowStringText(termView.getCurrentRow()))
             // LFか右端での入力があったときの時
             if (input == LF || oldX+1 == termBuffer.screenColumnSize) {
-                termBuffer.currentRow++
+                termView.cursor.x = 0
+                termView.cursor.y++
 
-                if(termBuffer.currentRow == termBuffer.totalLines){
+                if(termView.getCurrentRow() == termBuffer.totalLines){
                     Log.e("Main", "addRow")
                     termBuffer.addRow()
                 }
-
-                termView.cursor.x = 0
-                termView.cursor.y++
             }
 
-            Log.e("Main", "Main : curr: ${termBuffer.currentRow}, top: ${termBuffer.topRow}")
+            Log.e("Main", "Main : curr: ${termView.getCurrentRow()}, top: ${termBuffer.topRow}")
             termView.invalidate()
         }
     }

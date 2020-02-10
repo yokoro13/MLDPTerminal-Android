@@ -23,16 +23,6 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
                 topRow
             }
         }
-    // TODO move to View
-    // 現在入力中の行
-    var currentRow = 0
-        set(currentRow) {
-            field = if(currentRow < 0){
-                0
-            } else {
-                currentRow
-            }
-        }
 
     val totalLines: Int
         get() {

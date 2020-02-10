@@ -15,9 +15,6 @@ internal constructor(private val termBuffer: TerminalBuffer) {
 
     private val space = ' '
 
-    private val currentRow: Int
-        get() = termBuffer.currentRow
-
     /**
      * @param n 移動量
      */
@@ -36,12 +33,6 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      * @param n 移動量
      */
     fun moveUp(cursor: Cursor, n: Int) {
-        if(cursor.y - n < 0) {
-            termBuffer.currentRow -= cursor.y
-        } else {
-            termBuffer.currentRow -= n
-        }
-
         moveCursorY(cursor, -n)
     }
 
@@ -49,18 +40,13 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      * @param n 移動量
      */
     fun moveDown(cursor: Cursor, n: Int) {
-        if(cursor.y + n >= termBuffer.screenRowSize){
-            termBuffer.currentRow += termBuffer.screenRowSize - cursor.y + 1
-        } else {
-            termBuffer.currentRow += n
-        }
-        if(termBuffer.currentRow >= termBuffer.totalLines) {
-            for(i in 0 .. termBuffer.currentRow - termBuffer.totalLines) {
+        moveCursorY(cursor, n)
+
+        if(termBuffer.topRow + cursor.y >= termBuffer.totalLines) {
+            for(i in 0 .. termBuffer.topRow + cursor.y - termBuffer.totalLines) {
                 termBuffer.addRow()
             }
         }
-
-        moveCursorY(cursor, n)
     }
 
     /**
@@ -92,19 +78,14 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      * @param m 横の移動量(0 < m)
      */
     fun moveCursor(cursor: Cursor, n: Int, m: Int) { //n,mは1~
-        Log.e("Main", "es1 : curr: ${termBuffer.currentRow}, top: ${termBuffer.topRow}")
-
         if(n-1 > cursor.y) {
             cursor.y = 0
             moveDown(cursor, n-1)
         } else {
-            termBuffer.currentRow -= (cursor.y - (n-1))
             cursor.y = n-1
         }
 
         cursor.x = m-1
-
-        Log.e("Main", "es2 : curr: ${termBuffer.currentRow}, top: ${termBuffer.topRow}")
     }
 
     /**
@@ -112,7 +93,7 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      */
     private fun clearDisplay(cursor: Cursor) {
         for (x in cursor.x+1 until termBuffer.screenColumnSize){
-            termBuffer.setText(x, currentRow, space)
+            termBuffer.setText(x, termBuffer.topRow + cursor.y, space)
         }
         for (y in cursor.y+1 until termBuffer.displayedLines) {
             for (x in 0 until termBuffer.screenColumnSize){
@@ -131,9 +112,9 @@ internal constructor(private val termBuffer: TerminalBuffer) {
         }
 
         if (n == 1) { //カーソルより前にある画面上の文字を消す
-            for (y in termBuffer.topRow .. currentRow) {
+            for (y in termBuffer.topRow .. termBuffer.topRow + cursor.y) {
                 for (x in 0 until termBuffer.screenColumnSize) {
-                    if (y == currentRow && x == cursor.x) {
+                    if (y == termBuffer.topRow + cursor.y && x == cursor.x) {
                         break
                     }
                     termBuffer.setText(x, y, space)
@@ -156,19 +137,19 @@ internal constructor(private val termBuffer: TerminalBuffer) {
     fun clearRow(cursor: Cursor, n: Int) {
         if (n == 0) { //カーソル以降にある文字を消す
             for (x in cursor.x+1 until termBuffer.screenColumnSize) {
-                termBuffer.setText(x, currentRow, space)
+                termBuffer.setText(x, termBuffer.topRow + cursor.y, space)
             }
         }
 
         if (n == 1) { //カーソル以前にある文字を消す
             for (x in 0 until cursor.x-1) {
-                termBuffer.setText(x, currentRow, space)
+                termBuffer.setText(x, termBuffer.topRow + cursor.y, space)
             }
         }
 
         if (n == 2) { //全消去
             for (x in 0 until termBuffer.screenColumnSize) {
-                termBuffer.setText(x, currentRow, space)
+                termBuffer.setText(x, termBuffer.topRow + cursor.y, space)
             }
         }
     }
