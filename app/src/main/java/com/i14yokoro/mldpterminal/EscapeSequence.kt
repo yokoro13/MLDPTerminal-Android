@@ -50,7 +50,7 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      */
     fun moveDown(cursor: Cursor, n: Int) {
         if(cursor.y + n >= termBuffer.screenRowSize){
-            termBuffer.currentRow += termBuffer.screenRowSize - cursor.y
+            termBuffer.currentRow += termBuffer.screenRowSize - cursor.y + 1
         } else {
             termBuffer.currentRow += n
         }
@@ -94,16 +94,11 @@ internal constructor(private val termBuffer: TerminalBuffer) {
     fun moveCursor(cursor: Cursor, n: Int, m: Int) { //n,mは1~
         Log.e("Main", "es1 : curr: ${termBuffer.currentRow}, top: ${termBuffer.topRow}")
 
-
         if(n-1 > cursor.y) {
             cursor.y = 0
             moveDown(cursor, n-1)
         } else {
-            if(cursor.y >= n-1) {
-                termBuffer.currentRow -= (cursor.y - (n-1))
-            } else {
-                termBuffer.currentRow -= cursor.y
-            }
+            termBuffer.currentRow -= (cursor.y - (n-1))
             cursor.y = n-1
         }
 
