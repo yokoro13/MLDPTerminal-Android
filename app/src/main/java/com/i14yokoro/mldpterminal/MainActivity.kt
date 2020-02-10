@@ -562,19 +562,20 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                 termBuffer.setColor(termView.cursor.x, termView.getCurrentRow(), termBuffer.charColor)
                 termView.cursor.x++
             }
-            Log.e("Main", "Main : content: " + termBuffer.getRowStringText(termView.getCurrentRow()))
             // LFか右端での入力があったときの時
             if (input == LF || oldX+1 == termBuffer.screenColumnSize) {
                 termView.cursor.x = 0
-                termView.cursor.y++
 
-                if(termView.getCurrentRow() == termBuffer.totalLines){
-                    Log.e("Main", "addRow")
-                    termBuffer.addRow()
-                }
+                //if (termView.cursor.y + 1 == termView.screenRowSize){
+                    if (termView.getCurrentRow() + 1 == termBuffer.totalLines) {
+                        Log.e("Main", "addRow")
+                        termBuffer.addRow()
+                    }
+                //}
+                termView.cursor.y++
             }
 
-            Log.e("Main", "Main : curr: ${termView.getCurrentRow()}, top: ${termBuffer.topRow}")
+            Log.e("Main", "Main : curr: ${termView.getCurrentRow()}, top: ${termBuffer.topRow}, count: ${termBuffer.totalLines}")
             termView.invalidate()
         }
     }

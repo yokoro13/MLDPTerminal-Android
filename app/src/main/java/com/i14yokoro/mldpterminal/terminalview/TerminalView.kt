@@ -208,10 +208,15 @@ class TerminalView : View {
         }
     }
 
-    // TODO move to View
-    // 現在入力中の行
-
-    fun getCurrentRow() = termBuffer.topRow + cursor.y
+    // FIXME 配列アクセスはパフォーマンス最悪
+    fun getCurrentRow():Int{
+        val top = if(termBuffer.totalLines < screenRowSize){
+            0
+        } else {
+            termBuffer.totalLines - screenRowSize
+        }
+        return top + cursor.y
+    }
 
     fun setTitleBarSize(metrics: Float){
         terminalRenderer.titleBar = 20 * metrics.toInt() + paddingBottom

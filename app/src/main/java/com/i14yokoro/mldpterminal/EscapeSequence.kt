@@ -1,8 +1,6 @@
 package com.i14yokoro.mldpterminal
 
-import android.util.Log
 import com.i14yokoro.mldpterminal.terminalview.TerminalView.Cursor
-
 
 /**
  * ANSIのエスケープシーケンスと同じ動作をする
