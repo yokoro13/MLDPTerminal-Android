@@ -188,19 +188,18 @@ class TerminalView : View {
         }
     }
 
-    // FIXME currRowかtopRowがおかしい
-    fun cursorIsInScreen(): Boolean{
+    private fun cursorIsInScreen(): Boolean{
         return (termBuffer.topRow <= getCurrentRow() && getCurrentRow() <= termBuffer.topRow + termBuffer.screenRowSize - 1)
     }
 
-    fun focusable() {
+    private fun focusable() {
         isFocusable = true
         isFocusableInTouchMode = true
         requestFocus()
     }
 
     // 画面の編集許可
-    fun setEditable(editable: Boolean) {
+    private fun setEditable(editable: Boolean) {
         if (editable) {
             focusable()
         } else {
@@ -208,7 +207,6 @@ class TerminalView : View {
         }
     }
 
-    // FIXME 配列アクセスはパフォーマンス最悪
     fun getCurrentRow():Int{
         val top = if(termBuffer.totalLines < screenRowSize){
             0
