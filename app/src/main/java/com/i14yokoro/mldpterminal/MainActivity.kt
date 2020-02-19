@@ -95,29 +95,29 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
         findViewById<View>(R.id.btn_up).setOnClickListener {
             if (state == State.CONNECTED) {
-                bleService!!.writeMLDP("\u001b" + "[A")
+                writeMLDP("\u001b" + "[A")
             }
         }
 
         findViewById<View>(R.id.btn_down).setOnClickListener {
             if (state == State.CONNECTED) {
-                bleService!!.writeMLDP("\u001b" + "[B")
+                writeMLDP("\u001b" + "[B")
             }
         }
 
         findViewById<View>(R.id.btn_right).setOnClickListener {
             if (state == State.CONNECTED) {
-                bleService!!.writeMLDP("\u001b" + "[C")
+                writeMLDP("\u001b" + "[C")
             }
         }
         findViewById<View>(R.id.btn_left).setOnClickListener {
             if (state == State.CONNECTED) {
-                bleService!!.writeMLDP("\u001b" + "[D")
+                writeMLDP("\u001b" + "[D")
             }
         }
 
-        findViewById<View>(R.id.btn_esc).setOnClickListener { if (state == State.CONNECTED) bleService!!.writeMLDP("\u001b") }
-        findViewById<View>(R.id.btn_tab).setOnClickListener { if (state == State.CONNECTED) bleService!!.writeMLDP("\u0009") }
+        findViewById<View>(R.id.btn_esc).setOnClickListener { if (state == State.CONNECTED) writeMLDP("\u001b") }
+        findViewById<View>(R.id.btn_tab).setOnClickListener { if (state == State.CONNECTED) writeMLDP("\u0009") }
         findViewById<View>(R.id.btn_ctl).setOnClickListener { btnCtl = true }
 
         //SDK23以降はBLEをスキャンするのに位置情報が必要
@@ -136,7 +136,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         termView.setOnKeyListener { _, i, keyEvent ->
             if (keyEvent.action == KeyEvent.ACTION_DOWN && i == KeyEvent.KEYCODE_DEL) {
                 if (state == State.CONNECTED) {
-                    bleService!!.writeMLDP("\u0008")
+                    writeMLDP("\u0008")
                 } else {
                     termView.cursor.x--
                     termView.invalidate()
@@ -262,7 +262,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                 btnCtl = false
             }
             if (!sendCtl) {
-                bleService!!.writeMLDP(sendText)
+                writeMLDP(sendText)
             }
             return
         }
@@ -289,7 +289,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                     Log.i(TAG, "Received intent ACTION_BLE_CONNECTED")
                     state = State.CONNECTED
                     updateConnectionState()
-                    Handler().postDelayed({  bleService!!.writeMLDP("MLDP\r\nApp:on\r\n") }, 500)
+                    Handler().postDelayed({  writeMLDP("MLDP\r\nApp:on\r\n") }, 500)
                 }
                 MldpBluetoothService.ACTION_BLE_DISCONNECTED -> {
                     Log.i(TAG, "Received intent ACTION_BLE_DISCONNECTED")
@@ -430,7 +430,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         val mode = esStr[length - 1]
 
         if (mode == 's') {
-            bleService!!.writeMLDP("\u001b?${termView.screenColumnSize},${termView.screenRowSize}s")
+            writeMLDP("\u001b?${termView.screenColumnSize},${termView.screenRowSize}s")
         } else {
             termView.tecEscapeSequence(mode)
         }
@@ -475,6 +475,11 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         return bleService!!.connect(address)
     }
 
+    // MLDPに文字列を送信
+    fun writeMLDP(data: Any) {
+        bleService?.writeMLDP(data)
+    }
+
     // 周りにあるBLEをスキャン
     private fun startScan() {
         if (bleService != null) {
@@ -498,10 +503,10 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                     stack = 0
                 }
                 State.CONNECTED -> {
-                    printNotSendingText(LF + "connect to " + bleDeviceName)
+                    //printNotSendingText(LF + "connect to " + bleDeviceName)
                 }
                 State.DISCONNECTING -> {
-                    printNotSendingText(LF + "disconnected from " + bleDeviceName)
+                    //printNotSendingText(LF + "disconnected from " + bleDeviceName)
                 }
                 State.CONNECTING -> {}
             }
@@ -510,7 +515,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         }
     }
 
-    // TODO Viewに移動
     // 新しい行を追加
     private fun printNotSendingText(text: String) {
         for (element in text) {

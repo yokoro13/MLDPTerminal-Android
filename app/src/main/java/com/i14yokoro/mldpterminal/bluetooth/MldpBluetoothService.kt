@@ -354,17 +354,7 @@ class MldpBluetoothService : Service() {
 
     }
 
-    // MLDPに文字列を送信
-    fun writeMLDP(string: String) {
-        writeData(string)
-    }
-
-    // byte型の送信
-    fun writeMLDP(byteValues: ByteArray) {
-        writeData(byteValues)
-    }
-
-    private fun writeData(data: Any){
+    fun writeMLDP(data: Any){
         try {
             val writeDataCharacteristic: BluetoothGattCharacteristic? = if (mldpDataCharacteristic != null) {
                 mldpDataCharacteristic
