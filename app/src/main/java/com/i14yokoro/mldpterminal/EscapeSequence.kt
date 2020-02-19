@@ -90,7 +90,7 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      * 画面消去
      */
     private fun clearDisplay(cursor: Cursor) {
-        for (x in cursor.x+1 until termBuffer.screenColumnSize){
+        for (x in cursor.x until termBuffer.screenColumnSize){
             termBuffer.setText(x, termBuffer.topRow + cursor.y, space)
         }
         for (y in cursor.y+1 until termBuffer.displayedLines) {
@@ -134,13 +134,13 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      */
     fun clearRow(cursor: Cursor, n: Int) {
         if (n == 0) { //カーソル以降にある文字を消す
-            for (x in cursor.x+1 until termBuffer.screenColumnSize) {
+            for (x in cursor.x until termBuffer.screenColumnSize) {
                 termBuffer.setText(x, termBuffer.topRow + cursor.y, space)
             }
         }
 
         if (n == 1) { //カーソル以前にある文字を消す
-            for (x in 0 until cursor.x-1) {
+            for (x in 0 until cursor.x) {
                 termBuffer.setText(x, termBuffer.topRow + cursor.y, space)
             }
         }
