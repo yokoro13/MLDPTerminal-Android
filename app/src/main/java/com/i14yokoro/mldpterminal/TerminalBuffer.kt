@@ -1,6 +1,7 @@
 package com.i14yokoro.mldpterminal
 
 import android.util.Log
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * ターミナルの画面情報を扱う
@@ -25,9 +26,9 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
         }
 
     val totalLines: Int
-        get() {
-            return textBuffer.size
-        }
+    get() {
+        return lineCounter.get()
+    }
 
     // TODO move to View
     val displayedLines: Int
@@ -38,6 +39,7 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
                 totalLines
             }
         }
+
     // TODO move to View
     fun moveTopRow(n: Int){
         if(topRow + n < 0){
@@ -52,6 +54,7 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
      */
     fun addRow(lineWarp: Boolean = false){
         textBuffer.add(TerminalRow(CharArray(screenColumnSize){space}, IntArray(screenColumnSize){0}, lineWarp))
+        lineCounter.incrementAndGet()
     }
 
     /**
@@ -96,8 +99,10 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
         var newY = 0  // newTextBuffer の index
         var lineWarp: Boolean
         val newTextBuffer: ArrayList<TerminalRow> = ArrayList()
+        lineCounter.set(0)
 
         newTextBuffer.add(TerminalRow(CharArray(newScreenColumnSize){space}, IntArray(newScreenColumnSize){0}, false))
+        lineCounter.incrementAndGet()
 
         for (y in 0 until textBuffer.size){
             for (newX in 0 until screenColumnSize){
@@ -124,15 +129,17 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
             newY++
             lineWarp = oldX != screenColumnSize
             newTextBuffer.add(TerminalRow(CharArray(newScreenColumnSize){space}, IntArray(newScreenColumnSize){0}, lineWarp))
+            lineCounter.incrementAndGet()
         }
 
         textBuffer.clear()
         textBuffer = newTextBuffer
         screenColumnSize = newScreenColumnSize
         screenRowSize = newScreenRowSize
+        currentRow = 0
     }
 
     init {
-        textBuffer.add(TerminalRow(CharArray(screenColumnSize){space}, IntArray(screenColumnSize){0}, false))
+        addRow()
     }
 }
