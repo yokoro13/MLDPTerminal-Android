@@ -25,6 +25,8 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
             }
         }
 
+    // リストへのアクセスがおもい
+    private val lineCounter = AtomicInteger(0)
     val totalLines: Int
     get() {
         return lineCounter.get()
@@ -39,15 +41,6 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
                 totalLines
             }
         }
-
-    // TODO move to View
-    fun moveTopRow(n: Int){
-        if(topRow + n < 0){
-            topRow = 0
-        } else {
-            topRow += n
-        }
-    }
 
     /**
      * 新しい行を追加する.
@@ -136,7 +129,6 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
         textBuffer = newTextBuffer
         screenColumnSize = newScreenColumnSize
         screenRowSize = newScreenRowSize
-        currentRow = 0
     }
 
     init {

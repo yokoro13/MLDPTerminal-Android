@@ -126,10 +126,10 @@ class TerminalView : View {
             // 一番下の行までしか表示させない
             if (termBuffer.topRow + termBuffer.screenRowSize < termBuffer.totalLines) {
                 //表示する一番上の行を１つ下に
-                termBuffer.moveTopRow(1)
+                termBuffer.topRow++
                 if (cursorIsInScreen()) {
                     setEditable(true)
-                    cursor.y = getCurrentRow() - termBuffer.topRow
+                    cursor.y = currentRow - termBuffer.topRow
                 } else {
                     setEditable(false)
                 }
@@ -141,11 +141,11 @@ class TerminalView : View {
     fun scrollUp() {
         if (termBuffer.totalLines > termBuffer.screenRowSize) {
             //表示する一番上の行を１つ上に
-            termBuffer.moveTopRow(-1)
+            termBuffer.topRow--
             // カーソルが画面内にある
             if (cursorIsInScreen()) {
                 setEditable(true)
-                cursor.y = getCurrentRow() - termBuffer.topRow
+                cursor.y = currentRow - termBuffer.topRow
             } else { //画面外
                 setEditable(false)
             }
@@ -189,7 +189,7 @@ class TerminalView : View {
     }
 
     private fun cursorIsInScreen(): Boolean{
-        return (termBuffer.topRow <= getCurrentRow() && getCurrentRow() <= termBuffer.topRow + termBuffer.screenRowSize - 1)
+        return (termBuffer.topRow <= currentRow && currentRow <= termBuffer.topRow + termBuffer.screenRowSize - 1)
     }
 
     private fun focusable() {
@@ -207,14 +207,16 @@ class TerminalView : View {
         }
     }
 
-    fun getCurrentRow():Int{
-        val top = if(termBuffer.totalLines < screenRowSize){
-            0
-        } else {
-            termBuffer.totalLines - screenRowSize
+    // TODO cursor.yに依存しないようにする
+    val currentRow: Int
+        get(){
+            val top = if(termBuffer.totalLines < screenRowSize){
+                0
+            } else {
+                termBuffer.totalLines - screenRowSize
+            }
+            return top + cursor.y
         }
-        return top + cursor.y
-    }
 
     fun setTitleBarSize(metrics: Float){
         terminalRenderer.titleBar = 20 * metrics.toInt() + paddingBottom

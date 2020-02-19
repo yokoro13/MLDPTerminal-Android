@@ -514,14 +514,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         }
     }
 
-    // 新しい行を追加
-    private fun printNotSendingText(text: String) {
-        for (element in text) {
-            inputProcess(element)
-        }
-        inputProcess(LF)
-    }
-
     // キーボードを表示させる
     private fun showKeyboard() {
         buttonBar.getLocationOnScreen(anchor)
@@ -560,14 +552,14 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
             // input
             if (input != LF) {
                 // 上書き
-                termBuffer.setText(termView.cursor.x, termView.getCurrentRow(), input)
-                termBuffer.setColor(termView.cursor.x, termView.getCurrentRow(), termBuffer.charColor)
+                termBuffer.setText(termView.cursor.x, termView.currentRow, input)
+                termBuffer.setColor(termView.cursor.x, termView.currentRow, termBuffer.charColor)
                 termView.cursor.x++
             }
             // LFか右端での入力があったときの時
             if (input == LF || oldX+1 == termBuffer.screenColumnSize) {
 
-                if (termView.getCurrentRow() + 1 == termBuffer.totalLines) {
+                if (termView.currentRow + 1 == termBuffer.totalLines) {
                     termBuffer.addRow()
                 }
                 termView.cursor.x = 0
