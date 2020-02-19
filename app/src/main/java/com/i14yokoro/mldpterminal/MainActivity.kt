@@ -25,7 +25,7 @@ import kotlin.experimental.and
  */
 class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
-    private lateinit var termView: TerminalView//ディスプレイのEditText
+    private lateinit var termView: TerminalView//ディスプレイ
 
     // 設定保存用
     private lateinit var prefs: SharedPreferences
@@ -42,6 +42,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     lateinit var termBuffer: TerminalBuffer
 
     private var isEscapeSequence = false    // エスケープシーケンスを受信するとtrue
+    private var isReceiving = false
 
     private var isANSIEscapeSequence = false
     private var isTeCEscapeSequence = false
@@ -121,8 +122,10 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         findViewById<View>(R.id.btn_ctl).setOnClickListener { btnCtl = true }
 
         //SDK23以降はBLEをスキャンするのに位置情報が必要
-        if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT in 23..28) {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), 0)
+        } else if(29 <= Build.VERSION.SDK_INT){
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 0)
         }
 
         //自動接続
@@ -184,11 +187,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
             menu.findItem(R.id.menu_connect).isVisible = false
         } else {
             menu.findItem(R.id.menu_disconnect).isVisible = false
-            if (bleDeviceAddress != "\u0000") {
-                menu.findItem(R.id.menu_connect).isVisible = true
-            } else {
-                menu.findItem(R.id.menu_connect).isVisible = true
-            }
+            menu.findItem(R.id.menu_connect).isVisible = true
         }
         return true
     }
@@ -248,6 +247,9 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     }
 
     override fun onKey(text: Char) {
+        if(isReceiving){
+            return
+        }
         var sendCtl = false
         val sendText = text.toString()
 
@@ -255,7 +257,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
             if (btnCtl) {
                 if (text in '\u0020'..'\u007f') {
                     val sendB = byteArrayOf((text.toByte() and 0x1f))
-                    bleService!!.writeMLDP(sendB)
+                    writeMLDP(sendB)
                     btnCtl = false
                     sendCtl = true
                 }
@@ -301,6 +303,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                             ?: return
 
                     val splitData = receivedData.toCharArray()
+                    isReceiving = true
 
                     // Log.e("Main", receivedData)
                     stack += splitData.size
@@ -338,49 +341,49 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
                                 escapeString.setLength(0)
                             }
                             else
-                            -> if (isEscapeSequence) {
-                                escapeString.append(splitData[cnt])
+                            -> {
+                                if (isEscapeSequence) {
+                                    escapeString.append(splitData[cnt])
 
-                                if(splitData[cnt] == '['){
-                                    isANSIEscapeSequence = true
-                                } else if(splitData[cnt] == '?'){
-                                    isTeCEscapeSequence = true
-                                } else if(isANSIEscapeSequence){
-                                    val data = splitData[cnt].toString()
-                                    if (data.matches("[A-HJKSTfm]".toRegex())) {
-                                        checkANSIEscapeSequence()
-                                        clearEscapeSequence()
-                                    } else {
-                                        if(!data.matches("[0-9;]".toRegex())){
+                                    if(splitData[cnt] == '['){
+                                        isANSIEscapeSequence = true
+                                    } else if(splitData[cnt] == '?'){
+                                        isTeCEscapeSequence = true
+                                    } else if(isANSIEscapeSequence){
+                                        val data = splitData[cnt].toString()
+                                        if (data.matches("[A-HJKSTfm]".toRegex())) {
+                                            checkANSIEscapeSequence()
                                             clearEscapeSequence()
+                                        } else {
+                                            if(!data.matches("[0-9;]".toRegex())){
+                                                clearEscapeSequence()
+                                            }
                                         }
-                                    }
-                                } else if(isTeCEscapeSequence){
-                                    if (splitData[cnt].toString().matches("[s]".toRegex())) {
-                                        checkTeCEscapeSequence()
-                                        clearEscapeSequence()
+                                    } else if(isTeCEscapeSequence){
+                                        if (splitData[cnt].toString().matches("[s]".toRegex())) {
+                                            checkTeCEscapeSequence()
+                                            clearEscapeSequence()
+                                        } else {
+                                            // when receive number
+                                            //if(!splitData[cnt].matches("[0-9;]".toRegex())){
+                                            clearEscapeSequence()
+                                            //}
+                                        }
                                     } else {
-                                        // when receive number
-                                        //if(!splitData[cnt].matches("[0-9;]".toRegex())){
                                         clearEscapeSequence()
-                                        //}
                                     }
-                                } else {
-                                    clearEscapeSequence()
-                                }
 
-                            } else {
-                                if (splitData[cnt] == '\u0020') {
-                                    splitData[cnt] = ' '
+                                } else {
+                                    if (splitData[cnt] == '\u0020') {
+                                        splitData[cnt] = ' '
+                                    }
+                                    inputProcess(splitData[cnt])
                                 }
-                                if(splitData[cnt] == '\u0000'){
-                                    Log.d("MainActivity", "null!")
-                                }
-                                inputProcess(splitData[cnt])
                             }
                         }
                         stack--
                     }
+                    isReceiving = false
                 }
             }
         }
@@ -438,9 +441,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
     // 切断
     private val abortConnection = Runnable {
-        if (state == State.CONNECTING) {
-            bleService!!.disconnect()
-        }
+        bleService?.disconnect()
     }
 
     // bluetoothのserviceを使う
@@ -482,11 +483,9 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
     // 周りにあるBLEをスキャン
     private fun startScan() {
-        if (bleService != null) {
-            bleService!!.disconnect()
-            state = State.DISCONNECTING
-            updateConnectionState()
-        }
+        bleService?.disconnect()
+        state = State.DISCONNECTING
+        updateConnectionState()
 
         val bleServiceIntent = Intent(this@MainActivity, MldpBluetoothService::class.java)
         this.bindService(bleServiceIntent, bleServiceConnection, Context.BIND_AUTO_CREATE)
@@ -548,7 +547,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     }
 
     // strをリストに格納
-    // TODO ここおかしいきがする
     private fun inputProcess(input: Char) {
         if ((input in '\u0020'..'\u007f') || input == '\u000a' || input == '\u000d'){
 
@@ -568,18 +566,14 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
             }
             // LFか右端での入力があったときの時
             if (input == LF || oldX+1 == termBuffer.screenColumnSize) {
-                termView.cursor.x = 0
 
-                //if (termView.cursor.y + 1 == termView.screenRowSize){
-                    if (termView.getCurrentRow() + 1 == termBuffer.totalLines) {
-                        Log.e("Main", "addRow")
-                        termBuffer.addRow()
-                    }
-                //}
+                if (termView.getCurrentRow() + 1 == termBuffer.totalLines) {
+                    termBuffer.addRow()
+                }
+                termView.cursor.x = 0
                 termView.cursor.y++
             }
 
-            Log.e("Main", "Main : curr: ${termView.getCurrentRow()}, top: ${termBuffer.topRow}, count: ${termBuffer.totalLines}")
             termView.invalidate()
         }
     }
