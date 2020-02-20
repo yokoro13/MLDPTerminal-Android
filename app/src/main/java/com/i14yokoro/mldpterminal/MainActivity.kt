@@ -6,8 +6,10 @@ import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.content.*
 import android.graphics.Point
+import android.graphics.Rect
 import android.os.*
 import android.support.v7.app.AppCompatActivity
+import android.util.DisplayMetrics
 import android.util.Log
 import android.view.*
 import android.view.inputmethod.InputMethodManager
@@ -18,12 +20,13 @@ import com.i14yokoro.mldpterminal.terminalview.GestureListener
 import com.i14yokoro.mldpterminal.terminalview.InputListener
 import com.i14yokoro.mldpterminal.terminalview.TerminalView
 import kotlin.experimental.and
+import kotlin.math.abs
 
 
 /**
  * TODO 画面保持
  */
-class MainActivity : AppCompatActivity(), InputListener, GestureListener {
+class MainActivity : AppCompatActivity(), InputListener, GestureListener{
 
     private lateinit var termView: TerminalView//ディスプレイ
 
@@ -50,10 +53,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
     private var stack = 0  // 処理待ちの文字数
 
     private var escapeString: StringBuilder  = StringBuilder()// 受信したエスケープシーケンスを格納
-
-    private lateinit var buttonBar: LinearLayout
-    private val anchor = IntArray(2)
-
+    lateinit var metrics: DisplayMetrics
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,11 +69,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         val p = Point()
         wm.defaultDisplay.getSize(p)
 
-        buttonBar = findViewById(R.id.linearLayout)
-
-        buttonBar.getLocationOnScreen(anchor)
         termView = findViewById(R.id.main_display)
-        termView.buttonBarBottom = anchor[1]
         // FIXME よくない
         termView.screenColumnSize = p.x
         termView.screenRowSize = p.y
@@ -82,7 +78,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         termView.termBuffer = termBuffer
         termView.escapeSequence = EscapeSequence(termBuffer)
 
-        val metrics = resources.displayMetrics
+        metrics = resources.displayMetrics
         termView.setTitleBarSize(metrics.density)
 
         termView.setInputListener(this)
@@ -91,8 +87,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
         state = State.STARTING
         connectTimeoutHandler = Handler()
-
-        buttonBar = findViewById(R.id.linearLayout)
 
         findViewById<View>(R.id.btn_up).setOnClickListener {
             if (state == State.CONNECTED) {
@@ -149,6 +143,14 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
             false
         }
 
+        val mRootWindow = window
+        val mRootView = mRootWindow.decorView.findViewById<ViewGroup>(android.R.id.content)
+        mRootView.viewTreeObserver.addOnGlobalLayoutListener {
+            val rect = Rect()
+            mRootView.getWindowVisibleDisplayFrame(rect)
+            val diff = abs((mRootView.height - (rect.bottom )) * metrics.density)
+            Log.e("MainActivity", "diff: $diff")
+        }
     }
 
     override fun onResume() {
@@ -276,7 +278,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         if(termView.isFocusable) {
             showKeyboard()
         }
-        buttonBar.getLocationOnScreen(anchor)
     }
 
     override fun onMove() {
@@ -424,7 +425,6 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
         termView.invalidate()
     }
 
-    // TODO Viewに移動
     // エスケープシーケンスの処理
     private fun checkTeCEscapeSequence() {
         val esStr = escapeString.toString()
@@ -516,15 +516,11 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener {
 
     // キーボードを表示させる
     private fun showKeyboard() {
-        buttonBar.getLocationOnScreen(anchor)
-
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         termView.isFocusable = true
         termView.isFocusableInTouchMode = true
         termView.requestFocus()
         imm.showSoftInput(termView, InputMethodManager.SHOW_IMPLICIT)
-
-        buttonBar.getLocationOnScreen(anchor)
     }
 
     //　キーボードを隠す
