@@ -28,7 +28,7 @@ class TerminalRenderer(textSize: Int) {
             val keyPadding = if (cursor.y <= inv) {
                 0
             } else {
-                (cursor.y - inv) * fontLineSpacing
+                (cursor.y - 1 - inv) * fontLineSpacing
             }
             padding += keyPadding
         }
