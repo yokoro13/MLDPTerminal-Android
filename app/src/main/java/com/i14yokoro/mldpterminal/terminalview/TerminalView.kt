@@ -130,7 +130,7 @@ class TerminalView : View {
                 termBuffer.topRow++
                 if (cursorIsInScreen()) {
                     setEditable(true)
-                    cursor.y = currentRow - termBuffer.topRow
+                    cursor.y = termBuffer.currentRow - termBuffer.topRow
                 } else {
                     setEditable(false)
                 }
@@ -146,7 +146,7 @@ class TerminalView : View {
             // カーソルが画面内にある
             if (cursorIsInScreen()) {
                 setEditable(true)
-                cursor.y = currentRow - termBuffer.topRow
+                cursor.y = termBuffer.currentRow - termBuffer.topRow
             } else { //画面外
                 setEditable(false)
             }
@@ -189,8 +189,12 @@ class TerminalView : View {
         }
     }
 
+    private fun cursorCanMove(): Boolean{
+        return (termBuffer.totalLines - screenRowSize <= termBuffer.topRow + cursor.y && termBuffer.topRow + cursor.y <= termBuffer.totalLines - 1)
+    }
+
     private fun cursorIsInScreen(): Boolean{
-        return (termBuffer.topRow <= currentRow && currentRow <= termBuffer.topRow + termBuffer.screenRowSize - 1)
+        return (termBuffer.topRow <= termBuffer.currentRow && termBuffer.currentRow <= termBuffer.topRow + termBuffer.screenRowSize - 1)
     }
 
     private fun focusable() {
@@ -207,17 +211,6 @@ class TerminalView : View {
             isFocusable = false
         }
     }
-
-    // TODO cursor.yに依存しないようにする
-    val currentRow: Int
-        get(){
-            val top = if(termBuffer.totalLines < screenRowSize){
-                0
-            } else {
-                termBuffer.totalLines - screenRowSize
-            }
-            return top + cursor.y
-        }
 
     fun setTitleBarSize(metrics: Float){
         terminalRenderer.titleBar = 20 * metrics.toInt() + paddingBottom
@@ -239,16 +232,21 @@ class TerminalView : View {
 
         var y: Int = 0
             set(y) {
-                field = if(y >= screenRowSize){
-                    screenRowSize - 1
-                } else {
-                    if(y < 0){
-                        0
+                field = if(cursorCanMove()) {
+                    if (y >= screenRowSize) {
+                        screenRowSize - 1
                     } else {
-                        y
+                        if (y < 0) {
+                            0
+                        } else {
+                            y
+                        }
                     }
+                } else {
+                    termBuffer.totalLines - termBuffer.topRow - screenRowSize
                 }
             }
+
     }
 
 

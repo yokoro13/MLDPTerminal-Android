@@ -547,19 +547,20 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener{
             } else {
                 termBuffer.totalLines - termBuffer.screenRowSize
             }
+            termView.cursor.y = termBuffer.currentRow - termBuffer.topRow
 
             val oldX = termView.cursor.x
             // input
             if (input != LF) {
                 // 上書き
-                termBuffer.setText(termView.cursor.x, termView.currentRow, input)
-                termBuffer.setColor(termView.cursor.x, termView.currentRow, termBuffer.charColor)
+                termBuffer.setText(termView.cursor.x, termBuffer.currentRow, input)
+                termBuffer.setColor(termView.cursor.x, termBuffer.currentRow, termBuffer.charColor)
                 termView.cursor.x++
             }
             // LFか右端での入力があったときの時
             if (input == LF || oldX+1 == termBuffer.screenColumnSize) {
 
-                if (termView.currentRow + 1 == termBuffer.totalLines) {
+                if (termBuffer.currentRow + 1 == termBuffer.totalLines) {
                     termBuffer.addRow()
                 }
                 termView.cursor.x = 0
@@ -568,6 +569,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener{
                 }
 
                 termView.cursor.y++
+                termBuffer.currentRow++
             }
 
             termView.invalidate()

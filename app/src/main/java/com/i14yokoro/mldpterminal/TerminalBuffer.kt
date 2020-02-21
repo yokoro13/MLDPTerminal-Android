@@ -42,6 +42,27 @@ class TerminalBuffer(var screenColumnSize: Int, var screenRowSize: Int){
             }
         }
 
+    var currentRow: Int = 0
+        set(value) {
+            field = if(totalLines < screenRowSize){
+                if (value >= totalLines){
+                    totalLines-1
+                } else if (value < 0){
+                    0
+                } else {
+                    value
+                }
+            } else{
+                if (value >= totalLines){
+                    totalLines-1
+                } else if (value < totalLines - screenRowSize){
+                    totalLines - screenRowSize
+                } else {
+                    value
+                }
+            }
+        }
+
     /**
      * 新しい行を追加する.
      */

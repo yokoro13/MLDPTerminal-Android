@@ -31,6 +31,7 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      * @param n 移動量
      */
     fun moveUp(cursor: Cursor, n: Int) {
+        termBuffer.currentRow -= if (cursor.y - n > 0) n else cursor.y
         moveCursorY(cursor, -n)
     }
 
@@ -38,6 +39,7 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      * @param n 移動量
      */
     fun moveDown(cursor: Cursor, n: Int) {
+        termBuffer.currentRow += if (cursor.y + n < termBuffer.screenRowSize) n else (termBuffer.screenRowSize - cursor.y - 1)
         moveCursorY(cursor, n)
 
         if(termBuffer.topRow + cursor.y >= termBuffer.totalLines) {
@@ -77,9 +79,11 @@ internal constructor(private val termBuffer: TerminalBuffer) {
      */
     fun moveCursor(cursor: Cursor, n: Int, m: Int) { //n,mは1~
         if(n-1 > cursor.y) {
+            termBuffer.currentRow -= cursor.y
             cursor.y = 0
             moveDown(cursor, n-1)
         } else {
+            termBuffer.currentRow -= cursor.y - (n-1)
             cursor.y = n-1
         }
 
