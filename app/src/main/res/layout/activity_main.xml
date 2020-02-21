@@ -2,35 +2,28 @@
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/topLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="com.i14yokoro.mldpterminal.MainActivity"
-    android:orientation="vertical"
+    android:layout_height="fill_parent"
     android:fitsSystemWindows="true"
-    android:id="@+id/topLayout">
+    android:orientation="vertical"
+    tools:context="com.i14yokoro.mldpterminal.MainActivity">
 
-    <EditText
+    <com.i14yokoro.mldpterminal.terminalview.TerminalView
         android:id="@+id/main_display"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:background="#00000000"
-        android:fontFamily="monospace"
-        android:gravity="top|start"
-        android:breakStrategy="simple"
-        android:hyphenationFrequency="none"
-        android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
-        android:paddingBottom="100px"
-        android:textSize="30px"
-        android:textCursorDrawable="@drawable/color_cursor"
-        android:typeface="monospace" />
+        android:focusableInTouchMode="true"
+        android:paddingBottom="100px" />
+
 
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="100px"
-        android:fitsSystemWindows="true"
         android:layout_alignParentBottom="true"
-        android:gravity="bottom|center"
+        android:gravity="center|bottom"
         android:orientation="horizontal">
 
         <Button
@@ -45,7 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/tab"/>
+            android:text="@string/tab" />
 
         <Button
             android:id="@+id/btn_ctl"
@@ -82,5 +75,6 @@
             android:layout_weight="1"
             android:text="@string/arrow_right" />
     </LinearLayout>
+
 
 </RelativeLayout>
