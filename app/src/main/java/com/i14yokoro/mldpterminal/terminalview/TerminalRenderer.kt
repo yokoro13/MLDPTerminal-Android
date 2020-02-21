@@ -13,16 +13,30 @@ class TerminalRenderer(textSize: Int) {
     var titleBar: Int = 0
     var fontHeight: Int = 0
 
-    fun render(termBuffer: TerminalBuffer, canvas: Canvas, topRow: Int, cursor: TerminalView.Cursor, showCursor: Boolean, pad: Int) {
+    fun render(termBuffer: TerminalBuffer, canvas: Canvas, topRow: Int, cursor: TerminalView.Cursor, showCursor: Boolean, pad: Int, keyboard: Int) {
         val displayRows = if (topRow + termBuffer.screenRowSize <= termBuffer.totalLines){
             topRow + termBuffer.screenRowSize
         } else {
             termBuffer.totalLines
         }
-        for (row in topRow until displayRows) {
-            canvas.drawText(termBuffer.getRowText(row), 0, termBuffer.screenColumnSize, 0f,titleBar + (fontLineSpacing * (row-topRow).toFloat())-pad, textPaint)
+
+        var padding = pad
+
+        if(keyboard != 0) {
+            val inv = termBuffer.screenRowSize - (keyboard+pad) / fontLineSpacing
+
+            val keyPadding = if (cursor.y <= inv) {
+                0
+            } else {
+                (cursor.y - inv) * fontLineSpacing
+            }
+            padding += keyPadding
         }
-        moveToSavedCursor(canvas, cursor, showCursor, pad)
+
+        for (row in topRow until displayRows) {
+            canvas.drawText(termBuffer.getRowText(row), 0, termBuffer.screenColumnSize, 0f,titleBar + (fontLineSpacing * (row-topRow).toFloat())-padding, textPaint)
+        }
+        moveToSavedCursor(canvas, cursor, showCursor, padding)
     }
 
     private fun moveToSavedCursor(canvas: Canvas, cursor: TerminalView.Cursor, showCursor: Boolean, pad: Int) {

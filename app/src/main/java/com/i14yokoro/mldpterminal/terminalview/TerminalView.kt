@@ -21,7 +21,7 @@ class TerminalView : View {
 
     lateinit var termBuffer: TerminalBuffer
 
-    var textSize: Int = 25
+    private var textSize: Int = 25
 
     private var terminalRenderer: TerminalRenderer = TerminalRenderer(textSize)
     var cursor = Cursor()
@@ -36,10 +36,10 @@ class TerminalView : View {
         field = (height-100) / terminalRenderer.fontHeight - 1
     }
 
-    var oldY = 0
+    private var oldY = 0
 
-    var buttomBarPosition: Int = 0
-    var buttonBarBottom: Int = 0
+    var keyboardHeight: Int = 0
+    var isShowingKeyboard: Boolean =  false
 
     private var isDisplaying = false        // 画面更新中はtrue
 
@@ -103,7 +103,8 @@ class TerminalView : View {
     override fun onDraw(canvas: Canvas) {
         if (!isDisplaying) {
             isDisplaying = true
-            terminalRenderer.render(termBuffer, canvas, termBuffer.topRow, cursor, cursorIsInScreen(), paddingBottom)
+            val keyboard = if (isShowingKeyboard) keyboardHeight else 0
+            terminalRenderer.render(termBuffer, canvas, termBuffer.topRow, cursor, cursorIsInScreen(), paddingBottom, keyboard)
             isDisplaying = false
         }
     }
@@ -138,7 +139,7 @@ class TerminalView : View {
         }
     }
 
-    fun scrollUp() {
+    private fun scrollUp() {
         if (termBuffer.totalLines > termBuffer.screenRowSize) {
             //表示する一番上の行を１つ上に
             termBuffer.topRow--

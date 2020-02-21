@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener{
     private var bleAutoConnect: Boolean = false //自動接続するか
 
     private var btnCtl = false              // CTLボタンを押したらtrue
-    lateinit var termBuffer: TerminalBuffer
+    private lateinit var termBuffer: TerminalBuffer
 
     private var isEscapeSequence = false    // エスケープシーケンスを受信するとtrue
     private var isReceiving = false
@@ -53,7 +53,9 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener{
     private var stack = 0  // 処理待ちの文字数
 
     private var escapeString: StringBuilder  = StringBuilder()// 受信したエスケープシーケンスを格納
-    lateinit var metrics: DisplayMetrics
+    private lateinit var metrics: DisplayMetrics
+
+    private var layoutBottom: Int = 0
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -143,13 +145,15 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener{
             false
         }
 
-        val mRootWindow = window
-        val mRootView = mRootWindow.decorView.findViewById<ViewGroup>(android.R.id.content)
+        val mRootView = window.decorView.findViewById<ViewGroup>(android.R.id.content)
+        layoutBottom = mRootView.height
         mRootView.viewTreeObserver.addOnGlobalLayoutListener {
             val rect = Rect()
             mRootView.getWindowVisibleDisplayFrame(rect)
-            val diff = abs((mRootView.height - (rect.bottom )) * metrics.density)
-            Log.e("MainActivity", "diff: $diff")
+            termView.isShowingKeyboard = layoutBottom > rect.bottom
+            termView.keyboardHeight = if (termView.isShowingKeyboard) abs((layoutBottom - rect.bottom)) else 0
+            Log.e("MainActivity", "${layoutBottom- (rect.bottom)}")
+            layoutBottom = rect.bottom
         }
     }
 
@@ -281,7 +285,7 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener{
     }
 
     override fun onMove() {
-        hideKeyboard()
+        //hideKeyboard()
     }
 
     private val bleServiceReceiver = object : BroadcastReceiver() {
@@ -559,6 +563,10 @@ class MainActivity : AppCompatActivity(), InputListener, GestureListener{
                     termBuffer.addRow()
                 }
                 termView.cursor.x = 0
+                if (termView.cursor.y == termBuffer.screenRowSize-1){
+                    termView.scrollDown()
+                }
+
                 termView.cursor.y++
             }
 
