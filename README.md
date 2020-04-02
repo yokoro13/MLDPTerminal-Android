@@ -1,6 +1,6 @@
 # MLDPTerminal
 
-Microsoft社開発のMLDPを使用したターミナルエミュレータ
+Microchip社開発のMLDPを使用したターミナルエミュレータ
 
 MLDPに対応したBLE(RN4020等)を搭載したデバイスをFreeBSDにUSB接続することでandroidからCUI操作可能
 
